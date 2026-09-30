@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta name="description" content="Sirkula: Platform e-commerce thrift & trade fashion berbasis lokasi yang terintegrasi dengan personalized AI Stylist.">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block meta %}
+    <title>Sirkula | {{ name }}</title>
+    {% endblock meta %}
+</head>
+<body>
+    <header>
+        <nav>
+            <a>Sirkula</a>
+        </nav>
+    </header>
+    {% block content %}
+    
+    {% endblock content %}
+    <footer>
+        <p>&copy; 2026 Sirkula. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+    </footer>
+</body>
+</html>
