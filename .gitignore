@@ -87,3 +87,12 @@ local_settings.py
 
 .env
 db.sqlite3
+
+# Frontend dependencies
+node_modules/
+
+# Local Python environment
+.venv/
+
+# Collected deployment assets
+staticfiles/
