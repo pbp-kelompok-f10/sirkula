@@ -1,0 +1,84 @@
+{% load static %}
+
+<section aria-labelledby="hero-title">
+    <div
+        class="mx-auto grid max-w-7xl items-center gap-10
+               px-5 py-12 sm:px-8 sm:py-16
+               lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-20"
+    >
+        <div class="max-w-xl">
+            <h1
+                id="hero-title"
+                class="text-4xl leading-tight font-bold tracking-tight
+                       sm:text-5xl lg:text-6xl"
+            >
+                Gaya Tanpa Batas,
+                <span
+                    class="mt-2 block text-brand italic underline
+                           decoration-2 underline-offset-8"
+                >
+                    Nol Jejak Baru.
+                </span>
+            </h1>
+
+            <p class="mt-6 max-w-lg text-base leading-8 text-muted">
+                Bergabunglah dengan revolusi fashion berkelanjutan.
+                Di Sirkula, kamu bisa saling barter barang impianmu,
+                berbelanja <em>item preloved</em> berkualitas tinggi,
+                dan memanfaatkan AI stylist pribadi untuk
+                mengoptimalkan isi lemarimu.
+            </p>
+
+            <!-- Connect these controls when the destination modules are ready. -->
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <button
+                    type="button"
+                    disabled
+                    title="Lemari virtual belum tersedia"
+                    class="inline-flex min-h-12 items-center justify-center
+                           rounded-full border border-brand px-6 py-3
+                           text-center text-sm font-medium text-brand
+                           disabled:cursor-not-allowed"
+                >
+                    Jelajahi Lemari Virtual
+                </button>
+
+                <button
+                    type="button"
+                    disabled
+                    title="Barter dan thrift belum tersedia"
+                    class="inline-flex min-h-12 items-center justify-center gap-3
+                           rounded-full bg-brand px-6 py-3
+                           text-center text-sm font-medium text-white
+                           disabled:cursor-not-allowed"
+                >
+                    Mulai Barter/Thrift
+
+                    <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="size-5 shrink-0"
+                    >
+                        <path d="M5 12h14M13 6l6 6-6 6"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-hidden rounded-3xl bg-brand-soft">
+            <img
+                src="{% static 'img/home/hero-clothes.jpg' %}"
+                alt="Tumpukan pakaian di atas kursi."
+                width="1276"
+                height="960"
+                fetchpriority="high"
+                class="aspect-[4/3] w-full object-cover"
+            >
+        </div>
+    </div>
+</section>
