@@ -1,11 +1,18 @@
 django~=5.0
 gunicorn
 psycopg2-binary
+dj-database-url
 python-dotenv
 whitenoise
-# osmnx~=2.1.1
-# geopandas~=1.1.0
-# matplotlib~=3.11.2
-# networkx~=3.7
-# requests~=2.34.2
-# shapely~=2.1.2
+python-decouple
+
+# image processing
+Pillow
+
+# api's
+httpx
+django-storages
+djangorestframework
+
+# tailwind
+django-tailwind
