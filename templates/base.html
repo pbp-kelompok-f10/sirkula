@@ -1,28 +1,70 @@
-{% load static %}
+{% load static tailwind_tags %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id" data-theme="sirkula">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <meta name="description" content="Sirkula: Platform e-commerce thrift & trade fashion berbasis lokasi yang terintegrasi dengan personalized AI Stylist.">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    {% block meta %}
-    <title>Sirkula | {{ name }}</title>
-    {% endblock meta %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sirkula, platform thrift dan trade fashion berbasis lokasi dengan personalized AI Stylist.">
+
+    <title>{% block title %}Sirkula{% endblock title %}</title>
+
+    {% tailwind_css %}
+    {% block extra_head %}{% endblock extra_head %}
 </head>
-<body>
+<body class="flex min-h-screen flex-col bg-base-100 text-base-content antialiased">
+    <a
+        href="#main-content"
+        class="sr-only z-50 rounded-lg bg-primary px-4 py-2 text-primary-content focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+    >
+        Lewati ke konten utama
+    </a>
+
     <header>
-        <nav>
-            <a>Sirkula</a>
+        <nav class="navbar navbar-sirkula" aria-label="Navigasi utama">
+            <div class="navbar-start">
+                <a class="navbar-brand" href="{% url 'core:home' %}" aria-label="Sirkula - Beranda">
+                    <img
+                        class="navbar-logo"
+                        src="{% static 'img/sirkula.png' %}"
+                        alt=""
+                        width="60"
+                        height="45"
+                    >
+                    <span>Sirkula</span>
+                </a>
+            </div>
+
+            <div class="navbar-center">
+                <ul class="menu menu-horizontal" aria-label="Menu utama">
+                    <li>
+                        <a
+                            href="{% url 'core:home' %}"
+                            {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}
+                        >Beranda</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="navbar-end" aria-label="Akun">
+                {% if user.is_authenticated %}
+                    <span class="hidden text-sm md:inline">Halo, {{ user.get_short_name|default:user.username }}</span>
+                {% else %}
+                    <span class="text-sm">Temukan gaya berkelanjutanmu</span>
+                {% endif %}
+            </div>
         </nav>
     </header>
-    {% block content %}
-    
-    {% endblock content %}
-    <footer>
-        <p>&copy; 2026 Sirkula. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+
+    <main id="main-content" class="flex-1">
+        {% block content %}{% endblock content %}
+    </main>
+
+    <footer class="mt-auto bg-primary px-6 py-6 text-center text-primary-content">
+        <p class="text-sm">
+            &copy; {% now "Y" %} Sirkula. Fakultas Ilmu Komputer, Universitas Indonesia.
+        </p>
     </footer>
+
+    {% block extra_js %}{% endblock extra_js %}
 </body>
 </html>
