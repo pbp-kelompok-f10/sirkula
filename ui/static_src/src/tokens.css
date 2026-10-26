@@ -1,0 +1,154 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  /* COLORS */
+  /* Lime */
+  --color-lime-10: #feffef;
+  --color-lime-20: #fcffde;
+  --color-lime-30: #fbffce;
+  --color-lime-40: #f9ffbe;
+  --color-lime-50: #f8ffae;
+  --color-lime-60: #f6ff9d;
+  --color-lime-70: #f5ff8d;
+  --color-lime-80: #c0c86e;
+  --color-lime-90: #8b9150;
+  --color-lime-100: #565931;
+
+  /* Green */
+  --color-green-10: #e6f8ee;
+  --color-green-20: #cdf0dc;
+  --color-green-30: #b4e9cb;
+  --color-green-40: #9be1ba;
+  --color-green-50: #82daa9;
+  --color-green-60: #69d297;
+  --color-green-70: #50cb86;
+  --color-green-80: #3f9f69;
+  --color-green-90: #2d734c;
+  --color-green-100: #1c472f;
+
+  /* Blue */
+  --color-blue-10: #e5ebf7;
+  --color-blue-20: #ccd7f0;
+  --color-blue-30: #b2c3e8;
+  --color-blue-40: #99b0e0;
+  --color-blue-50: #7f9cd8;
+  --color-blue-60: #6688d1;
+  --color-blue-70: #4c74c9;
+  --color-blue-80: #3c5b9d;
+  --color-blue-90: #2b4272;
+  --color-blue-100: #1b2946;
+
+  /* Navy */
+  --color-navy-10: #e2e1e4;
+  --color-navy-20: #c4c4ca;
+  --color-navy-30: #a7a6af;
+  --color-navy-40: #898894;
+  --color-navy-50: #6c6a79;
+  --color-navy-60: #4e4d5f;
+  --color-navy-70: #312f44;
+  --color-navy-80: #262535;
+  --color-navy-90: #1c1b27;
+  --color-navy-100: #111018;
+
+  /* Neutral */
+  --color-neutral-10: #eaebed;
+  --color-neutral-20: #d5d7db;
+  --color-neutral-30: #c0c3c9;
+  --color-neutral-40: #aaaeb6;
+  --color-neutral-50: #959aa4;
+  --color-neutral-60: #808692;
+  --color-neutral-70: #6b7280;
+  --color-neutral-80: #545964;
+  --color-neutral-90: #3d4149;
+  --color-neutral-100: #25282d;
+
+  /* SEMANTIC */
+  /* Success */
+  --color-success-10: #dff7e8;
+  --color-success-20: #c0eed1;
+  --color-success-30: #a0e6ba;
+  --color-success-40: #81dea3;
+  --color-success-50: #61d68c;
+  --color-success-60: #42cd75;
+  --color-success-70: #22c55e;
+  --color-success-80: #1b9a4a;
+  --color-success-90: #137035;
+  --color-success-100: #0c4521;
+
+  /* Warning */
+  --color-warning-10: #fef1dc;
+  --color-warning-20: #fce3b9;
+  --color-warning-30: #fbd596;
+  --color-warning-40: #f9c874;
+  --color-warning-50: #f8ba51;
+  --color-warning-60: #f6ac2e;
+  --color-warning-70: #f59e0b;
+  --color-warning-80: #c07c09;
+  --color-warning-90: #8b5a06;
+  --color-warning-100: #563704;
+
+  /* Danger */
+  --color-danger-10: #fde4e4;
+  --color-danger-20: #facaca;
+  --color-danger-30: #f8afaf;
+  --color-danger-40: #f69494;
+  --color-danger-50: #f47979;
+  --color-danger-60: #f15f5f;
+  --color-danger-70: #ef4444;
+  --color-danger-80: #bb3535;
+  --color-danger-90: #872727;
+  --color-danger-100: #541818;
+
+  /* Font family */
+  --font-poppins: "Poppins", sans-serif;
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Font sizes — assumes a 16px root */
+  --text-h1: 4rem;     /* 64px */
+  --text-h2: 3rem;     /* 48px */
+  --text-h3: 2.5rem;   /* 40px */
+  --text-h4: 2rem;     /* 32px */
+  --text-h5: 1.5rem;   /* 24px */
+  --text-h6: 1.25rem;  /* 20px */
+  --text-h7: 1rem;     /* 16px */
+  --text-h8: 0.875rem; /* 14px */
+  --text-h9: 0.75rem;  /* 12px */
+
+  /* Line height and letter spacing */
+  --text-h1--line-height: normal;
+  --text-h1--letter-spacing: 0em;
+
+  --text-h2--line-height: normal;
+  --text-h2--letter-spacing: 0em;
+
+  --text-h3--line-height: normal;
+  --text-h3--letter-spacing: 0em;
+
+  --text-h4--line-height: normal;
+  --text-h4--letter-spacing: 0em;
+
+  --text-h5--line-height: normal;
+  --text-h5--letter-spacing: 0em;
+
+  --text-h6--line-height: normal;
+  --text-h6--letter-spacing: 0em;
+
+  --text-h7--line-height: normal;
+  --text-h7--letter-spacing: 0em;
+
+  --text-h8--line-height: normal;
+  --text-h8--letter-spacing: 0em;
+
+  --text-h9--line-height: normal;
+  --text-h9--letter-spacing: 0em;
+
+  /* Radius */
+  --radius-card-small: 0.75rem; /* 12px */
+  --radius-card-medium: 2rem;   /* 32px */
+  --radius-card-big: 3rem;      /* 48px */
+}
