@@ -110,11 +110,14 @@
                     </button>
                 {% endfor %}
 
-                <!-- Modal dihubungkan pada tahap kelola kategori -->
+                <!-- Kategori hanya dapat ditambahkan oleh pengguna yang login -->
                 <button
                     type="button"
-                    disabled
-                    class="min-h-11 rounded-full border-2 border-[#1C472F] px-5 py-2"
+                    id="open-category-modal"
+                    aria-haspopup="dialog"
+                    aria-controls="category-modal"
+                    {% if not request.user.is_authenticated %}disabled title="Silakan login untuk menambahkan kategori"{% endif %}
+                    class="min-h-11 rounded-full border-2 border-[#1C472F] px-5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-50"
                 > + Tambah Kategori </button>
             </form>
 
@@ -195,4 +198,38 @@
     </div>
 
 </div>
+
+{% if category_form %}
+<dialog id="category-modal" aria-labelledby="category-modal-title"
+    {% if open_category_modal %}data-open-on-load="true"{% endif %}
+    class="category-modal fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-[862px] overflow-y-auto rounded-xl border-0 bg-[#FFFFEF] p-6 text-[#1C472F] shadow-xl">
+    <div class="relative mb-7 px-9">
+        <h2 id="category-modal-title" class="text-center text-2xl font-bold sm:text-[32px]">Tambah Kategori Baru</h2>
+        <button type="button" id="close-category-modal" aria-label="Tutup modal tambah kategori"
+            class="absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+            <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+    </div>
+    <form method="post" action="{% url 'create_category' %}" id="category-form">
+        {% csrf_token %}
+        {% if category_form.non_field_errors %}
+            <div class="mb-4 text-sm text-red-700" role="alert">{{ category_form.non_field_errors }}</div>
+        {% endif %}
+        <label for="category-name" class="mb-2 block text-xs font-bold text-gray-700">Nama Kategori</label>
+        <input id="category-name" name="name" type="text" required maxlength="100" autofocus
+            value="{{ category_form.name.value|default_if_none:'' }}" placeholder="Contoh: Blouse"
+            {% if category_form.name.errors %}aria-invalid="true" aria-describedby="category-name-errors"{% endif %}
+            class="min-h-12 w-full rounded-xl border border-gray-500 bg-[#EBEBED] px-3 py-3 text-base text-gray-800 placeholder:text-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+        {% if category_form.name.errors %}
+            <div id="category-name-errors" class="mt-2 text-sm text-red-700" role="alert">
+                {% for error in category_form.name.errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+        <div class="mt-6 flex justify-end">
+            <button type="submit" class="min-h-12 rounded-xl bg-[#1C472F] px-5 py-3 text-[#FFFFEF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">Simpan</button>
+        </div>
+    </form>
+</dialog>
+<script src="{% static 'js/wardrobe.js' %}" defer></script>
+{% endif %}
 {% endblock content %}
