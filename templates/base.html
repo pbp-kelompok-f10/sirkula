@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block meta %}
-    <title>Sirkula | {{ name }}</title>
+    <title>{% block title %}Sirkula{% endblock title %}</title>
     {% endblock meta %}
 </head>
 <body>
