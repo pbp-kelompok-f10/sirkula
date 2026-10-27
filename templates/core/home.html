@@ -1,48 +1,9 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "layouts/site.html" %}
 
-{% block meta %}
-    <title>Sirkula | Gaya Tanpa Batas, Nol Jejak Baru</title>
+{% block title %}Sirkula | Gaya Tanpa Batas, Nol Jejak Baru{% endblock title %}
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap"
-        rel="stylesheet"
-    >
-
-{% endblock meta %}
-
-{% block styles %}
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
-{% endblock styles %}
-
-{% block header %}
-    <div lang="id" class="font-sans text-ink antialiased">
-        <a
-            href="#main-content"
-            class="sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50
-                   focus:not-sr-only focus:rounded-lg focus:bg-white
-                   focus:px-4 focus:py-3 focus:text-brand focus:shadow-lg"
-        >
-            Lewati navigasi
-        </a>
-
-        {% include "components/navbar.html" %}
-    </div>
-{% endblock header %}
-
-{% block content %}
-    <main
-        id="main-content"
-        tabindex="-1"
-        lang="id"
-        class="min-h-screen bg-canvas font-sans text-ink antialiased"
-    >
-        {% include "core/partials/hero.html" %}
-        {% include "core/partials/features.html" %}
-        {% include "core/partials/how_it_works.html" %}
-    </main>
-{% endblock content %}
-
-{% block footer %}
-    {% include "core/partials/footer.html" %}
-{% endblock footer %}
+{% block page_content %}
+    {% include "core/partials/hero.html" %}
+    {% include "core/partials/features.html" %}
+    {% include "core/partials/how_it_works.html" %}
+{% endblock page_content %}

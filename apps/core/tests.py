@@ -25,7 +25,10 @@ class HomePageTests(SimpleTestCase):
             "core/partials/hero.html",
             "core/partials/features.html",
             "core/partials/how_it_works.html",
-            "core/partials/footer.html",
+            "layouts/site.html",
+            "components/header.html",
+            "components/navbar.html",
+            "components/footer.html",
         ):
             self.assertTemplateUsed(response, template)
         self.assertContains(response, "Gaya Tanpa Batas,")
@@ -89,3 +92,29 @@ class HomePageTests(SimpleTestCase):
             self.assertEqual(links[label]["href"], target)
         active = [text.strip() for attrs, text in parser.items if attrs.get("aria-current") == "page"]
         self.assertEqual(active, ["Home"])
+
+    def test_shared_layout_can_render_another_apps_page(self):
+        from types import SimpleNamespace
+
+        from django.template import engines
+        from django.test import RequestFactory
+
+        request = RequestFactory().get("/wardrobe/")
+        request.resolver_match = SimpleNamespace(
+            namespace="wardrobe", view_name="wardrobe:index"
+        )
+        template = engines["django"].from_string(
+            '{% extends "layouts/site.html" %}'
+            '{% block title %}Wardrobe | Sirkula{% endblock %}'
+            '{% block page_content %}<h1>Wardrobe test page</h1>{% endblock %}'
+        )
+        html = template.render({}, request=request)
+        self.assertIn("<title>Wardrobe | Sirkula</title>", html)
+        self.assertIn("Wardrobe test page", html)
+        self.assertIn("css/app.css", html)
+        self.assertNotIn("css/style.css", html)
+        self.assertNotIn("Gaya Tanpa Batas", html)
+        self.assertEqual(html.count("<main"), 1)
+        self.assertEqual(html.count("<header"), 1)
+        self.assertEqual(html.count("<footer"), 1)
+        self.assertRegex(html, r'href="/wardrobe/"\s+aria-current="page"')

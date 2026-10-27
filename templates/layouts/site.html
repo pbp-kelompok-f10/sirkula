@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+{# Shared Tailwind layout. Child pages override title and page_content; do not add another main element. #}
+
+{% block meta %}
+    <title>{% block title %}Sirkula{% endblock title %}</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&display=swap"
+        rel="stylesheet"
+    >
+    {% block extra_head %}{% endblock extra_head %}
+{% endblock meta %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+{% endblock styles %}
+
+{% block header %}
+    {% include "components/header.html" %}
+{% endblock header %}
+
+{% block content %}
+    <main
+        id="main-content"
+        tabindex="-1"
+        lang="id"
+        class="min-h-screen bg-canvas font-sans text-ink antialiased"
+    >
+        {% block page_content %}{% endblock page_content %}
+    </main>
+{% endblock content %}
+
+{% block footer %}
+    {% include "components/footer.html" %}
+{% endblock footer %}
