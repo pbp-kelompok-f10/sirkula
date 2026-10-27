@@ -87,3 +87,7 @@ local_settings.py
 
 .env
 db.sqlite3
+# Local development and generated assets
+.venv/
+node_modules/
+static/css/tailwind.css
