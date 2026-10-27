@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Wardrobe | Sirkula{% endblock title %}
+
+{% block content %}
+<div class="relative min-h-full bg-[#FFFFEF] pb-32 text-[#1C472F]">
+
+    <!-- Judul halaman -->
+    <section
+        class="bg-gradient-to-r from-[#CCD8EE] to-[#F3FAC5] px-4 pt-12 pb-20 text-center sm:px-6"
+        aria-labelledby="wardrobe-title"
+    >
+        <h1
+            id="wardrobe-title"
+            class="mb-2 text-3xl font-bold sm:text-5xl"
+        >
+            Lemari Virtual
+        </h1>
+        <p>Selamat datang di lemari virtualmu.</p>
+    </section>
+
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        <!-- Tujuan tombol dihubungkan saat halaman Mix and Match tersedia -->
+        <div class="relative mx-auto -mt-7 mb-10 max-w-4xl">
+            <button
+                type="button"
+                disabled
+                class="flex min-h-14 w-full items-center justify-center gap-4 rounded-xl border-2 border-[#1C472F] bg-[#E5E5E5] px-4 py-3 text-lg text-gray-800 sm:text-2xl"
+            >
+                <span>Mix and Match Outfit</span>
+                <svg
+                    class="h-8 w-8 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <circle cx="12" cy="12" r="10" stroke-width="1.5" />
+                    <path
+                        d="M7 12h10m-4-4 4 4-4 4"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Pencarian dan filter menggunakan query parameter -->
+        <form method="get" class="mb-5">
+            <label for="wardrobe-search" class="sr-only">
+                Cari nama pakaian
+            </label>
+
+            <div class="flex max-w-lg gap-2">
+                <input
+                    id="wardrobe-search"
+                    type="search"
+                    name="q"
+                    value="{{ search_query|default:'' }}"
+                    placeholder="Cari nama pakaian..."
+                    class="min-w-0 flex-1 rounded-xl border border-[#1C472F] bg-white px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]"
+                >
+
+                {% if active_category_id %}
+                    <input
+                        type="hidden"
+                        name="category"
+                        value="{{ active_category_id }}"
+                    >
+                {% endif %}
+
+                <button
+                    type="submit"
+                    class="rounded-xl bg-[#1C472F] px-5 py-3 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]"
+                > Cari </button>
+            </div>
+        </form>
+
+        <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
+
+            <form
+                method="get"
+                class="flex flex-wrap items-center gap-3"
+                aria-label="Filter kategori pakaian"
+            >
+                {% if search_query %}
+                    <input type="hidden" name="q" value="{{ search_query }}">
+                {% endif %}
+
+                <button
+                    type="submit"
+                    name="category"
+                    value=""
+                    aria-pressed="{% if not active_category_id %}true{% else %}false{% endif %}"
+                    class="min-h-11 rounded-full border-2 border-[#1C472F] px-5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] {% if not active_category_id %}bg-[#1C472F] text-white{% else %}bg-transparent text-[#1C472F]{% endif %}"
+                > Semua </button>
+
+                {% for category in categories %}
+                    <button
+                        type="submit"
+                        name="category"
+                        value="{{ category.id }}"
+                        aria-pressed="{% if category.id == active_category_id %}true{% else %}false{% endif %}"
+                        class="min-h-11 rounded-full border-2 border-[#1C472F] px-5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] {% if category.id == active_category_id %}bg-[#1C472F] text-white{% else %}bg-transparent text-[#1C472F]{% endif %}"
+                    >
+                        {{ category.name }}
+                    </button>
+                {% endfor %}
+
+                <!-- Modal dihubungkan pada tahap kelola kategori -->
+                <button
+                    type="button"
+                    disabled
+                    class="min-h-11 rounded-full border-2 border-[#1C472F] px-5 py-2"
+                > + Tambah Kategori </button>
+            </form>
+
+            <!-- Modal dihubungkan pada tahap tambah pakaian -->
+            <button
+                type="button"
+                disabled
+                class="min-h-11 shrink-0 rounded-full bg-[#F5FF8D] px-5 py-2 font-medium text-[#1C472F]"
+            > + Tambah Baju </button>
+        </div>
+
+        <!-- Koleksi pakaian -->
+        <section aria-label="Koleksi pakaian">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+
+                {% for clothing in clothes %}
+                    <article class="min-w-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                        <div class="mb-4 aspect-square overflow-hidden rounded-xl bg-gray-100">
+                            {% if clothing.primary_image_url %}
+                                <img
+                                    src="{{ clothing.primary_image_url }}"
+                                    alt="{{ clothing.name }}"
+                                    loading="lazy"
+                                    class="h-full w-full object-contain"
+                                >
+                            {% else %}
+                                <div class="flex h-full items-center justify-center p-4 text-center text-sm text-gray-500">
+                                    Foto belum tersedia
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <h2 class="break-words text-sm font-bold">
+                            {{ clothing.name }}
+                        </h2>
+                    </article>
+
+                {% empty %}
+                    <div class="col-span-full py-16 text-center">
+                        {% if search_query or active_category_id %}
+                            <p>Tidak ada pakaian yang sesuai dengan pencarian atau kategori ini.</p>
+                        {% else %}
+                            <p>Belum ada pakaian di lemarimu.</p>
+                            <p class="mt-2 text-sm">
+                                Tambahkan pakaian untuk mulai mengisi koleksimu.
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Dihubungkan ke halaman Mix and Match pada tahap berikutnya -->
+    <div class="fixed right-4 bottom-4 sm:right-8 sm:bottom-8">
+        <button
+            type="button"
+            disabled
+            class="flex min-h-12 items-center gap-3 rounded-full bg-[#1C472F] px-5 py-4 text-white shadow-lg"
+        >
+            <svg
+                class="h-6 w-6 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+                <path
+                    d="M5 5h14v11H9l-4 4V5Z"
+                    stroke-width="1.75"
+                    stroke-linejoin="round"
+                />
+            </svg>
+            <span class="font-semibold">Chat AI Stylist</span>
+        </button>
+    </div>
+
+</div>
+{% endblock content %}
