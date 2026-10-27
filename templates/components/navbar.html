@@ -1,103 +1,44 @@
-{% url "main:home" as home_url %}
-
-<header class="border-b border-line bg-navigation">
-    <nav
-        aria-label="Navigasi utama"
-        class="mx-auto flex max-w-7xl flex-wrap items-center
-               justify-between gap-4 px-5 py-4 sm:px-8 lg:px-12"
-    >
-        <a
-            href="{{ home_url }}"
-            class="rounded-md text-xl font-bold
-                   focus-visible:outline-2 focus-visible:outline-offset-4
-                   focus-visible:outline-brand"
-        >
-            Logo
+{% url "core:home" as home_url %}
+<header class="bg-brand text-white">
+    <nav aria-label="Navigasi utama" class="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-5 px-5 py-5 sm:px-8 lg:px-16 lg:py-6">
+        <a href="{{ home_url }}" aria-label="Sirkula — beranda" class="inline-flex items-center gap-2 rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            {% include "core/partials/brand_mark.html" with mark_class="w-12 text-navigation" only %}
+            <span class="text-lg font-semibold">Sirkula</span>
         </a>
-
-        <ul
-            class="order-3 flex w-full flex-wrap justify-center gap-2
-                   text-sm font-medium sm:order-none sm:w-auto sm:gap-4"
-        >
+        <ul class="order-3 flex w-full flex-wrap items-center justify-center gap-2 text-sm sm:gap-6 lg:order-none lg:w-auto">
             <li>
-                <a
-                    href="{{ home_url }}"
-                    {% if request.resolver_match.view_name == "main:home" %}
-                        aria-current="page"
-                    {% endif %}
-                    class="inline-flex min-h-11 items-center rounded-full px-4
-                           hover:bg-brand-soft
-                           aria-[current=page]:bg-ink
-                           aria-[current=page]:text-white
-                           focus-visible:outline-2 focus-visible:outline-offset-4
-                           focus-visible:outline-brand"
-                >
+                <a href="{{ home_url }}"
+                   {% if request.resolver_match.view_name == "core:home" %}aria-current="page"{% endif %}
+                   class="inline-flex min-h-11 items-center rounded-lg px-4 hover:bg-white/10 aria-[current=page]:bg-navigation aria-[current=page]:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
                     Home
                 </a>
             </li>
-
-            <!-- Placeholder labels retained from the Figma design. -->
             <li>
-                <button
-                    type="button"
-                    disabled
-                    title="Tujuan menu belum tersedia"
-                    class="inline-flex min-h-11 items-center rounded-full px-4
-                           disabled:cursor-not-allowed"
-                >
-                    Home
-                </button>
+                <a href="/wardrobe/"
+                   {% if request.resolver_match.namespace == "wardrobe" %}aria-current="page"{% endif %}
+                   class="inline-flex min-h-11 items-center rounded-lg px-4 hover:bg-white/10 aria-[current=page]:bg-navigation aria-[current=page]:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    Wardrobe
+                </a>
             </li>
-
             <li>
-                <button
-                    type="button"
-                    disabled
-                    title="Tujuan menu belum tersedia"
-                    class="inline-flex min-h-11 items-center rounded-full px-4
-                           disabled:cursor-not-allowed"
-                >
-                    Home
-                </button>
+                <a href="/barter/"
+                   {% if request.resolver_match.namespace == "bartering" %}aria-current="page"{% endif %}
+                   class="inline-flex min-h-11 items-center rounded-lg px-4 hover:bg-white/10 aria-[current=page]:bg-navigation aria-[current=page]:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    Barter
+                </a>
             </li>
-
             <li>
-                <button
-                    type="button"
-                    disabled
-                    title="Tujuan menu belum tersedia"
-                    class="inline-flex min-h-11 items-center rounded-full px-4
-                           disabled:cursor-not-allowed"
-                >
-                    Home
-                </button>
+                <a href="/marketplace/"
+                   {% if request.resolver_match.namespace == "marketplace" %}aria-current="page"{% endif %}
+                   class="inline-flex min-h-11 items-center rounded-lg px-4 hover:bg-white/10 aria-[current=page]:bg-navigation aria-[current=page]:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    Thrift
+                </a>
             </li>
         </ul>
-
-        <!-- Replace with a named URL when authentication is available. -->
-        <button
-            type="button"
-            disabled
-            title="Login belum tersedia"
-            class="inline-flex min-h-11 items-center justify-center gap-2
-                   rounded-full bg-brand px-5 text-sm font-medium text-white
-                   disabled:cursor-not-allowed"
-        >
-            Login
-
-            <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="size-4"
-            >
-                <path d="M10 17l5-5-5-5M15 12H3"></path>
-                <path d="M15 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5"></path>
-            </svg>
-        </button>
+        <div class="flex items-center gap-3 text-sm">
+            {# Provisional account paths: align with accounts URL names when available. #}
+            <a href="/accounts/register/" class="inline-flex min-h-11 items-center rounded-lg bg-navigation px-4 text-brand hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Register</a>
+            <a href="/accounts/login/" class="inline-flex min-h-11 items-center rounded-lg border border-navigation px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Login</a>
+        </div>
     </nav>
 </header>
