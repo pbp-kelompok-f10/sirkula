@@ -2,7 +2,7 @@
 <!-- mau domain pbp :( -->
   <a href="https://sirkula.pbp.cs.ui.ac.id">  
     <picture>
-      <img src="static/img/sirkula.png" alt="Sirkula Logo">
+      <img src="static/img/sirkula-github.png" alt="Sirkula Logo">
     </picture>
   </a>
 </p>
