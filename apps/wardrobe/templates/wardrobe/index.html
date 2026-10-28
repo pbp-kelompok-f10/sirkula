@@ -126,11 +126,12 @@
                 > + Tambah Kategori </button>
             </form>
 
-            <!-- Modal dihubungkan pada tahap tambah pakaian -->
+            <!-- Tambah pakaian memakai kategori dan foto milik pengguna -->
             <button
                 type="button"
-                disabled
-                class="min-h-11 shrink-0 rounded-full bg-[#F5FF8D] px-5 py-2 font-medium text-[#1C472F]"
+                id="open-item-modal" aria-haspopup="dialog" aria-controls="item-modal"
+                {% if not request.user.is_authenticated %}disabled title="Silakan login untuk menambahkan pakaian"{% endif %}
+                class="min-h-11 shrink-0 rounded-full bg-[#F5FF8D] px-5 py-2 font-medium text-[#1C472F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-50"
             > + Tambah Baju </button>
         </div>
 
@@ -141,18 +142,20 @@
                 {% for clothing in clothes %}
                     <article class="min-w-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                         <div class="mb-4 aspect-square overflow-hidden rounded-xl bg-gray-100">
-                            {% if clothing.primary_image_url %}
-                                <img
-                                    src="{{ clothing.primary_image_url }}"
-                                    alt="{{ clothing.name }}"
-                                    loading="lazy"
-                                    class="h-full w-full object-contain"
-                                >
-                            {% else %}
-                                <div class="flex h-full items-center justify-center p-4 text-center text-sm text-gray-500">
-                                    Foto belum tersedia
-                                </div>
-                            {% endif %}
+                            {% with photo=clothing.images.first %}
+                                {% if photo %}
+                                    <img
+                                        src="{% url 'wardrobe:item_photo' photo_id=photo.pk %}"
+                                        alt="{{ clothing.name }}"
+                                        loading="lazy"
+                                        class="h-full w-full object-contain"
+                                    >
+                                {% else %}
+                                    <div class="flex h-full items-center justify-center p-4 text-center text-sm text-gray-500">
+                                        Foto belum tersedia
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
                         </div>
 
                         <h2 class="break-words text-sm font-bold">
@@ -235,6 +238,74 @@
         </div>
     </form>
 </dialog>
+{% endif %}
+{% if item_form %}
+<dialog id="item-modal" aria-labelledby="item-modal-title"
+    {% if open_item_modal %}data-open-on-load="true"{% endif %}
+    class="item-modal fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-[862px] overflow-y-auto rounded-xl border-0 bg-[#FFFFEF] p-6 text-[#1C472F] shadow-xl">
+    <div class="relative mb-7 px-9">
+        <h2 id="item-modal-title" class="text-center text-2xl font-bold sm:text-[32px]">Tambah Pakaian Baru</h2>
+        <button type="button" id="close-item-modal" aria-label="Tutup modal tambah pakaian"
+            class="absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+            <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+    </div>
+    <form method="post" action="{% url 'wardrobe:create_item' %}" enctype="multipart/form-data" id="item-form">
+        {% csrf_token %}
+        {% if item_form.non_field_errors %}
+            <div id="item-form-errors" tabindex="-1" class="mb-4 rounded-lg border border-red-700 p-3 text-sm text-red-700" role="alert">
+                {% for error in item_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+        {% if not categories %}
+            <p class="mb-4 rounded-lg border border-[#1C472F] p-3 text-sm" id="item-category-guidance">Tambahkan kategori terlebih dahulu melalui tombol Tambah Kategori di halaman Wardrobe.</p>
+        {% endif %}
+        <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="min-w-0">
+                <label for="item-name" class="mb-2 block text-xs font-bold text-gray-700">Nama Pakaian</label>
+                <input id="item-name" type="text" name="name" required maxlength="100" value="{{ item_form.name.value|default_if_none:'' }}" placeholder="Contoh: Blouse cantik"
+                    aria-describedby="item-name-client-error{% if item_form.name.errors %} item-name-errors{% endif %}"
+                    {% if item_form.name.errors %}aria-invalid="true"{% endif %}
+                    class="min-h-12 w-full rounded-xl border border-gray-500 bg-[#EBEBED] px-3 py-3 text-base text-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+                {% if item_form.name.errors %}<div id="item-name-errors" class="mt-2 text-sm text-red-700" role="alert">{% for error in item_form.name.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                <p id="item-name-client-error" class="mt-2 text-sm text-red-700" role="alert" hidden></p>
+            </div>
+            <div class="min-w-0">
+                <label for="item-category" class="mb-2 block text-xs font-bold text-gray-700">Kategori</label>
+                <select id="item-category" name="category" required
+                    aria-describedby="item-category-client-error{% if item_form.category.errors %} item-category-errors{% endif %}{% if not categories %} item-category-guidance{% endif %}"
+                    {% if item_form.category.errors %}aria-invalid="true"{% endif %}
+                    class="min-h-12 w-full rounded-xl border border-gray-500 bg-[#EBEBED] px-3 py-3 text-base text-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+                    {% for value, label in item_form.category.field.choices %}
+                        <option value="{{ value }}" {% if value|stringformat:'s' == item_form.category.value|stringformat:'s' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% if item_form.category.errors %}<div id="item-category-errors" class="mt-2 text-sm text-red-700" role="alert">{% for error in item_form.category.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                <p id="item-category-client-error" class="mt-2 text-sm text-red-700" role="alert" hidden></p>
+            </div>
+        </div>
+        <label for="item-photos" id="item-upload-zone" class="item-upload-zone relative flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-500 bg-[#EBEBED] p-6 text-center text-gray-600 sm:min-h-64">
+            <input id="item-photos" type="file" name="photos" multiple required accept="image/jpeg,image/png,image/webp" class="sr-only"
+                aria-describedby="item-photos-help item-photos-client-error{% if item_form.photos.errors %} item-photos-errors{% endif %}"
+                {% if item_form.photos.errors %}aria-invalid="true"{% endif %}>
+            <svg aria-hidden="true" class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" /></svg>
+            <span class="text-base">Upload Gambar Pakaian</span>
+            <span id="item-photos-help" class="text-sm">Klik atau seret foto ke sini. JPG, PNG, atau WebP; 1–5 foto, maksimal 5 MB per foto.</span>
+        </label>
+        {% if item_form.photos.errors %}<div id="item-photos-errors" class="mt-2 text-sm text-red-700" role="alert">{% for error in item_form.photos.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+        {% if item_form.is_bound %}<p id="item-photos-reselect" class="mt-2 text-sm text-gray-700">Pilih ulang foto sebelum menyimpan lagi. Browser tidak mengisi ulang pilihan file setelah halaman dimuat.</p>{% endif %}
+        <p id="item-photos-client-error" class="mt-2 text-sm text-red-700" role="alert" hidden></p>
+        <p id="item-photos-status" class="mt-3 text-sm text-gray-700" role="status" aria-live="polite">Belum ada foto dipilih.</p>
+        <ul id="item-photo-previews" class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label="Preview foto pakaian" hidden></ul>
+        <div class="mt-6 flex justify-end">
+            <button id="save-item" type="submit" {% if not categories %}disabled data-no-categories="true"{% endif %}
+                class="min-h-12 rounded-xl bg-[#1C472F] px-5 py-3 text-[#FFFFEF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-50">Simpan</button>
+        </div>
+    </form>
+</dialog>
+{% endif %}
+
+{% if request.user.is_authenticated %}
 <script src="{% static 'wardrobe/js/wardrobe.js' %}" defer></script>
 {% endif %}
 {% endblock content %}

@@ -1,7 +1,65 @@
-.category-modal::backdrop {
+.category-modal::backdrop,
+.item-modal::backdrop {
     background: rgb(0 0 0 / 40%);
 }
 
-html.category-modal-open {
+html.wardrobe-modal-open {
     overflow: hidden;
+}
+
+.item-modal [aria-invalid="true"] {
+    border-color: #b91c1c;
+}
+
+.item-upload-zone:focus-within,
+.item-upload-zone.is-dragging {
+    outline: 2px solid #1c472f;
+    outline-offset: 3px;
+}
+
+.item-photo-preview {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #d1d5db;
+    border-radius: 0.75rem;
+    background: white;
+    padding: 0.5rem;
+}
+
+.item-photo-preview img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    border-radius: 0.5rem;
+    background: #ebebed;
+}
+
+.item-photo-filename {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.item-photo-remove {
+    min-height: 44px;
+    width: 100%;
+    margin-top: 0.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #1c472f;
+}
+
+.item-photo-remove:hover {
+    background: #f3fac5;
+}
+
+.item-photo-remove:focus-visible {
+    outline: 2px solid #1c472f;
+    outline-offset: -2px;
+}
+
+.item-modal [hidden] {
+    display: none !important;
 }
