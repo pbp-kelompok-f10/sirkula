@@ -115,9 +115,12 @@
   }
 
   .btn-outline.btn-secondary {
-    border-color: var(--color-lime-100);
+    --btn-color: var(--color-lime-10);
+    --btn-fg: var(--color-lime-10);
+    --btn-rest-fg: var(--color-lime-10);
+    --btn-border: var(--color-lime-10);
+
     background-color: transparent;
-    color: var(--color-lime-100);
   }
 
   .btn-outline.btn-accent {
@@ -382,11 +385,35 @@
     color: #ffffff;
     font-size: var(--text-h6);
     font-weight: var(--font-weight-bold);
+    padding-left: 2rem;
   }
 
-  .navbar-sirkula .navbar-logo { width: 3.75rem; height: 2.8125rem; object-fit: contain; }
+  .navbar-sirkula .navbar-logo { width: 7rem; object-fit: contain; }
 
-  .navbar-sirkula .menu-horizontal { gap: 2.5625rem; padding: 0; }
+  .navbar-sirkula .menu-horizontal {
+    --menu-active-bg: var(--color-lime-10);
+
+    gap: 2.5625rem;
+    padding: 0;
+  }
+
+  .navbar-sirkula .menu-horizontal > li > a {
+    color: var(--color-lime-10);
+  }
+
+  .navbar-sirkula .menu-horizontal > li > a:hover,
+  .navbar-sirkula .menu-horizontal > li > a:focus-visible {
+    color: var(--color-lime-10);
+  }
+
+  .navbar-sirkula .menu-horizontal > li > a:is(
+    .active,
+    .is-active,
+    [aria-current="page"]
+  ) {
+    background-color: var(--color-lime-10);
+    color: var(--color-success-100);
+  }
 
   .navbar-sirkula .menu-horizontal a {
     border-radius: var(--radius-card-small);
@@ -396,9 +423,9 @@
     line-height: normal;
   }
 
-  .navbar-sirkula:not(.navbar-authenticated) .menu-horizontal a { font-weight: var(--font-weight-bold); }
+  .navbar-sirkula:not(.navbar-authenticated) .menu-horizontal a { font-weight: var(--font-weight-normal); }
 
-  .navbar-sirkula .menu-horizontal a:is(.active, [aria-current="page"]) {
+  .navbar-sirkula .menu-horizontal a:is(.active, .is-active, [aria-current="page"]) {
     background-color: var(--color-lime-10);
     color: var(--color-success-100);
   }
@@ -406,7 +433,8 @@
   .navbar-sirkula .navbar-end {
     display: flex;
     justify-content: flex-end;
-    gap: 1.5rem;
+    gap: 1rem;
+    padding-right: 2rem;
   }
 
   .navbar-sirkula .btn { color: inherit; }
@@ -424,7 +452,11 @@
     color: var(--color-lime-10);
   }
 
-  .navbar-sirkula .btn-cart { padding-inline: 1.25rem; border-color: transparent; }
+  .navbar-sirkula .btn-cart {
+    padding-inline: 1.25rem;
+    border-color: transparent;
+    background-color: transparent;
+  }
 
   /* Footer */
   .footer-sirkula {
@@ -516,5 +548,40 @@
     .footer-sirkula .footer-links { grid-template-columns: 1fr; gap: 2rem; padding: 0 1rem; }
     .footer-sirkula .footer-title { font-size: var(--text-h6); }
     .footer-sirkula nav a { font-size: var(--text-h7); }
+  }
+}
+
+/* Buat override DaisyUI */
+@layer utilities {
+  .navbar-sirkula .menu-horizontal {
+    --menu-active-bg: var(--color-lime-10);
+    --menu-active-fg: var(--color-success-100);
+  }
+
+  .navbar-sirkula .menu-horizontal > li > a,
+  .navbar-sirkula .menu-horizontal > li > a:hover,
+  .navbar-sirkula .menu-horizontal > li > a:focus-visible {
+    color: var(--color-lime-10);
+  }
+
+  .navbar-sirkula .menu-horizontal > li > a:is(
+    .active,
+    .is-active,
+    [aria-current="page"]
+  ) {
+    background-color: var(--color-lime-10);
+    color: var(--color-success-100);
+  }
+
+  .navbar-sirkula .btn-outline.btn-secondary {
+    --btn-color: var(--color-lime-10);
+    --btn-fg: var(--color-lime-10);
+    --btn-rest-fg: var(--color-lime-10);
+    --btn-bg: transparent;
+    --btn-border: var(--color-lime-10);
+
+    color: var(--color-lime-10);
+    border-color: var(--color-lime-10);
+    background-color: transparent;
   }
 }

@@ -49,6 +49,11 @@ INSTALLED_APPS = [
 # Tailwind definition
 TAILWIND_APP_NAME = 'ui'
 
+# STATICFILES
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
 # PNPM
 NPM_BIN_PATH = os.getenv('NPM_BIN_PATH', "npm")
 

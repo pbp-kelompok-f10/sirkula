@@ -104,6 +104,7 @@
   --font-poppins: "Poppins", sans-serif;
 
   /* Font weights */
+  --font-weight-light: 300;
   --font-weight-normal: 400;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
