@@ -1,0 +1,311 @@
+/*
+ * Shop page styles.
+ *
+ * Dipindahkan dari CSS lama supaya tampilan halaman shop tetap sama,
+ * sementara navbar/footer/body sekarang memakai base Tailwind + DaisyUI
+ * dari templates/base.html.
+ *
+ * Semua selector di-scope ke .shop-page agar tidak bentrok dengan
+ * class DaisyUI (mis. .card-body, .card-title, .btn-primary).
+ */
+
+.shop-page .hero-section {
+    height: 380px;
+    background-color: #c4c4c4;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shop-page .hero-title {
+    font-size: 20rem;
+    color: #eef1f3;
+    font-weight: 500;
+    letter-spacing: -0.05em;
+    margin: 0;
+}
+
+.shop-page .shop-wrapper {
+    max-width: 1100px;
+    margin: -80px auto 48px auto;
+    position: relative;
+    z-index: 10;
+    background-color: #eef1f3;
+    border-radius: 24px;
+    padding: 36px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.shop-page .shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+}
+
+.shop-page .shop-header-title {
+    font-size: 1.85rem;
+    font-weight: bold;
+    color: #222222;
+    line-height: 1.2;
+}
+
+.shop-page .text-green {
+    color: #194331;
+}
+
+/* Search Bar */
+.shop-page .search-bar-container {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 9999px;
+    padding: 8px 16px;
+    width: 320px;
+}
+
+.shop-page .search-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.875rem;
+}
+
+.shop-page .search-btn {
+    border: none;
+    background: transparent;
+    font-weight: bold;
+    color: #4b5563;
+    cursor: pointer;
+}
+
+/* Layout Content */
+.shop-page .shop-content {
+    display: flex;
+    gap: 28px;
+}
+
+.shop-page .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+}
+
+.shop-page .btn-filter-main {
+    width: 100%;
+    background-color: #194331;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.shop-page .filter-card {
+    background-color: #ffffff;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.shop-page .filter-title {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 12px;
+}
+
+.shop-page .slider-input {
+    width: 100%;
+    accent-color: #194331;
+    margin-bottom: 8px;
+}
+
+.shop-page .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #6b7280;
+}
+
+/* Size Chips */
+.shop-page .size-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.shop-page .size-btn {
+    background-color: #e2e8e4;
+    color: #222222;
+    font-weight: bold;
+    border: none;
+    padding: 6px 0;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.shop-page .size-btn.active,
+.shop-page .size-btn:hover {
+    background-color: #194331;
+    color: #ffffff;
+}
+
+/* Map Location */
+.shop-page .map-wrapper {
+    margin-bottom: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.shop-page .location-img {
+    width: 100%;
+    display: block;
+    border-radius: 8px;
+}
+
+.shop-page .btn-location {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background-color: #194331;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.shop-page .product-grid {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    align-content: start;
+}
+
+.shop-page .product-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.shop-page .card-img-wrapper {
+    position: relative;
+    height: 150px;
+    margin-bottom: 12px;
+}
+
+.shop-page .card-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background-color: #e6e877;
+    color: #111827;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.shop-page .card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.shop-page .card-body {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.shop-page .card-qty {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.shop-page .card-title {
+    font-size: 0.875rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 4px;
+    white-space: normal;
+    overflow: visible;
+}
+
+.shop-page .card-price {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #194331;
+    margin-bottom: 12px;
+}
+
+.shop-page .card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.shop-page .btn-primary {
+    flex-grow: 1;
+    background-color: #194331;
+    color: #ffffff;
+    border: none;
+    border-radius: 9999px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    height: auto;
+    min-height: 0;
+}
+
+.shop-page .btn-secondary {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #d1d5db;
+    background: transparent;
+    border-radius: 8px;
+    font-weight: bold;
+    color: #374151;
+    cursor: pointer;
+    padding: 0;
+}
+
+.shop-page .empty-products {
+    grid-column: span 3;
+    text-align: center;
+    padding: 40px 0;
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .shop-page .product-grid {
+        grid-template-columns: 1fr;
+    }
+    .shop-page .shop-content {
+        flex-direction: column;
+    }
+    .shop-page .sidebar {
+        width: 100%;
+    }
+}

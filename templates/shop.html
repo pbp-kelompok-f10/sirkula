@@ -1,11 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block meta %}
-    <title>Sirkula | Shop</title>
-{% endblock meta %}
+{% block title %}Shop | Sirkula{% endblock title %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/shop.css' %}">
+{% endblock extra_head %}
+
+{% block nav_shop %}is-active{% endblock nav_shop %}
 
 {% block content %}
+    <div class="shop-page">
     <!-- Hero Section -->
     <section class="hero-section" style="background-image: url('{% static 'img/baju-bg.png' %}');">
         <h1 class="hero-title">SHOP</h1>
@@ -45,8 +50,8 @@
                     <h3 class="filter-title">Ukuran</h3>
                     <div class="size-grid">
                         <button class="size-btn">XS</button>
-                        <button class="size-btn active">S</button>
-                        <button class="size-btn active">M</button>
+                        <button class="size-btn">S</button>
+                        <button class="size-btn">M</button>
                         <button class="size-btn">L</button>
                         <button class="size-btn">XL</button>
                         <button class="size-btn">2XL</button>
@@ -94,4 +99,5 @@
             </section>
         </div>
     </main>
+    </div>
 {% endblock content %}

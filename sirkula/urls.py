@@ -14,8 +14,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-<<<<<<< Updated upstream
 from django.urls import path, include
 
 urlpatterns = [
@@ -26,12 +27,13 @@ urlpatterns = [
     path("marketplace/", include("apps.marketplace.urls")),
     path("barter/", include("apps.bartering.urls")),
     path("outfits/", include("apps.outfits.urls")),
-=======
-from django.urls import path
-from .views import show_shop
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('shop/', show_shop, name='shop'),
->>>>>>> Stashed changes
+    path("transactions/", include("apps.transactions.urls")),
 ]
+
+if settings.DEBUG:
+    # Include django_browser_reload URLs only in DEBUG mode
+    urlpatterns += [
+        path("__reload__/", include("django_browser_reload.urls")),
+    ]
+    # Serve media files (foto produk) saat development
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

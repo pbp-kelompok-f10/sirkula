@@ -1,104 +1,131 @@
-{% load static %}
+{% load static tailwind_tags %}
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="sirkula">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    {% block meta %}
-        <title>Sirkula</title>
-    {% endblock meta %}
+    <meta name="description" content="Sirkula, platform thrift dan trade fashion berbasis lokasi dengan personalized AI Stylist.">
 
-    <!-- Memanggil CSS Utama -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>{% block title %}Sirkula{% endblock title %}</title>
+
+    {% tailwind_css %}
+    {% block extra_head %}{% endblock extra_head %}
 </head>
-<body>
+<body class="flex min-h-screen flex-col bg-base-100 text-base-content antialiased">
+    <a
+        href="#main-content"
+        class="sr-only z-50 rounded-lg bg-primary px-4 py-2 text-primary-content focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+    >
+        Lewati ke konten utama
+    </a>
 
-    <!-- NAVBAR -->
-    <header class="navbar">
-        <!-- Logo -->
-        <a href="/" class="logo font-bold">
-            <img src="{% static 'img/sirkula-logo.png' %}" alt="Sirkula Logo" class="logo-img">
-        </a>
+    <header>
+        <nav class="navbar navbar-sirkula{% if user.is_authenticated %} navbar-authenticated{% endif %}" aria-label="Navigasi utama">
+            <div class="navbar-start">
+                <a class="navbar-brand" href="{% url 'core:home' %}" aria-label="Sirkula - Beranda">
+                    <img
+                        class="navbar-logo"
+                        src="{% static 'img/sirkula-logo.png' %}"
+                        alt=""
+                    >
+                </a>
+            </div>
 
-        <!-- Menu Navigasi Tengah -->
-        <nav class="nav-menu">
-            <a href="/" class="nav-link active">Home</a>
-            <a href="/shop/" class="nav-link">Shop</a>
-            <a href="#" class="nav-link">Wardrobe</a>
-            <a href="#" class="nav-link">Map</a>
+            <div class="navbar-center">
+                <ul class="menu menu-horizontal" aria-label="Menu utama">
+                    <li>
+                        <a
+                            href="{% url 'core:home' %}"
+                            class="{% block nav_home %}{% endblock nav_home %}"
+                            {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}
+                        >Home</a>
+                    </li>
+                    <li>
+                        <a
+                            href="{% url 'marketplace:shop' %}"
+                            class="{% block nav_shop %}{% endblock nav_shop %}"
+                            {% if request.resolver_match.url_name == 'shop' %}aria-current="page"{% endif %}
+                        >Shop</a>
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            class="{% block nav_wardrobe %}{% endblock nav_wardrobe %}"
+                            {% if request.resolver_match.url_name == 'wardrobe' %}aria-current="page"{% endif %}
+                        >Wardrobe</a>
+                    </li>
+                    <li>
+                        <a
+                            href="#"
+                            class="{% block nav_map %}{% endblock nav_map %}"
+                            {% if request.resolver_match.url_name == 'map' %}aria-current="page"{% endif %}
+                        >Map</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="navbar-end" aria-label="Akun">
+                {% if user.is_authenticated %}
+                    <a href="#" class="btn btn-cart" aria-label="Keranjang">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.05 2.05L3.149 2.022C3.38643 2.01601 3.61824 2.09473 3.80293 2.24406C3.98762 2.39339 4.11314 2.60358 4.157 2.837L6.847 17.184C6.88993 17.4133 7.01169 17.6204 7.19121 17.7694C7.37072 17.9185 7.59669 18 7.83 18H18M18 18C16.8954 18 16 18.8954 16 20C16 21.1046 16.8954 22 18 22C19.1046 22 20 21.1046 20 20C20 18.8954 19.1046 18 18 18ZM4.563 5H20.998C21.1468 4.9997 21.2938 5.03261 21.4283 5.09633C21.5627 5.16005 21.6813 5.25298 21.7753 5.36834C21.8693 5.4837 21.9363 5.61858 21.9716 5.76315C22.0068 5.90772 22.0094 6.05833 21.979 6.204L20.953 12.43C20.8537 12.8815 20.6011 13.2846 20.2381 13.5708C19.8751 13.8571 19.4242 14.0087 18.962 14H6.25M10 20C10 21.1046 9.10457 22 8 22C6.89543 22 6 21.1046 6 20C6 18.8954 6.89543 18 8 18C9.10457 18 10 18.8954 10 20Z"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="btn btn-profile">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 13C14.7614 13 17 10.7614 17 8C17 5.23858 14.7614 3 12 3C9.23858 3 7 5.23858 7 8C7 10.7614 9.23858 13 12 13ZM12 13C14.1217 13 16.1566 13.8429 17.6569 15.3431C19.1571 16.8434 20 18.8783 20 21M12 13C9.87827 13 7.84344 13.8429 6.34315 15.3431C4.84285 16.8434 4 18.8783 4 21"/>
+                        </svg>
+                        <span>Hi, {{ user.get_short_name|default:user.username }}</span>
+                    </a>
+                    <a href="#" class="btn btn-logout">Logout</a>
+                {% else %}
+                    <a href="#" class="btn btn-login font-bold">Login</a>
+                    <a href="#" class="btn btn-outline btn-secondary">Register</a>
+                {% endif %}
+            </div>
         </nav>
-
-        <!-- Tombol Autentikasi -->
-        <div class="auth-buttons">
-            <a href="#" class="btn-register">Register</a>
-            <a href="#" class="btn-login">Login</a>
-        </div>
     </header>
 
-    <!-- KONTEN DINAMIS -->
-    <main class="content-wrapper">
-        {% block content %}
-        {% endblock content %}
+    <main id="main-content" class="flex-1">
+        {% block content %}{% endblock content %}
     </main>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-        <div class="footer-container">
-            
-            <!-- Card Feedback Utama -->
-            <div class="feedback-card">
-                <div class="feedback-text">
-                    <h2>Bantu Kami<br>Jadi Lebih Baik!</h2>
-                    <p>"Pendapatmu sangat berharga! Bagikan pengalamanmu agar Sirkula bisa jadi platform yang lebih nyaman untuk semua."</p>
-                </div>
-                <div class="feedback-logo">
-                    <img src="{% static 'img/sirkula-logo.png' %}" alt="Sirkula Icon">
-                </div>
-            </div>
+    <!-- <footer class="mt-auto bg-primary px-6 py-6 text-center text-primary-content">
+        <p class="text-sm">
+            &copy; {% now "Y" %} Sirkula. Fakultas Ilmu Komputer, Universitas Indonesia.
+        </p>
+    </footer> -->
 
-            <!-- Tautan Support & Contact Us -->
+    <footer class="space-y-4">
+        <div class="footer-sirkula">
+            <div class="footer-hero">
+                <div>
+                    <h2>Bantu Kami <br> Jadi Lebih Baik!</h2>
+                    <p>Pendapatmu sangat berharga! Bagikan pengalamanmu agar Sirkula bisa jadi platform yang lebih nyaman untuk semua.</p>
+                </div>
+                <img src="{% static 'img/sirkula-icon.png' %}" alt="Sirkula Icon" />
+            </div>
             <div class="footer-links">
-                
-                <!-- Support -->
-                <div class="footer-column">
-                    <h3>Support</h3>
-                    <ul>
-                        <li><a href="#">Help Center</a></li>
-                        <li><a href="#">Terms & Conditions</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
-                        <li><a href="#">User Guide</a></li>
-                    </ul>
+                <nav class="footer-support flex flex-col">
+                    <span class="footer-title">Support</span>
+                    <a href="#">Help Center</a>
+                    <a href="#">Terms & Conditions</a>
+                    <a href="#">Privacy & Policy</a>
+                    <a href="#">User Guide</a>
+                </nav>
+                <div class="footer-contact flex flex-col">
+                    <span class="footer-title">Contact Us</span>
+                    <a href="https://instagram.com/sirkula.csui">@sirkula.csui</a>
+                    <a href="mailto:support@sirkula.com">sirkula@gmail.com</a>
+                    <a href="https://linkedin.com/in/sirkula">Sirkula Team</a>
                 </div>
-
-                <!-- Contact Us -->
-                <div class="footer-column">
-                    <h3>Contact Us</h3>
-                    <ul class="contact-list">
-                        <li>
-                            <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                            <span>@Sirkula.cs.id</span>
-                        </li>
-                        <li>
-                            <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                            <a href="mailto:Sirkula@gmail.com">Sirkula@gmail.com</a>
-                        </li>
-                        <li>
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.762-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                            <span>@Sirkula</span>
-                        </li>
-                    </ul>
-                </div>
-
             </div>
-
-            <!-- Copyright Line -->
-            <div class="copyright">
-                © 2026 Sirkula. All rights reserved.
+            <div class="footer-copyright">
+                <p>&copy; 2026 Sirkula. All rights reserved.</p>
             </div>
-
         </div>
     </footer>
 
+    {% block extra_js %}{% endblock extra_js %}
 </body>
 </html>
