@@ -240,6 +240,12 @@
     margin-bottom: 4px;
 }
 
+.shop-page .card-seller {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
 .shop-page .card-title {
     font-size: 0.875rem;
     font-weight: bold;

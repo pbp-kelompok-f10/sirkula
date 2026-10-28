@@ -75,12 +75,15 @@
                 {% for item in products %}
                 <div class="product-card">
                     <div class="card-img-wrapper">
-                        <span class="card-badge">Label</span>
-                        <img src="{{ item.image.url }}" alt="{{ item.name }}" class="card-img">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.name }}" class="card-img">
+                        {% else %}
+                            <img src="{% static 'img/sirkula.png' %}" alt="Belum ada foto" class="card-img">
+                        {% endif %}
                     </div>
                     <div class="card-body">
-                        <p class="card-qty">10 Butir</p>
                         <h4 class="card-title">{{ item.name }}</h4>
+                        <p class="card-seller">oleh {{ item.seller.username }}</p>
                         <p class="card-price">Rp {{ item.price|floatformat:"0" }}</p>
                         <div class="card-actions">
                             <button class="btn-primary">

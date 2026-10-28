@@ -20,4 +20,4 @@ class Product(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.name} - {self.seller}" 
+        return f"{self.name} - {self.seller}"
