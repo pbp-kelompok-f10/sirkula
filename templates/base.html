@@ -90,10 +90,40 @@
         {% block content %}{% endblock content %}
     </main>
 
-    <footer class="mt-auto bg-primary px-6 py-6 text-center text-primary-content">
+    <!-- <footer class="mt-auto bg-primary px-6 py-6 text-center text-primary-content">
         <p class="text-sm">
             &copy; {% now "Y" %} Sirkula. Fakultas Ilmu Komputer, Universitas Indonesia.
         </p>
+    </footer> -->
+
+    <footer class="space-y-4">
+        <div class="footer-sirkula">
+            <div class="footer-hero">
+                <div>
+                    <h2>Bantu Kami <br> Jadi Lebih Baik!</h2>
+                    <p>Pendapatmu sangat berharga! Bagikan pengalamanmu agar Sirkula bisa jadi platform yang lebih nyaman untuk semua.</p>
+                </div>
+                <img src="{% static 'img/sirkula-icon.png' %}" alt="Sirkula Icon" />
+            </div>
+            <div class="footer-links">
+                <nav class="footer-support flex flex-col">
+                    <span class="footer-title">Support</span>
+                    <a href="#">Help Center</a>
+                    <a href="#">Terms & Conditions</a>
+                    <a href="#">Privacy & Policy</a>
+                    <a href="#">User Guide</a>
+                </nav>
+                <div class="footer-contact flex flex-col">
+                    <span class="footer-title">Contact Us</span>
+                    <a href="https://instagram.com/sirkula.csui">@sirkula.csui</a>
+                    <a href="mailto:support@sirkula.com">sirkula@gmail.com</a>
+                    <a href="https://linkedin.com/in/sirkula">Sirkula Team</a>
+                </div>
+            </div>
+            <div class="footer-copyright">
+                <p>&copy; 2026 Sirkula. All rights reserved.</p>
+            </div>
+        </div>
     </footer>
 
     {% block extra_js %}{% endblock extra_js %}
