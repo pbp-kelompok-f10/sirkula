@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 import os
 from dotenv import load_dotenv
 
@@ -18,6 +19,18 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Private photos are stored outside the checkout and served through authorized views.
+private_root = os.getenv("WARDROBE_PRIVATE_ROOT")
+if not private_root:
+    raise ImproperlyConfigured("WARDROBE_PRIVATE_ROOT harus diatur untuk foto privat.")
+
+WARDROBE_PRIVATE_ROOT = Path(private_root).expanduser()
+if not WARDROBE_PRIVATE_ROOT.is_absolute():
+    raise ImproperlyConfigured("WARDROBE_PRIVATE_ROOT harus berupa path absolut.")
+WARDROBE_PRIVATE_ROOT = WARDROBE_PRIVATE_ROOT.resolve()
+if WARDROBE_PRIVATE_ROOT.is_relative_to(BASE_DIR.resolve()):
+    raise ImproperlyConfigured("Penyimpanan foto privat harus berada di luar repository.")
 
 
 # Quick-start development settings - unsuitable for production
