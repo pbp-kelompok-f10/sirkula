@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+    <title>Sirkula | Shop</title>
+{% endblock meta %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero-section" style="background-image: url('{% static 'img/baju-bg.png' %}');">
+        <h1 class="hero-title">SHOP</h1>
+    </section>
+
+    <!-- Main Content Wrapper -->
+    <main class="shop-wrapper">
+        
+        <!-- Header Katalog (Judul & Search Bar) -->
+        <div class="shop-header">
+            <h2 class="shop-header-title">
+                Thrift dan <br><span class="text-green">Kurasi Lokal.</span>
+            </h2>
+            <div class="search-bar-container">
+                <input type="text" placeholder="What's ur lookin' for?" class="search-input">
+                <button class="search-btn">➔</button>
+            </div>
+        </div>
+
+        <div class="shop-content">
+            <!-- Sidebar Filter (Sisi Kiri) -->
+            <aside class="sidebar">
+                <button class="btn-filter-main">Filter</button>
+                
+                <!-- Filter Harga -->
+                <div class="filter-card">
+                    <h3 class="filter-title">Harga</h3>
+                    <input type="range" min="0" max="1000" value="500" class="slider-input">
+                    <div class="slider-labels">
+                        <span>< 50K</span>
+                        <span>> 1000K</span>
+                    </div>
+                </div>
+
+                <!-- Filter Ukuran -->
+                <div class="filter-card">
+                    <h3 class="filter-title">Ukuran</h3>
+                    <div class="size-grid">
+                        <button class="size-btn">XS</button>
+                        <button class="size-btn active">S</button>
+                        <button class="size-btn active">M</button>
+                        <button class="size-btn">L</button>
+                        <button class="size-btn">XL</button>
+                        <button class="size-btn">2XL</button>
+                        <button class="size-btn">3XL</button>
+                        <button class="size-btn">>3XL</button>
+                    </div>
+                </div>
+
+                <!-- Filter Lokasi -->
+                <div class="filter-card">
+                    <h3 class="filter-title">Lokasi</h3>
+                    <div class="map-wrapper">
+                        <img src="{% static 'img/map_dummy.jpg' %}" alt="Map" class="location-img">
+                    </div>
+                    <button class="btn-location">Search for Location</button>
+                </div>
+            </aside>
+
+            <!-- Grid Katalog Produk (Sisi Kanan) -->
+            <section class="product-grid">
+                {% for item in products %}
+                <div class="product-card">
+                    <div class="card-img-wrapper">
+                        <span class="card-badge">Label</span>
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}" class="card-img">
+                    </div>
+                    <div class="card-body">
+                        <p class="card-qty">10 Butir</p>
+                        <h4 class="card-title">{{ item.name }}</h4>
+                        <p class="card-price">Rp {{ item.price|floatformat:"0" }}</p>
+                        <div class="card-actions">
+                            <button class="btn-primary">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8M8 12h8"></path></svg>
+                                Button
+                            </button>
+                            <button class="btn-secondary">i</button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-products">
+                    <p>Belum ada produk yang tersedia saat ini.</p>
+                </div>
+                {% endfor %}
+            </section>
+        </div>
+    </main>
+{% endblock content %}
