@@ -17,22 +17,60 @@ logger = logging.getLogger(__name__)
 
 # Create your views here.
 def _wardrobe_context(request):
-    if not request.user.is_authenticated:
-        return {
-            "categories": Category.objects.none(),
-            "clothes": WardrobeItem.objects.none(),
-            "category_form": None,
-            "item_form": None,
-        }
+    search_query = request.GET.get("q", "").strip()
+    category_param = request.GET.get("category", "").strip()
 
-    return {
-        "categories": Category.objects.filter(owner=request.user),
-        "clothes": WardrobeItem.objects.filter(
-            owner=request.user
-        ).select_related("category").prefetch_related("images"),
+    context = {
+        "categories": Category.objects.none(),
+        "clothes": WardrobeItem.objects.none(),
+        "category_form": None,
+        "item_form": None,
+        "search_query": search_query,
+        "active_category_id": None,
+    }
+
+    if not request.user.is_authenticated:
+        if category_param:
+            raise Http404("Kategori tidak ditemukan.")
+
+        return context
+
+    categories = Category.objects.filter(owner=request.user)
+
+    clothes = (
+        WardrobeItem.objects.filter(owner=request.user)
+        .select_related("category")
+        .prefetch_related("images")
+    )
+
+    if search_query:
+        clothes = clothes.filter(name__icontains=search_query)
+
+    if category_param:
+        try:
+            category_id = int(category_param)
+        except ValueError:
+            raise Http404("Kategori tidak ditemukan.") from None
+
+        if not 1 <= category_id <= 9_223_372_036_854_775_807:
+            raise Http404("Kategori tidak ditemukan.")
+
+        category = get_object_or_404(
+            categories,
+            pk=category_id,
+        )
+
+        clothes = clothes.filter(category=category)
+        context["active_category_id"] = category.pk
+
+    context.update({
+        "categories": categories,
+        "clothes": clothes,
         "category_form": CategoryForm(owner=request.user),
         "item_form": WardrobeItemForm(owner=request.user),
-    }
+    })
+
+    return context
 
 def wardrobe(request):
     return render(
