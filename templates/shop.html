@@ -74,15 +74,17 @@
             <section class="product-grid">
                 {% for item in products %}
                 <div class="product-card">
-                    <div class="card-img-wrapper">
+                    <a href="{% url 'marketplace:product_detail' item.pk %}" class="card-img-wrapper block">
                         {% if item.image %}
                             <img src="{{ item.image.url }}" alt="{{ item.name }}" class="card-img">
                         {% else %}
                             <img src="{% static 'img/sirkula.png' %}" alt="Belum ada foto" class="card-img">
                         {% endif %}
-                    </div>
+                    </a>
                     <div class="card-body">
-                        <h4 class="card-title">{{ item.name }}</h4>
+                        <a href="{% url 'marketplace:product_detail' item.pk %}">
+                            <h4 class="card-title">{{ item.name }}</h4>
+                        </a>
                         <p class="card-seller">oleh {{ item.seller.username }}</p>
                         <p class="card-price">Rp {{ item.price|floatformat:"0" }}</p>
                         <div class="card-actions">
