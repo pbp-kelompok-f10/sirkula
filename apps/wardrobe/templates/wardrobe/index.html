@@ -2,6 +2,11 @@
 {% load static %}
 
 {% block title %}Wardrobe | Sirkula{% endblock title %}
+{% block nav_wardrobe %}active{% endblock nav_wardrobe %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'wardrobe/css/wardrobe.css' %}">
+{% endblock extra_head %}
 
 {% block content %}
 <div class="relative min-h-full bg-[#FFFFEF] pb-32 text-[#1C472F]">

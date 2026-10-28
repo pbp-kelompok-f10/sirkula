@@ -57,7 +57,20 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'main.apps.MainConfig',  # Keep legacy migration history.
     'apps.wardrobe.apps.WardrobeConfig',
+    "tailwind",
+    "ui",
 ]
+
+# Tailwind definition
+TAILWIND_APP_NAME = 'ui'
+
+# STATICFILES
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# PNPM
+NPM_BIN_PATH = os.getenv('NPM_BIN_PATH', "npm")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -68,6 +81,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if DEBUG:
+    # Add django_browser_reload only in DEBUG mode
+    INSTALLED_APPS += ["django_browser_reload"]
+    MIDDLEWARE += [
+        "django_browser_reload.middleware.BrowserReloadMiddleware",
+    ]
 
 ROOT_URLCONF = 'sirkula.urls'
 
@@ -135,7 +155,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
