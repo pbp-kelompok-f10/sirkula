@@ -108,7 +108,7 @@
 
                 {% for clothing in clothes %}
                     <article class="min-w-0 rounded-lg border border-gray-200 bg-white shadow-sm">
-                        <a href="{% url 'wardrobe:item_detail' item_id=clothing.pk %}" data-item-detail
+                        <a href="{% url 'wardrobe:item_detail' item_id=clothing.pk %}" data-item-detail data-item-edit-url="{% url 'wardrobe:update_item' item_id=clothing.pk %}"
                             aria-label="Lihat detail {{ clothing.name }}" aria-haspopup="dialog" aria-controls="item-detail-modal"
                             class="block rounded-lg p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
                         <div class="mb-4 aspect-square overflow-hidden rounded-xl bg-gray-100">
@@ -308,13 +308,18 @@
             <button type="button" id="detail-next-photo" aria-label="Foto berikutnya" class="min-h-11 rounded-xl border border-[#1C472F] px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-40">Berikutnya</button>
         </div>
         <div id="detail-photo-thumbnails" class="detail-photo-thumbnails mt-4" role="group" aria-label="Pilih foto pakaian" hidden></div>
+        <div class="mt-6 flex justify-end">
+            <button type="button" id="open-item-edit" aria-haspopup="dialog" aria-controls="item-edit-modal" class="min-h-12 rounded-xl bg-[#1C472F] px-5 py-3 text-[#FFFFEF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">Edit Pakaian</button>
+        </div>
         <p id="detail-gallery-help" class="mt-3 text-sm text-gray-700" hidden>Gunakan tombol foto atau panah kiri dan kanan pada keyboard untuk berpindah foto.</p>
     </div>
 </dialog>
 {% endif %}
 
 {% if request.user.is_authenticated %}
+{% include 'wardrobe/_item_edit_modal.html' %}
 <script src="{% static 'wardrobe/js/wardrobe.js' %}" defer></script>
 <script src="{% static 'wardrobe/js/item-detail.js' %}" defer></script>
+<script src="{% static 'wardrobe/js/item-edit.js' %}" defer></script>
 {% endif %}
 {% endblock content %}

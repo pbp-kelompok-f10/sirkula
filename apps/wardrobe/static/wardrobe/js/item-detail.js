@@ -175,6 +175,12 @@
         close.focus();
         loadDetail();
     });
+    document.getElementById("open-item-edit").addEventListener("click", () => {
+        if (!item || !trigger?.dataset.itemEditUrl) return;
+        document.dispatchEvent(new CustomEvent("wardrobe:edit-item", {
+            detail: { item, url: trigger.dataset.itemEditUrl },
+        }));
+    });
     close.addEventListener("click", () => modal.close());
     retry.addEventListener("click", loadDetail);
     previous.addEventListener("click", () => showPhoto(photoIndex - 1));

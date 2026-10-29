@@ -1,5 +1,5 @@
 from django import forms
-from .models import Category, WardrobeItem
+from .models import Category, WardrobeItem, WardrobeItemImage
 from .validators import validate_photo_size
 from django.core.validators import FileExtensionValidator
 
@@ -49,9 +49,11 @@ class MultipleImageField(forms.ImageField):
 
     def clean(self, data, initial=None):
         if not data:
-            raise forms.ValidationError(
-                "Tambahkan minimal satu foto pakaian."
-            )
+            if self.required:
+                raise forms.ValidationError(
+                    "Tambahkan minimal satu foto pakaian."
+                )
+            return []
 
         files = list(data) if isinstance(data, (list, tuple)) else [data]
 
@@ -124,3 +126,84 @@ class WardrobeItemForm(forms.ModelForm):
             )
         else:
             self.fields["category"].queryset = Category.objects.none()
+
+class WardrobeItemEditForm(WardrobeItemForm):
+    delete_photos = forms.ModelMultipleChoiceField(
+        label="Foto yang dihapus",
+        queryset=WardrobeItemImage.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        error_messages={
+            "invalid_choice": (
+                "Pilih foto yang memang milik pakaian ini."
+            ),
+            "invalid_pk_value": (
+                "Pilihan foto tidak valid."
+            ),
+        },
+    )
+
+    class Meta(WardrobeItemForm.Meta):
+        fields = ["name", "category", "photos", "delete_photos"]
+
+    def __init__(self, *args, owner, instance, **kwargs):
+        if instance.pk is None:
+            raise ValueError(
+                "Form edit memerlukan pakaian yang sudah tersimpan."
+            )
+
+        if (
+            owner is None
+            or not owner.is_authenticated
+            or instance.owner_id != owner.pk
+        ):
+            raise ValueError(
+                "Form edit hanya boleh digunakan oleh pemilik pakaian."
+            )
+
+        super().__init__(
+            *args,
+            owner=owner,
+            instance=instance,
+            **kwargs,
+        )
+
+        self.fields["photos"].required = False
+        self.fields["photos"].label = "Foto Baru"
+
+        self.fields["delete_photos"].queryset = (
+            instance.images.all()
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Jangan menghitung jumlah akhir jika pilihan foto
+        # atau unggahan baru sudah gagal divalidasi.
+        if (
+            "photos" not in cleaned_data
+            or "delete_photos" not in cleaned_data
+        ):
+            return cleaned_data
+
+        new_photos = cleaned_data["photos"]
+        deleted_photos = cleaned_data["delete_photos"]
+
+        existing_count = self.instance.images.count()
+        remaining_count = existing_count - deleted_photos.count()
+        final_count = remaining_count + len(new_photos)
+
+        if final_count < 1:
+            self.add_error(
+                "photos",
+                "Pakaian harus memiliki minimal satu foto "
+                "setelah perubahan.",
+            )
+        elif final_count > 5:
+            self.add_error(
+                "photos",
+                "Total foto lama dan foto baru maksimal lima. "
+                "Hapus beberapa foto lama atau kurangi foto baru.",
+            )
+
+        return cleaned_data

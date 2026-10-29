@@ -26,4 +26,9 @@ urlpatterns = [
     views.item_detail,
     name="item_detail",
     ),
+    path(
+    "items/<int:item_id>/edit/",
+    views.update_item,
+    name="update_item",
+),
 ]

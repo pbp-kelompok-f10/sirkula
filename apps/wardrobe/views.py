@@ -11,7 +11,7 @@ from django.views.decorators.vary import vary_on_cookie
 from django.http import JsonResponse
 from django.urls import reverse
 
-from .forms import CategoryForm, WardrobeItemForm
+from .forms import CategoryForm, WardrobeItemForm, WardrobeItemEditForm
 from .models import Category, WardrobeItem, WardrobeItemImage
 
 
@@ -131,6 +131,15 @@ def _cleanup_uploaded_photos(storage, names):
                 name,
             )
 
+def _item_edit_error_response(form, status=400):
+    return JsonResponse(
+        {
+            "ok": False,
+            "errors": form.errors.get_json_data(),
+        },
+        status=status,
+    )
+
 
 @transaction.non_atomic_requests
 @require_POST
@@ -248,6 +257,204 @@ def create_item(request):
         context,
         status=response_status,
     )
+
+@transaction.non_atomic_requests
+@never_cache
+@vary_on_cookie
+@require_POST
+def update_item(request, item_id):
+    if not request.user.is_authenticated:
+        raise Http404("Pakaian tidak ditemukan.")
+
+    image_field = WardrobeItemImage._meta.get_field("image")
+    storage = image_field.storage
+
+    saved_names = []
+    form = None
+
+    try:
+        with transaction.atomic():
+            item = get_object_or_404(
+                WardrobeItem.objects.select_for_update(),
+                pk=item_id,
+                owner=request.user,
+            )
+
+            form = WardrobeItemEditForm(
+                request.POST,
+                request.FILES,
+                owner=request.user,
+                instance=item,
+            )
+
+            if not form.is_valid():
+                return _item_edit_error_response(form)
+
+            category = Category.objects.select_for_update().get(
+                pk=form.cleaned_data["category"].pk,
+                owner=request.user,
+            )
+
+            existing_photos = list(
+                item.images.select_for_update().order_by(
+                    "position",
+                    "id",
+                )
+            )
+
+            deleted_ids = set(
+                form.cleaned_data["delete_photos"].values_list(
+                    "pk",
+                    flat=True,
+                )
+            )
+
+            kept_photos = [
+                photo
+                for photo in existing_photos
+                if photo.pk not in deleted_ids
+            ]
+
+            deleted_names = tuple(
+                photo.image.name
+                for photo in existing_photos
+                if photo.pk in deleted_ids and photo.image.name
+            )
+
+            new_uploads = form.cleaned_data["photos"]
+            final_count = len(kept_photos) + len(new_uploads)
+
+            # Periksa kembali jumlah foto dalam transaksi.
+            if not 1 <= final_count <= 5:
+                form.add_error(
+                    "photos",
+                    "Jumlah akhir foto harus antara satu dan lima.",
+                )
+                return _item_edit_error_response(form)
+
+            item = form.save(commit=False)
+            item.category = category
+            item.full_clean()
+            item.save()
+
+            new_photos = []
+
+            for position, uploaded_file in enumerate(
+                new_uploads,
+                start=len(kept_photos) + 1,
+            ):
+                photo = WardrobeItemImage(
+                    item=item,
+                    position=position,
+                )
+
+                uploaded_file.seek(0)
+
+                filename = image_field.generate_filename(
+                    photo,
+                    uploaded_file.name,
+                )
+
+                saved_name = storage.save(
+                    filename,
+                    uploaded_file,
+                    max_length=image_field.max_length,
+                )
+
+                saved_names.append(saved_name)
+                photo.image = saved_name
+                new_photos.append(photo)
+
+            # Hapus baris database dahulu. File lama masih disimpan.
+            if deleted_ids:
+                item.images.filter(pk__in=deleted_ids).delete()
+
+            # Urutkan foto lama yang dipertahankan sebelum
+            # menambahkan foto baru agar posisi tidak bertabrakan.
+            for position, photo in enumerate(
+                kept_photos,
+                start=1,
+            ):
+                if photo.position != position:
+                    photo.position = position
+                    photo.save(update_fields=["position"])
+
+            for photo in new_photos:
+                photo.full_clean()
+                photo.save()
+
+            # Callback tidak dijalankan jika transaksi dibatalkan.
+            transaction.on_commit(
+                lambda names=deleted_names: (
+                    _cleanup_uploaded_photos(storage, names)
+                ),
+                robust=True,
+            )
+
+    except Http404:
+        _cleanup_uploaded_photos(storage, saved_names)
+        raise
+
+    except Category.DoesNotExist:
+        _cleanup_uploaded_photos(storage, saved_names)
+
+        form.add_error(
+            "category",
+            "Kategori tidak lagi tersedia. Pilih kategori milikmu.",
+        )
+        return _item_edit_error_response(form)
+
+    except ValidationError:
+        _cleanup_uploaded_photos(storage, saved_names)
+        logger.exception(
+            "Validasi edit pakaian gagal untuk item_id=%s.",
+            item_id,
+        )
+
+        form.add_error(
+            None,
+            "Perubahan tidak dapat disimpan. "
+            "Periksa kembali isianmu.",
+        )
+        return _item_edit_error_response(form)
+
+    except Exception:
+        _cleanup_uploaded_photos(storage, saved_names)
+        logger.exception(
+            "Edit pakaian gagal untuk item_id=%s, user_id=%s.",
+            item_id,
+            request.user.pk,
+        )
+
+        message = (
+            "Perubahan gagal disimpan. Silakan coba lagi."
+        )
+
+        if form is not None:
+            form.add_error(None, message)
+            return _item_edit_error_response(form, status=500)
+
+        return JsonResponse(
+            {
+                "ok": False,
+                "errors": {
+                    "__all__": [
+                        {
+                            "message": message,
+                            "code": "",
+                        }
+                    ],
+                },
+            },
+            status=500,
+        )
+
+    return JsonResponse({
+        "ok": True,
+        "item": {
+            "id": item.pk,
+        },
+    })
 
 
 @never_cache
