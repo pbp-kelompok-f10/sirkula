@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Order, OrderItem, Transaction
+from .models import (
+    Order,
+    OrderItem,
+    OrderStatusHistory,
+    Transaction,
+    TransactionNotification,
+)
 
 
 @admin.register(Transaction)
@@ -31,3 +37,15 @@ class OrderAdmin(admin.ModelAdmin):
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ("order", "product", "price")
     search_fields = ("order__buyer__username", "product__name")
+
+
+@admin.register(OrderStatusHistory)
+class OrderStatusHistoryAdmin(admin.ModelAdmin):
+    list_display = ("order", "status", "created_at")
+    list_filter = ("status",)
+
+
+@admin.register(TransactionNotification)
+class TransactionNotificationAdmin(admin.ModelAdmin):
+    list_display = ("recipient", "order", "is_read", "created_at")
+    list_filter = ("is_read",)

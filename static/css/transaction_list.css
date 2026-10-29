@@ -220,6 +220,28 @@
     background: #3ca76e;
 }
 
+.timeline-item small,
+.timeline-item span {
+    display: block;
+    margin-top: 4px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.transaction-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 28px;
+}
+
+.transaction-pagination a {
+    color: #195333;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
 .timeline-item.cancelled {
     color: #b91c1c;
 }

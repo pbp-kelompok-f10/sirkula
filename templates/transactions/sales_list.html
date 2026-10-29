@@ -55,6 +55,18 @@
                 <p>Pesanan untuk produk kamu akan muncul di sini.</p>
             </div>
         {% endif %}
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="transaction-pagination" aria-label="Pagination pesanan">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&status={{ selected_status }}">Sebelumnya</a>
+                {% endif %}
+                <span>Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&status={{ selected_status }}">Berikutnya</a>
+                {% endif %}
+            </nav>
+        {% endif %}
     </section>
 </main>
 {% endblock %}

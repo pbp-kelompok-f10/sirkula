@@ -1,7 +1,12 @@
 from django.conf import settings
 from django.db import models
+import uuid
 
 from apps.marketplace.models import Product
+
+
+def generate_order_number():
+    return f"ORD-{uuid.uuid4().hex[:12].upper()}"
 
 
 class Transaction(models.Model):
@@ -66,6 +71,7 @@ class Order(models.Model):
         blank=True,
         related_name="orders",
     )
+    order_number = models.CharField(max_length=32, unique=True, default=generate_order_number)
     address = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=30)
     purchase_method = models.CharField(max_length=10, choices=PurchaseMethod.choices)
@@ -86,7 +92,25 @@ class Order(models.Model):
         return self.items.select_related("product", "product__seller").first().product
 
     def __str__(self):
-        return f"Order #{self.pk}"
+        return f"Order {self.order_number}"
+
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_history")
+    status = models.CharField(max_length=12, choices=Order.Status.choices)
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+
+class TransactionNotification(models.Model):
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="transaction_notifications")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="notifications")
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class OrderItem(models.Model):

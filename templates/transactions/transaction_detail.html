@@ -90,19 +90,15 @@
             <article class="detail-card">
                 <h2>Timeline Pesanan</h2>
                 <div class="timeline">
-                    <div class="timeline-item active">Pesanan dibuat</div>
-                    <div class="timeline-item {% if transaction.status != 'PENDING' and transaction.status != 'CANCELLED' %}active{% endif %}">
-                        Pesanan dikonfirmasi
-                    </div>
-                    <div class="timeline-item {% if transaction.status == 'SHIPPED' or transaction.status == 'COMPLETED' %}active{% endif %}">
-                        Pesanan dikirim
-                    </div>
-                    <div class="timeline-item {% if transaction.status == 'COMPLETED' %}active{% endif %}">
-                        Pesanan selesai
-                    </div>
-                    {% if transaction.status == 'CANCELLED' %}
-                        <div class="timeline-item cancelled active">Pesanan dibatalkan</div>
-                    {% endif %}
+                    {% for history in status_history %}
+                        <div class="timeline-item active">
+                            <strong>{{ history.get_status_display }}</strong>
+                            <small>{{ history.created_at|date:'d M Y H:i' }}</small>
+                            {% if history.note %}<span>{{ history.note }}</span>{% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="timeline-item active">Pesanan dibuat</div>
+                    {% endfor %}
                 </div>
             </article>
         </div>

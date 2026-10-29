@@ -4,12 +4,14 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db import transaction as db_transaction
 from decimal import Decimal
 
 from apps.marketplace.models import Product
 
 from .cart import Cart
-from .models import Order, OrderItem
+from .models import Order, OrderItem, OrderStatusHistory, TransactionNotification
 
 
 @login_required
@@ -118,23 +120,41 @@ def thrift_checkout(request):
             "admin_fee": str(admin_fee),
             "total": str(checkout_total),
         }
-        buyer = request.user if request.user.is_authenticated else None
-        order = Order.objects.create(
-            buyer=buyer,
-            address=address,
-            phone_number=phone_number,
-            purchase_method=purchase_method,
-            shipping_method=shipping_method,
-            shipping_cost=shipping_cost,
-            admin_fee=admin_fee,
-            subtotal=cart.total_price,
-            total=checkout_total,
-        )
-        OrderItem.objects.bulk_create([
-            OrderItem(order=order, product=item, price=item.price)
-            for item in items
-        ])
-        Product.objects.filter(pk__in=[item.pk for item in items]).update(is_available=False)
+        with db_transaction.atomic():
+            locked_items = list(
+                Product.objects.select_for_update().filter(
+                    pk__in=[item.pk for item in items],
+                    is_available=True,
+                    listing_type=Product.ListingType.THRIFT,
+                )
+            )
+            if len(locked_items) != len(items):
+                messages.error(request, "Salah satu produk sudah tidak tersedia.")
+                return redirect("transactions:cart")
+            subtotal = sum((item.price for item in locked_items), Decimal("0"))
+            checkout_total = subtotal + admin_fee + shipping_cost
+            buyer = request.user if request.user.is_authenticated else None
+            order = Order.objects.create(
+                buyer=buyer,
+                address=address,
+                phone_number=phone_number,
+                purchase_method=purchase_method,
+                shipping_method=shipping_method,
+                shipping_cost=shipping_cost,
+                admin_fee=admin_fee,
+                subtotal=subtotal,
+                total=checkout_total,
+            )
+            OrderItem.objects.bulk_create([
+                OrderItem(order=order, product=item, price=item.price)
+                for item in locked_items
+            ])
+            Product.objects.filter(pk__in=[item.pk for item in locked_items]).update(is_available=False)
+            OrderStatusHistory.objects.create(
+                order=order,
+                status=Order.Status.PENDING,
+                note="Pesanan dibuat.",
+            )
         request.session.modified = True
         Cart(request).clear()
         request.session["checkout_success"] = {
@@ -190,9 +210,11 @@ def purchase_list(request):
     transactions = Order.objects.filter(buyer=request.user)
     if status in Order.Status.values:
         transactions = transactions.filter(status=status)
-    transactions = transactions.select_related("product", "product__seller")
+    transactions = transactions.select_related("buyer").prefetch_related("items__product")
+    page_obj = Paginator(transactions, 10).get_page(request.GET.get("page"))
     return render(request, "transactions/purchase_list.html", {
-        "transactions": transactions,
+        "transactions": page_obj,
+        "page_obj": page_obj,
         "statuses": Order.Status.choices,
         "selected_status": status,
     })
@@ -204,9 +226,11 @@ def sales_list(request):
     transactions = Order.objects.filter(items__product__seller=request.user).distinct()
     if status in Order.Status.values:
         transactions = transactions.filter(status=status)
-    transactions = transactions.select_related("buyer")
+    transactions = transactions.select_related("buyer").prefetch_related("items__product")
+    page_obj = Paginator(transactions, 10).get_page(request.GET.get("page"))
     return render(request, "transactions/sales_list.html", {
-        "transactions": transactions,
+        "transactions": page_obj,
+        "page_obj": page_obj,
         "statuses": Order.Status.choices,
         "selected_status": status,
     })
@@ -225,6 +249,7 @@ def transaction_detail(request, transaction_id):
         return redirect("transactions:purchases")
     return render(request, "transactions/transaction_detail.html", {
         "transaction": transaction,
+        "status_history": transaction.status_history.all(),
         "is_buyer": is_buyer,
         "is_seller": is_seller,
     })
@@ -259,5 +284,16 @@ def update_transaction_status(request, transaction_id):
 
     transaction.status = next_status
     transaction.save(update_fields=["status", "updated_at"])
+    OrderStatusHistory.objects.create(
+        order=transaction,
+        status=next_status,
+        note=f"Status diubah menjadi {transaction.get_status_display()}.",
+    )
+    if transaction.buyer_id:
+        TransactionNotification.objects.create(
+            recipient=transaction.buyer,
+            order=transaction,
+            message=f"Status order {transaction.order_number} berubah menjadi {transaction.get_status_display()}.",
+        )
     messages.success(request, "Status transaksi berhasil diperbarui.")
     return redirect("transactions:detail", transaction_id=transaction.pk)
