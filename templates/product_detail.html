@@ -117,7 +117,7 @@
                 <div class="mt-10 flex flex-col gap-3 sm:flex-row">
                     {% if product.listing_type == 'BARTER' %}
                         <a
-                            href="#"
+                            href="{% url 'bartering:checkout' product.pk %}"
                             class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-base font-semibold text-white transition hover:bg-green-90"
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+  Pembayaran Barter | Sirkula
+{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/barter-checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+  <main class="barter-page">
+    <div class="barter-container">
+      <div class="barter-steps">
+        <b class="done">1</b>
+        <i></i>
+        <b class="done">2</b>
+        <i></i>
+        <b class="active">3</b>
+        <i></i>
+        <b>4 Selesai</b>
+      </div>
+
+      <div class="payment-grid">
+        <section class="barter-card personal-card">
+          <h1>Informasi Pengiriman</h1>
+          <input placeholder="Alamat pengiriman">
+          <input placeholder="Nomor handphone">
+
+          <h2>Biaya Simulasi</h2>
+          <p class="price-line">
+            <span>Biaya admin</span>
+            <b>Rp 1.000</b>
+          </p>
+        </section>
+
+        <section class="barter-card payment-card">
+          <h1>Pembayaran</h1>
+          <div class="dummy-qr"></div>
+          <p>Kode ini akan expired dalam 23:01</p>
+
+          <form method="post">
+            {% csrf_token %}
+            <button class="barter-button" type="submit">Pembayaran Berhasil</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+{% endblock %}

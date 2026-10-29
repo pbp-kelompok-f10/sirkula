@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pembayaran | Sirkula{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="checkout-page">
+  <section class="checkout-container">
+
+    <!-- Step Indicator -->
+    <nav class="checkout-steps" aria-label="Langkah pembayaran">
+      <div class="step active">
+        <span>1</span>
+        <strong>Pembayaran</strong>
+      </div>
+      <div class="step-line" aria-hidden="true"></div>
+      <div class="step">
+        <span>2</span>
+        <strong>Selesai</strong>
+      </div>
+    </nav>
+
+    <!-- Dummy Payment Card -->
+    <div class="dummy-payment-card">
+      <h1>Pembayaran</h1>
+      <p class="payment-subtitle">Silakan scan QR dummy berikut.</p>
+
+      <div class="dummy-qr" aria-label="Kode QR Pembayaran Dummy">
+        <div class="qr-pattern" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <p class="expiry-text">Kode ini akan expired dalam 23:01</p>
+
+      <div class="payment-total">
+        Total pembayaran:
+        <strong>Rp {{ checkout_total|floatformat:"0" }}</strong>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="success-button">
+          Pembayaran Berhasil
+        </button>
+      </form>
+
+      <a href="{% url 'transactions:cart' %}" class="back-link">
+        Kembali ke keranjang
+      </a>
+    </div>
+
+  </section>
+</main>
+{% endblock %}

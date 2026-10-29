@@ -118,16 +118,14 @@
                         </span>
                     </div>
 
-                    <button
-                        type="button"
-                        disabled
-                        class="mt-6 flex h-12 w-full cursor-not-allowed items-center justify-center rounded-xl bg-neutral-30 text-base font-semibold text-neutral-70"
-                        title="Checkout belum tersedia"
+                    <a
+                        href="{% url 'transactions:thrift_checkout' %}"
+                        class="mt-6 flex h-12 w-full items-center justify-center rounded-xl bg-primary text-base font-semibold text-white transition hover:bg-green-90"
                     >
                         Lanjut ke Checkout
-                    </button>
+                    </a>
                     <p class="mt-3 text-center text-xs leading-relaxed text-neutral-70">
-                        Halaman checkout dan pembuatan transaksi sedang disiapkan.
+                        Pembayaran masih berupa simulasi untuk kebutuhan demo.
                     </p>
                 </aside>
             </div>

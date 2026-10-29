@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MoU Barter | Sirkula{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/barter-checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="barter-page">
+  <div class="barter-container">
+
+    <!-- Step Indicator -->
+    <nav class="barter-steps" aria-label="Langkah checkout">
+      <b class="done">1</b>
+      <i aria-hidden="true"></i>
+      <b class="active">2</b>
+      <i aria-hidden="true"></i>
+      <b>3</b>
+      <i aria-hidden="true"></i>
+      <b>4</b>
+    </nav>
+
+    <!-- MoU Card -->
+    <section class="barter-card">
+      <header>
+        <h1>Pengisian MoU Barter</h1>
+        <p>Kalian berdua sedang mengisi MoU Barter.</p>
+      </header>
+
+      <article class="mou-content">
+        <h2>MEMORANDUM OF UNDERSTANDING (MoU)</h2>
+        <h3>TENTANG KERJASAMA SISTEM BARTER BARANG</h3>
+        <p>Para pihak sepakat melakukan pertukaran barang secara sukarela, jujur, dan saling menguntungkan.</p>
+
+        <h3>PASAL 1: DESKRIPSI BARANG</h3>
+        <p>Barang barter yang diajukan: <strong>{{ product.name }}</strong>.</p>
+
+        <h3>PASAL 2: PENGIRIMAN DAN PEMERIKSAAN</h3>
+        <p>Masing-masing pihak wajib mengirim dan memeriksa kondisi barang setelah diterima.</p>
+
+        <h3>PASAL 3: PERSETUJUAN ELEKTRONIK</h3>
+        <p>MoU berlaku setelah masing-masing pengguna menyetujui persetujuan elektronik.</p>
+
+        {% if error %}
+          <p class="form-error" role="alert">{{ error }}</p>
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          <label class="agree-check">
+            <input type="checkbox" name="agree_mou" value="1" required>
+            <span>SAYA SETUJU DENGAN MOU INI</span>
+          </label>
+
+          <button type="submit" class="barter-button">
+            Lanjut ke Pembayaran
+          </button>
+        </form>
+      </article>
+    </section>
+
+  </div>
+</main>
+{% endblock %}
