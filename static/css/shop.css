@@ -192,6 +192,13 @@
     border-radius: 8px;
 }
 
+.product-thumbnail {
+    display: block;
+    width: 100%;
+    padding: 0;
+    cursor: pointer;
+}
+
 .shop-page .btn-location {
     display: block;
     width: 100%;

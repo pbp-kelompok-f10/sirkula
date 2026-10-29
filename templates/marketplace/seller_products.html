@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Produk Saya | Sirkula{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-[#f7f9ec] px-6 py-10">
+    <section class="mx-auto max-w-6xl">
+        <div class="flex items-center justify-between gap-4">
+            <h1 class="text-3xl font-bold text-primary">Produk Saya</h1>
+            <a href="{% url 'marketplace:product_create' %}" class="rounded-xl bg-primary px-5 py-3 font-semibold text-white">
+                Tambah Produk
+            </a>
+        </div>
+        <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {% for product in products %}
+                <article class="rounded-2xl bg-white p-4 shadow-sm">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="h-48 w-full rounded-xl object-cover">
+                    {% endif %}
+                    <h2 class="mt-4 text-lg font-bold">{{ product.name }}</h2>
+                    <p class="mt-1 text-sm text-neutral-70">Rp {{ product.price|floatformat:'0' }}</p>
+                    <p class="mt-2 text-sm {% if product.is_available %}text-green-700{% else %}text-red-600{% endif %}">
+                        {% if product.is_available %}Tersedia{% else %}Tidak tersedia{% endif %}
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <a href="{% url 'marketplace:product_update' product.pk %}" class="rounded-lg border border-primary px-3 py-2 text-sm text-primary">Edit</a>
+                        <form method="post" action="{% url 'marketplace:product_toggle_availability' product.pk %}">
+                            {% csrf_token %}
+                            <button class="rounded-lg border border-primary px-3 py-2 text-sm text-primary" type="submit">
+                                {% if product.is_available %}Nonaktifkan{% else %}Aktifkan{% endif %}
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'marketplace:product_delete' product.pk %}">
+                            {% csrf_token %}
+                            <button class="rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600" type="submit">Hapus</button>
+                        </form>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="rounded-xl bg-white p-8 text-neutral-70">Belum ada produk.</p>
+            {% endfor %}
+        </div>
+    </section>
+</main>
+{% endblock %}

@@ -20,12 +20,14 @@
                 <div class="aspect-square w-full overflow-hidden rounded-2xl bg-neutral-20">
                     {% if product.image %}
                         <img
+                            id="main-product-image"
                             src="{{ product.image.url }}"
                             alt="{{ product.name }}"
                             class="h-full w-full object-cover"
                         >
                     {% else %}
                         <img
+                            id="main-product-image"
                             src="{% static 'img/sirkula.png' %}"
                             alt="Belum ada foto"
                             class="h-full w-full object-cover"
@@ -36,13 +38,17 @@
                 {% if product.gallery.all %}
                     <div class="mt-5 grid grid-cols-3 gap-5">
                         {% for photo in product.gallery.all %}
-                            <div class="aspect-[1.1/1] overflow-hidden rounded-2xl border-2 {% if forloop.first %}border-primary{% else %}border-transparent{% endif %} bg-neutral-20">
+                            <button
+                                type="button"
+                                class="product-thumbnail aspect-[1.1/1] overflow-hidden rounded-2xl border-2 {% if forloop.first %}border-primary{% else %}border-transparent{% endif %} bg-neutral-20"
+                                data-image-url="{{ photo.image.url }}"
+                            >
                                 <img
                                     src="{{ photo.image.url }}"
                                     alt="{{ product.name }} foto {{ forloop.counter }}"
                                     class="h-full w-full object-cover"
                                 >
-                            </div>
+                            </button>
                         {% endfor %}
                     </div>
                 {% endif %}
@@ -223,4 +229,17 @@
         {% endif %}
     </div>
 </div>
+<script>
+    document.querySelectorAll(".product-thumbnail").forEach((thumbnail) => {
+        thumbnail.addEventListener("click", () => {
+            document.getElementById("main-product-image").src = thumbnail.dataset.imageUrl;
+            document.querySelectorAll(".product-thumbnail").forEach((item) => {
+                item.classList.remove("border-primary");
+                item.classList.add("border-transparent");
+            });
+            thumbnail.classList.remove("border-transparent");
+            thumbnail.classList.add("border-primary");
+        });
+    });
+</script>
 {% endblock content %}
