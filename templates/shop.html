@@ -24,39 +24,31 @@
             <h2 class="shop-header-title">
                 Thrift dan <br><span class="text-green">Kurasi Lokal.</span>
             </h2>
-            <div class="search-bar-container">
-                <input type="text" placeholder="What's ur lookin' for?" class="search-input">
-                <button class="search-btn">➔</button>
-            </div>
+            <form method="get" class="search-bar-container">
+                <input type="search" name="q" value="{{ query }}" placeholder="What's ur lookin' for?" class="search-input">
+                <button type="submit" class="search-btn">➔</button>
+            </form>
         </div>
 
         <div class="shop-content">
             <!-- Sidebar Filter (Sisi Kiri) -->
             <aside class="sidebar">
-                <button class="btn-filter-main">Filter</button>
+                <button type="submit" form="shop-filter-form" class="btn-filter-main">Terapkan Filter</button>
                 
                 <!-- Filter Harga -->
-                <div class="filter-card">
+                <form id="shop-filter-form" method="get">
+                    <input type="hidden" name="q" value="{{ query }}">
+                    <div class="filter-card">
                     <h3 class="filter-title">Harga</h3>
-                    <input type="range" min="0" max="1000" value="500" class="slider-input">
-                    <div class="slider-labels">
-                        <span>< 50K</span>
-                        <span>> 1000K</span>
+                    <input type="number" name="min_price" value="{{ min_price }}" min="0" placeholder="Harga minimum" class="price-filter-input">
+                    <input type="number" name="max_price" value="{{ max_price }}" min="0" placeholder="Harga maksimum" class="price-filter-input">
                     </div>
-                </div>
 
                 <!-- Filter Ukuran -->
                 <div class="filter-card">
                     <h3 class="filter-title">Ukuran</h3>
                     <div class="size-grid">
-                        <button class="size-btn">XS</button>
-                        <button class="size-btn">S</button>
-                        <button class="size-btn">M</button>
-                        <button class="size-btn">L</button>
-                        <button class="size-btn">XL</button>
-                        <button class="size-btn">2XL</button>
-                        <button class="size-btn">3XL</button>
-                        <button class="size-btn">>3XL</button>
+                        <input type="text" name="size" value="{{ selected_size }}" placeholder="Contoh: M" class="size-filter-input">
                     </div>
                 </div>
 
@@ -66,8 +58,9 @@
                     <div class="map-wrapper">
                         <img src="{% static 'img/map_dummy.jpg' %}" alt="Map" class="location-img">
                     </div>
-                    <button class="btn-location">Search for Location</button>
+                    <input type="text" name="location" value="{{ location }}" placeholder="Contoh: Depok" class="location-filter-input">
                 </div>
+                </form>
             </aside>
 
             <!-- Grid Katalog Produk (Sisi Kanan) -->
@@ -88,10 +81,7 @@
                         <p class="card-seller">oleh {{ item.seller.username }}</p>
                         <p class="card-price">Rp {{ item.price|floatformat:"0" }}</p>
                         <div class="card-actions">
-                            <button class="btn-primary">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8M8 12h8"></path></svg>
-                                Button
-                            </button>
+                            <a href="{% url 'marketplace:product_detail' item.pk %}" class="btn-primary">Lihat Detail</a>
                             <button class="btn-secondary">i</button>
                         </div>
                     </div>
@@ -103,6 +93,14 @@
                 {% endfor %}
             </section>
         </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pagination" aria-label="Pagination">
+                {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&q={{ query }}&min_price={{ min_price }}&max_price={{ max_price }}&size={{ selected_size }}&location={{ location }}">‹</a>{% endif %}
+                <span>Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&q={{ query }}&min_price={{ min_price }}&max_price={{ max_price }}&size={{ selected_size }}&location={{ location }}">›</a>{% endif %}
+            </nav>
+        {% endif %}
     </main>
     </div>
 {% endblock content %}

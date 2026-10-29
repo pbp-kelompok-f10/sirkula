@@ -136,6 +136,24 @@
     color: #6b7280;
 }
 
+.shop-page .price-filter-input,
+.shop-page .size-filter-input,
+.shop-page .location-filter-input {
+    width: 100%;
+    margin-bottom: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 9px 10px;
+    background: #ffffff;
+    outline: none;
+}
+
+.shop-page .price-filter-input:focus,
+.shop-page .size-filter-input:focus,
+.shop-page .location-filter-input:focus {
+    border-color: #194331;
+}
+
 /* Size Chips */
 .shop-page .size-grid {
     display: grid;
@@ -283,6 +301,7 @@
     cursor: pointer;
     height: auto;
     min-height: 0;
+    text-decoration: none;
 }
 
 .shop-page .btn-secondary {
@@ -302,6 +321,27 @@
     text-align: center;
     padding: 40px 0;
     color: #6b7280;
+}
+
+.shop-page .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 32px;
+    color: #194331;
+    font-weight: 700;
+}
+
+.shop-page .pagination a {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 50%;
+    background: #194331;
+    color: #ffffff;
+    text-decoration: none;
 }
 
 @media (max-width: 768px) {
