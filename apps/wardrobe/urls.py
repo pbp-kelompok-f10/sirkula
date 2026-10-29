@@ -36,4 +36,14 @@ urlpatterns = [
         views.delete_item,
         name="delete_item",
     ),
+    path(
+    "categories/<int:category_id>/edit/",
+    views.update_category,
+    name="update_category",
+    ),
+    path(
+        "categories/<int:category_id>/delete/",
+        views.delete_category,
+        name="delete_category",
+    ),
 ]

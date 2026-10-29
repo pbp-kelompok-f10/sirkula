@@ -631,3 +631,144 @@ def delete_item(request, item_id):
             "id": item_id,
         },
     })
+
+def _category_error_response(
+    form=None,
+    *,
+    message=None,
+    status=400,
+):
+    if form is not None:
+        errors = form.errors.get_json_data()
+    else:
+        errors = {
+            "__all__": [
+                {
+                    "message": message,
+                    "code": "category_operation_failed",
+                }
+            ],
+        }
+
+    return JsonResponse(
+        {
+            "ok": False,
+            "errors": errors,
+        },
+        status=status,
+    )
+
+@transaction.non_atomic_requests
+@never_cache
+@vary_on_cookie
+@require_POST
+def update_category(request, category_id):
+    if not request.user.is_authenticated:
+        raise Http404("Kategori tidak ditemukan.")
+
+    try:
+        with transaction.atomic():
+            category = get_object_or_404(
+                Category.objects.select_for_update(),
+                pk=category_id,
+                owner=request.user,
+            )
+
+            form = CategoryForm(
+                request.POST,
+                owner=request.user,
+                instance=category,
+            )
+
+            if not form.is_valid():
+                return _category_error_response(form)
+
+            try:
+                # Savepoint agar error constraint dapat ditangani
+                # tanpa merusak transaksi luar.
+                with transaction.atomic():
+                    category = form.save()
+
+            except IntegrityError:
+                duplicate_exists = (
+                    Category.objects.filter(
+                        owner=request.user,
+                        name__iexact=form.cleaned_data["name"],
+                    )
+                    .exclude(pk=category_id)
+                    .exists()
+                )
+
+                if not duplicate_exists:
+                    raise
+
+                form.add_error(
+                    "name",
+                    "Kamu sudah memiliki kategori dengan nama ini.",
+                )
+                return _category_error_response(form)
+
+    except Http404:
+        raise
+
+    except Exception:
+        logger.exception(
+            "Edit kategori gagal untuk category_id=%s, user_id=%s.",
+            category_id,
+            request.user.pk,
+        )
+
+        return _category_error_response(
+            message="Kategori gagal diperbarui. Silakan coba lagi.",
+            status=500,
+        )
+
+    return JsonResponse({
+        "ok": True,
+        "category": {
+            "id": category.pk,
+            "name": category.name,
+        },
+    })
+
+@transaction.non_atomic_requests
+@never_cache
+@vary_on_cookie
+@require_POST
+def delete_category(request, category_id):
+    if not request.user.is_authenticated:
+        raise Http404("Kategori tidak ditemukan.")
+
+    try:
+        with transaction.atomic():
+            category = get_object_or_404(
+                Category.objects.select_for_update(),
+                pk=category_id,
+                owner=request.user,
+            )
+
+            # SET_NULL mempertahankan pakaian dengan kategori kosong.
+            # Tidak ada penghapusan foto atau pemanggilan cleanup.
+            category.delete()
+
+    except Http404:
+        raise
+
+    except Exception:
+        logger.exception(
+            "Hapus kategori gagal untuk category_id=%s, user_id=%s.",
+            category_id,
+            request.user.pk,
+        )
+
+        return _category_error_response(
+            message="Kategori gagal dihapus. Silakan coba lagi.",
+            status=500,
+        )
+
+    return JsonResponse({
+        "ok": True,
+        "category": {
+            "id": category_id,
+        },
+    })
