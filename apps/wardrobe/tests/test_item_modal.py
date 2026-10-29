@@ -38,7 +38,7 @@ class ItemModalTests(TestCase):
         self.assertContains(response, "Tambah Pakaian Baru")
         self.assertContains(response, "maksimal 5 MB per foto")
         self.assertNotContains(response, self.foreign.name)
-        self.assertNotContains(response, ">Draft<")
+        self.assertContains(response, 'id="save-item-draft"')
         self.assertContains(response, 'wardrobe/js/wardrobe.js', count=1)
 
     def test_anonymous_has_no_upload_modal(self):

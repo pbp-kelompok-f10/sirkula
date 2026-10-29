@@ -207,3 +207,151 @@ class WardrobeItemEditForm(WardrobeItemForm):
             )
 
         return cleaned_data
+
+class WardrobeItemDraftForm(WardrobeItemForm):
+    delete_photos = forms.ModelMultipleChoiceField(
+        label="Foto yang dihapus",
+        queryset=WardrobeItemImage.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        error_messages={
+            "invalid_choice": (
+                "Pilih foto yang memang milik draft ini."
+            ),
+            "invalid_pk_value": "Pilihan foto tidak valid.",
+        },
+    )
+
+    class Meta(WardrobeItemForm.Meta):
+        fields = ["name", "category", "photos", "delete_photos"]
+
+    def __init__(self, *args, owner, instance=None, **kwargs):
+        if owner is None or not owner.is_authenticated:
+            raise ValueError(
+                "Form draft memerlukan pengguna yang sudah login."
+            )
+
+        if instance is not None and instance.pk is not None:
+            if (
+                instance.owner_id != owner.pk
+                or instance.status != WardrobeItem.Status.DRAFT
+            ):
+                raise ValueError(
+                    "Form ini hanya boleh membuka draft milik pengguna."
+                )
+
+        super().__init__(
+            *args,
+            owner=owner,
+            instance=instance,
+            **kwargs,
+        )
+
+        self.instance.owner = owner
+        self.instance.status = WardrobeItem.Status.DRAFT
+
+        self.fields["name"].required = False
+        self.fields["category"].required = False
+        self.fields["photos"].required = False
+        self.fields["photos"].label = "Foto Baru"
+
+        if self.instance.pk is not None:
+            self.fields["delete_photos"].queryset = (
+                self.instance.images.all()
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        required_keys = (
+            "name",
+            "category",
+            "photos",
+            "delete_photos",
+        )
+
+        if any(
+            key not in cleaned_data
+            for key in required_keys
+        ):
+            return cleaned_data
+
+        existing_count = (
+            self.instance.images.count()
+            if self.instance.pk is not None
+            else 0
+        )
+
+        deleted_count = (
+            cleaned_data["delete_photos"].count()
+        )
+        new_count = len(cleaned_data["photos"])
+
+        final_count = (
+            existing_count - deleted_count + new_count
+        )
+
+        if final_count > 5:
+            self.add_error(
+                "photos",
+                "Total foto lama dan foto baru maksimal lima.",
+            )
+
+        has_content = (
+            bool(cleaned_data["name"])
+            or cleaned_data["category"] is not None
+            or final_count > 0
+        )
+
+        if not has_content:
+            self.add_error(
+                None,
+                "Isi minimal nama, kategori, atau satu foto "
+                "sebelum menyimpan draft.",
+            )
+
+        return cleaned_data
+
+
+class WardrobeItemDraftCompleteForm(WardrobeItemDraftForm):
+    def __init__(self, *args, owner, instance, **kwargs):
+        if instance is None or instance.pk is None:
+            raise ValueError(
+                "Penyelesaian memerlukan draft yang sudah tersimpan."
+            )
+
+        super().__init__(
+            *args,
+            owner=owner,
+            instance=instance,
+            **kwargs,
+        )
+
+        self.fields["name"].required = True
+        self.fields["category"].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if (
+            "photos" not in cleaned_data
+            or "delete_photos" not in cleaned_data
+        ):
+            return cleaned_data
+
+        remaining_count = (
+            self.instance.images.count()
+            - cleaned_data["delete_photos"].count()
+        )
+        final_count = (
+            remaining_count
+            + len(cleaned_data["photos"])
+        )
+
+        if final_count < 1:
+            self.add_error(
+                "photos",
+                "Tambahkan minimal satu foto pakaian.",
+            )
+
+        return cleaned_data

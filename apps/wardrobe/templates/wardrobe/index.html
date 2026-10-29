@@ -102,6 +102,8 @@
             > + Tambah Baju </button>
         </div>
 
+        <p id="wardrobe-feedback" class="mb-4 text-sm" role="status" aria-live="polite" hidden></p>
+
         <!-- Koleksi pakaian -->
         <section aria-label="Koleksi pakaian">
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -221,8 +223,17 @@
             <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18" /></svg>
         </button>
     </div>
-    <form method="post" action="{% url 'wardrobe:create_item' %}" enctype="multipart/form-data" id="item-form">
+    <form method="post" action="{% url 'wardrobe:create_item' %}" enctype="multipart/form-data" id="item-form"
+        data-current-draft-url="{% url 'wardrobe:current_draft' %}"
+        data-save-draft-url="{% url 'wardrobe:save_draft' %}"
+        data-complete-draft-url="{% url 'wardrobe:complete_draft' %}"
+        data-discard-draft-url="{% url 'wardrobe:discard_draft' %}">
         {% csrf_token %}
+        <input type="hidden" id="item-draft-id" name="draft_id">
+        <input type="hidden" id="item-draft-version" name="version">
+        <p id="item-draft-state" class="mb-4 text-sm" role="status" aria-live="polite" hidden></p>
+        <p id="item-operation-error" tabindex="-1" class="mb-4 rounded-lg border border-red-700 p-3 text-sm text-red-700" role="alert" hidden></p>
+        <button type="button" id="item-draft-reload" class="mb-4 min-h-11 rounded-xl border border-[#1C472F] px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]" hidden>Muat ulang draft</button>
         {% if item_form.non_field_errors %}
             <div id="item-form-errors" tabindex="-1" class="mb-4 rounded-lg border border-red-700 p-3 text-sm text-red-700" role="alert">
                 {% for error in item_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
@@ -255,25 +266,31 @@
                 <p id="item-category-client-error" class="mt-2 text-sm text-red-700" role="alert" hidden></p>
             </div>
         </div>
+        <ul id="item-saved-photos" class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label="Foto draft tersimpan" hidden></ul>
         <label for="item-photos" id="item-upload-zone" class="item-upload-zone relative flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-500 bg-[#EBEBED] p-6 text-center text-gray-600 sm:min-h-64">
             <input id="item-photos" type="file" name="photos" multiple required accept="image/jpeg,image/png,image/webp" class="sr-only"
                 aria-describedby="item-photos-help item-photos-client-error{% if item_form.photos.errors %} item-photos-errors{% endif %}"
                 {% if item_form.photos.errors %}aria-invalid="true"{% endif %}>
             <svg aria-hidden="true" class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" /></svg>
             <span class="text-base">Upload Gambar Pakaian</span>
-            <span id="item-photos-help" class="text-sm">Klik atau seret foto ke sini. JPG, PNG, atau WebP; 1–5 foto, maksimal 5 MB per foto.</span>
+            <span id="item-photos-help" class="text-sm">Klik atau seret foto ke sini. JPG, PNG, atau WebP; maksimal 5 foto, maksimal 5 MB per foto. Simpan memerlukan minimal 1 foto; Draft boleh tanpa foto.</span>
         </label>
         {% if item_form.photos.errors %}<div id="item-photos-errors" class="mt-2 text-sm text-red-700" role="alert">{% for error in item_form.photos.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
         {% if item_form.is_bound %}<p id="item-photos-reselect" class="mt-2 text-sm text-gray-700">Pilih ulang foto sebelum menyimpan lagi. Browser tidak mengisi ulang pilihan file setelah halaman dimuat.</p>{% endif %}
         <p id="item-photos-client-error" class="mt-2 text-sm text-red-700" role="alert" hidden></p>
         <p id="item-photos-status" class="mt-3 text-sm text-gray-700" role="status" aria-live="polite">Belum ada foto dipilih.</p>
         <ul id="item-photo-previews" class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label="Preview foto pakaian" hidden></ul>
-        <div class="mt-6 flex justify-end">
-            <button id="save-item" type="submit" {% if not categories %}disabled data-no-categories="true"{% endif %}
-                class="min-h-12 rounded-xl bg-[#1C472F] px-5 py-3 text-[#FFFFEF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-50">Simpan</button>
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <button type="button" id="discard-item-draft" class="min-h-12 rounded-xl border border-red-700 px-5 py-3 text-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]" hidden>Buang Draft</button>
+            <div class="ml-auto flex gap-3">
+                <button type="button" id="save-item-draft" disabled class="min-h-12 rounded-xl border border-gray-500 px-5 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-50">Draft</button>
+                <button id="save-item" type="submit" {% if not categories %}disabled data-no-categories="true"{% endif %}
+                    class="min-h-12 rounded-xl bg-[#1C472F] px-5 py-3 text-[#FFFFEF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-50">Simpan</button>
+            </div>
         </div>
     </form>
 </dialog>
+{% include 'wardrobe/_draft_discard_modal.html' %}
 {% endif %}
 
 {% if request.user.is_authenticated %}
@@ -321,6 +338,7 @@
 {% include 'wardrobe/_item_edit_modal.html' %}
 {% include 'wardrobe/_item_delete_modal.html' %}
 <script src="{% static 'wardrobe/js/wardrobe.js' %}" defer></script>
+<script src="{% static 'wardrobe/js/item-add-draft.js' %}" defer></script>
 <script src="{% static 'wardrobe/js/item-detail.js' %}" defer></script>
 <script src="{% static 'wardrobe/js/item-edit.js' %}" defer></script>
 <script src="{% static 'wardrobe/js/item-delete.js' %}" defer></script>

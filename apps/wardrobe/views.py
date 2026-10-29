@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.http import FileResponse, Http404, HttpResponseForbidden
@@ -11,7 +12,13 @@ from django.views.decorators.vary import vary_on_cookie
 from django.http import JsonResponse
 from django.urls import reverse
 
-from .forms import CategoryForm, WardrobeItemForm, WardrobeItemEditForm
+from .forms import (
+    CategoryForm,
+    WardrobeItemForm,
+    WardrobeItemEditForm,
+    WardrobeItemDraftForm,
+    WardrobeItemDraftCompleteForm,
+)
 from .models import (
     Category,
     WardrobeItem,
@@ -44,7 +51,10 @@ def _wardrobe_context(request):
     categories = Category.objects.filter(owner=request.user)
 
     clothes = (
-        WardrobeItem.objects.filter(owner=request.user)
+        WardrobeItem.objects.filter(
+            owner=request.user,
+            status=WardrobeItem.Status.ACTIVE,
+        )
         .select_related("category")
         .prefetch_related("images")
     )
@@ -158,6 +168,8 @@ def create_item(request):
             "Silakan login untuk menambahkan pakaian."
         )
 
+    wants_json = "application/json" in request.headers.get("Accept", "")
+
     form = WardrobeItemForm(
         request.POST,
         request.FILES,
@@ -165,6 +177,8 @@ def create_item(request):
     )
 
     if not form.is_valid():
+        if wants_json:
+            return _item_edit_error_response(form)
         context = _wardrobe_context(request)
         context.update({
             "item_form": form,
@@ -252,7 +266,12 @@ def create_item(request):
         response_status = 500
 
     else:
+        if wants_json:
+            return JsonResponse({"ok": True, "item": {"id": item.pk}})
         return redirect("wardrobe:index")
+
+    if wants_json:
+        return _item_edit_error_response(form, status=response_status)
 
     context = _wardrobe_context(request)
     context.update({
@@ -287,6 +306,7 @@ def update_item(request, item_id):
                 WardrobeItem.objects.select_for_update(),
                 pk=item_id,
                 owner=request.user,
+                status=WardrobeItem.Status.ACTIVE,
             )
 
             form = WardrobeItemEditForm(
@@ -520,6 +540,7 @@ def item_detail(request, item_id):
         ).prefetch_related("images"),
         pk=item_id,
         owner=request.user,
+        status=WardrobeItem.Status.ACTIVE,
     )
 
     category = None
@@ -566,6 +587,7 @@ def delete_item(request, item_id):
                 WardrobeItem.objects.select_for_update(),
                 pk=item_id,
                 owner=request.user,
+                status=WardrobeItem.Status.ACTIVE,
             )
 
             photos = list(
@@ -771,4 +793,525 @@ def delete_category(request, category_id):
         "category": {
             "id": category_id,
         },
+    })
+
+
+def _draft_payload(draft):
+    category = None
+
+    if draft.category is not None:
+        category = {
+            "id": draft.category_id,
+            "name": draft.category.name,
+        }
+
+    photos = [
+        {
+            "id": photo.pk,
+            "position": photo.position,
+            "url": reverse(
+                "wardrobe:item_photo",
+                kwargs={"photo_id": photo.pk},
+            ),
+        }
+        for photo in draft.images.all()
+    ]
+
+    return {
+        "id": draft.pk,
+        "name": draft.name,
+        "category": category,
+        "photos": photos,
+        "version": draft.updated_at.isoformat(),
+    }
+
+
+@never_cache
+@vary_on_cookie
+@require_safe
+def current_draft(request):
+    if not request.user.is_authenticated:
+        raise Http404("Draft tidak ditemukan.")
+
+    draft = (
+        WardrobeItem.objects.filter(
+            owner=request.user,
+            status=WardrobeItem.Status.DRAFT,
+        )
+        .select_related("category")
+        .prefetch_related("images")
+        .first()
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "draft": (
+            _draft_payload(draft)
+            if draft is not None
+            else None
+        ),
+    })
+
+
+def _draft_error_response(
+    form=None,
+    *,
+    message=None,
+    code="draft_operation_failed",
+    status=400,
+):
+    if form is not None:
+        errors = form.errors.get_json_data()
+    else:
+        errors = {
+            "__all__": [
+                {
+                    "message": message,
+                    "code": code,
+                }
+            ],
+        }
+
+    return JsonResponse(
+        {
+            "ok": False,
+            "errors": errors,
+        },
+        status=status,
+    )
+
+
+def _apply_draft_photos(draft, cleaned_data, saved_names):
+    image_field = WardrobeItemImage._meta.get_field("image")
+    storage = image_field.storage
+
+    existing_photos = list(
+        draft.images.select_for_update().order_by(
+            "position",
+            "id",
+        )
+    )
+
+    deleted_ids = set(
+        cleaned_data["delete_photos"].values_list(
+            "pk",
+            flat=True,
+        )
+    )
+
+    kept_photos = [
+        photo
+        for photo in existing_photos
+        if photo.pk not in deleted_ids
+    ]
+
+    new_uploads = cleaned_data["photos"]
+    final_count = len(kept_photos) + len(new_uploads)
+
+    if not 0 <= final_count <= 5:
+        raise ValidationError(
+            "Jumlah akhir foto draft maksimal lima."
+        )
+
+    deleted_names = [
+        photo.image.name
+        for photo in existing_photos
+        if photo.pk in deleted_ids and photo.image.name
+    ]
+
+    cleanup_ids = queue_photo_cleanup(deleted_names)
+    new_photos = []
+
+    for position, uploaded_file in enumerate(
+        new_uploads,
+        start=len(kept_photos) + 1,
+    ):
+        photo = WardrobeItemImage(
+            item=draft,
+            position=position,
+        )
+
+        uploaded_file.seek(0)
+
+        filename = image_field.generate_filename(
+            photo,
+            uploaded_file.name,
+        )
+
+        saved_name = storage.save(
+            filename,
+            uploaded_file,
+            max_length=image_field.max_length,
+        )
+
+        saved_names.append(saved_name)
+        photo.image = saved_name
+        new_photos.append(photo)
+
+    if deleted_ids:
+        draft.images.filter(pk__in=deleted_ids).delete()
+
+    for position, photo in enumerate(kept_photos, start=1):
+        if photo.position != position:
+            photo.position = position
+            photo.save(update_fields=["position"])
+
+    for photo in new_photos:
+        photo.full_clean()
+        photo.save()
+
+    return cleanup_ids
+
+
+@transaction.non_atomic_requests
+@never_cache
+@vary_on_cookie
+@require_POST
+def save_draft(request):
+    if not request.user.is_authenticated:
+        raise Http404("Draft tidak ditemukan.")
+
+    saved_names = []
+    form = None
+
+    try:
+        with transaction.atomic():
+            # Mengunci pemilik juga melindungi pembuatan draft
+            # ketika belum ada baris draft yang dapat dikunci.
+            get_object_or_404(
+                get_user_model().objects.select_for_update(),
+                pk=request.user.pk,
+            )
+
+            draft = (
+                WardrobeItem.objects.select_for_update()
+                .filter(
+                    owner=request.user,
+                    status=WardrobeItem.Status.DRAFT,
+                )
+                .first()
+            )
+
+            posted_id = request.POST.get("draft_id", "").strip()
+            posted_version = request.POST.get("version", "").strip()
+
+            if draft is None:
+                conflict = bool(posted_id or posted_version)
+            else:
+                conflict = (
+                    posted_id != str(draft.pk)
+                    or posted_version != draft.updated_at.isoformat()
+                )
+
+            if conflict:
+                return _draft_error_response(
+                    message=(
+                        "Draft sudah berubah atau tidak lagi tersedia. "
+                        "Muat ulang draft sebelum menyimpan kembali."
+                    ),
+                    code="draft_conflict",
+                    status=409,
+                )
+
+            form = WardrobeItemDraftForm(
+                request.POST,
+                request.FILES,
+                owner=request.user,
+                instance=draft,
+            )
+
+            if not form.is_valid():
+                return _draft_error_response(form)
+
+            category = form.cleaned_data["category"]
+
+            if category is not None:
+                category = (
+                    Category.objects.select_for_update().get(
+                        pk=category.pk,
+                        owner=request.user,
+                    )
+                )
+
+            draft = form.save(commit=False)
+            draft.owner = request.user
+            draft.status = WardrobeItem.Status.DRAFT
+            draft.category = category
+            draft.full_clean()
+            draft.save()
+
+            cleanup_ids = _apply_draft_photos(
+                draft,
+                form.cleaned_data,
+                saved_names,
+            )
+
+            payload = _draft_payload(draft)
+
+            transaction.on_commit(
+                lambda ids=cleanup_ids: cleanup_pending_photos(ids),
+                robust=True,
+            )
+
+    except Http404:
+        _cleanup_failed_uploads(saved_names)
+        raise
+
+    except Category.DoesNotExist:
+        _cleanup_failed_uploads(saved_names)
+
+        form.add_error(
+            "category",
+            "Kategori tidak lagi tersedia. "
+            "Pilih kategori lain atau kosongkan untuk menyimpan draft.",
+        )
+        return _draft_error_response(form)
+
+    except ValidationError:
+        _cleanup_failed_uploads(saved_names)
+
+        logger.exception(
+            "Validasi penyimpanan draft gagal untuk user_id=%s.",
+            request.user.pk,
+        )
+
+        form.add_error(
+            None,
+            "Draft tidak dapat disimpan. Periksa kembali isianmu.",
+        )
+        return _draft_error_response(form)
+
+    except Exception:
+        _cleanup_failed_uploads(saved_names)
+
+        logger.exception(
+            "Penyimpanan draft gagal untuk user_id=%s.",
+            request.user.pk,
+        )
+
+        return _draft_error_response(
+            message="Draft gagal disimpan. Silakan coba lagi.",
+            status=500,
+        )
+
+    return JsonResponse({
+        "ok": True,
+        "draft": payload,
+    })
+
+
+@transaction.non_atomic_requests
+@never_cache
+@vary_on_cookie
+@require_POST
+def complete_draft(request):
+    if not request.user.is_authenticated:
+        raise Http404("Draft tidak ditemukan.")
+
+    saved_names = []
+    form = None
+
+    try:
+        with transaction.atomic():
+            get_object_or_404(
+                get_user_model().objects.select_for_update(),
+                pk=request.user.pk,
+            )
+
+            draft = (
+                WardrobeItem.objects.select_for_update()
+                .filter(
+                    owner=request.user,
+                    status=WardrobeItem.Status.DRAFT,
+                )
+                .first()
+            )
+
+            posted_id = request.POST.get("draft_id", "").strip()
+            posted_version = request.POST.get("version", "").strip()
+
+            if (
+                draft is None
+                or posted_id != str(draft.pk)
+                or posted_version != draft.updated_at.isoformat()
+            ):
+                return _draft_error_response(
+                    message=(
+                        "Draft sudah berubah atau tidak lagi tersedia. "
+                        "Muat ulang draft sebelum menyelesaikannya."
+                    ),
+                    code="draft_conflict",
+                    status=409,
+                )
+
+            form = WardrobeItemDraftCompleteForm(
+                request.POST,
+                request.FILES,
+                owner=request.user,
+                instance=draft,
+            )
+
+            if not form.is_valid():
+                return _draft_error_response(form)
+
+            category = Category.objects.select_for_update().get(
+                pk=form.cleaned_data["category"].pk,
+                owner=request.user,
+            )
+
+            item = form.save(commit=False)
+            item.category = category
+
+            cleanup_ids = _apply_draft_photos(
+                item,
+                form.cleaned_data,
+                saved_names,
+            )
+
+            # Periksa keadaan akhir sebelum mengaktifkan pakaian.
+            if not 1 <= item.images.count() <= 5:
+                raise ValidationError(
+                    "Pakaian aktif harus memiliki satu sampai lima foto."
+                )
+
+            item.status = WardrobeItem.Status.ACTIVE
+            item.full_clean()
+            item.save(force_update=True)
+
+            transaction.on_commit(
+                lambda ids=cleanup_ids: cleanup_pending_photos(ids),
+                robust=True,
+            )
+
+    except Http404:
+        _cleanup_failed_uploads(saved_names)
+        raise
+
+    except Category.DoesNotExist:
+        _cleanup_failed_uploads(saved_names)
+
+        form.add_error(
+            "category",
+            "Kategori tidak lagi tersedia. "
+            "Pilih kategori milikmu sebelum menyimpan pakaian.",
+        )
+        return _draft_error_response(form)
+
+    except ValidationError:
+        _cleanup_failed_uploads(saved_names)
+
+        logger.exception(
+            "Validasi penyelesaian draft gagal untuk user_id=%s.",
+            request.user.pk,
+        )
+
+        form.add_error(
+            None,
+            "Draft belum dapat diselesaikan. "
+            "Periksa kembali isianmu.",
+        )
+        return _draft_error_response(form)
+
+    except Exception:
+        _cleanup_failed_uploads(saved_names)
+
+        logger.exception(
+            "Penyelesaian draft gagal untuk user_id=%s.",
+            request.user.pk,
+        )
+
+        return _draft_error_response(
+            message=(
+                "Draft gagal diselesaikan. Silakan coba lagi."
+            ),
+            status=500,
+        )
+
+    return JsonResponse({
+        "ok": True,
+        "item": {
+            "id": item.pk,
+        },
+    })
+
+
+@transaction.non_atomic_requests
+@never_cache
+@vary_on_cookie
+@require_POST
+def discard_draft(request):
+    if not request.user.is_authenticated:
+        raise Http404("Draft tidak ditemukan.")
+
+    try:
+        with transaction.atomic():
+            get_object_or_404(
+                get_user_model().objects.select_for_update(),
+                pk=request.user.pk,
+            )
+
+            draft = (
+                WardrobeItem.objects.select_for_update()
+                .filter(
+                    owner=request.user,
+                    status=WardrobeItem.Status.DRAFT,
+                )
+                .first()
+            )
+
+            posted_id = request.POST.get("draft_id", "").strip()
+            posted_version = request.POST.get("version", "").strip()
+
+            if (
+                draft is None
+                or posted_id != str(draft.pk)
+                or posted_version != draft.updated_at.isoformat()
+            ):
+                return _draft_error_response(
+                    message=(
+                        "Draft sudah berubah atau tidak lagi tersedia. "
+                        "Muat ulang draft sebelum membuangnya."
+                    ),
+                    code="draft_conflict",
+                    status=409,
+                )
+
+            photos = list(
+                draft.images.select_for_update().all()
+            )
+
+            photo_names = [
+                photo.image.name
+                for photo in photos
+                if photo.image.name
+            ]
+
+            cleanup_ids = queue_photo_cleanup(photo_names)
+
+            # Baris foto ikut terhapus melalui CASCADE.
+            # File storage tetap ada sampai transaksi berhasil.
+            draft.delete()
+
+            transaction.on_commit(
+                lambda ids=cleanup_ids: cleanup_pending_photos(ids),
+                robust=True,
+            )
+
+    except Http404:
+        raise
+
+    except Exception:
+        logger.exception(
+            "Pembuangan draft gagal untuk user_id=%s.",
+            request.user.pk,
+        )
+
+        return _draft_error_response(
+            message="Draft gagal dibuang. Silakan coba lagi.",
+            status=500,
+        )
+
+    return JsonResponse({
+        "ok": True,
+        "draft": None,
     })

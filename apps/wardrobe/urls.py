@@ -46,4 +46,24 @@ urlpatterns = [
         views.delete_category,
         name="delete_category",
     ),
+    path(
+        "draft/",
+        views.current_draft,
+        name="current_draft",
+    ),
+    path(
+        "draft/save/",
+        views.save_draft,
+        name="save_draft",
+    ),
+    path(
+        "draft/complete/",
+        views.complete_draft,
+        name="complete_draft",
+    ),
+    path(
+        "draft/discard/",
+        views.discard_draft,
+        name="discard_draft",
+    ),
 ]

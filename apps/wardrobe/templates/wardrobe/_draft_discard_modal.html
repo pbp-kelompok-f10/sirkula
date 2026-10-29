@@ -1,0 +1,15 @@
+<dialog id="draft-discard-modal" aria-labelledby="draft-discard-title" aria-describedby="draft-discard-description"
+    class="item-modal fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-[862px] overflow-y-auto rounded-xl border-0 bg-[#FFFFEF] p-6 text-[#1C472F] shadow-xl">
+    <div class="relative mb-7 px-9">
+        <h2 id="draft-discard-title" class="text-center text-2xl font-bold sm:text-[32px]">Buang Draft?</h2>
+        <button type="button" id="close-draft-discard" aria-label="Tutup konfirmasi buang draft" class="absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+            <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+    </div>
+    <p id="draft-discard-description">Buang draft ini beserta fotonya? Setelah dibuang, kamu bisa mulai menambahkan pakaian lain. Tindakan ini tidak dapat dibatalkan.</p>
+    <p id="draft-discard-error" tabindex="-1" class="mt-4 text-sm text-red-700" role="alert" hidden></p>
+    <div class="mt-6 flex flex-wrap justify-end gap-3">
+        <button type="button" id="cancel-draft-discard" class="min-h-12 rounded-xl border border-[#1C472F] px-5 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">Batal</button>
+        <button type="button" id="confirm-draft-discard" class="min-h-12 rounded-xl bg-[#1C472F] px-5 py-3 text-[#FFFFEF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">Buang Draft</button>
+    </div>
+</dialog>

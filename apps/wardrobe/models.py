@@ -34,7 +34,19 @@ class Category(models.Model):
         return self.name
 
 class WardrobeItem(models.Model):
-    name = models.CharField(max_length=100)
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        ACTIVE = "active", "Aktif"
+
+    name = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -52,9 +64,22 @@ class WardrobeItem(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    status__in=["draft", "active"],
+                ),
+                name="wardrobe_item_status_valid",
+            ),
+            models.UniqueConstraint(
+                fields=["owner"],
+                condition=models.Q(status="draft"),
+                name="wardrobe_one_draft_per_owner",
+            ),
+        ]
 
     def __str__(self):
-        return self.name
+        return self.name or "Draft tanpa nama"
 
 
 
