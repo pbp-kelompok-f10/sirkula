@@ -8,6 +8,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST, require_safe
 from django.views.decorators.vary import vary_on_cookie
+from django.http import JsonResponse
+from django.urls import reverse
 
 from .forms import CategoryForm, WardrobeItemForm
 from .models import Category, WardrobeItem, WardrobeItemImage
@@ -17,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 # Create your views here.
 def _wardrobe_context(request):
-    search_query = request.GET.get("q", "").strip()
     category_param = request.GET.get("category", "").strip()
 
     context = {
@@ -25,7 +26,6 @@ def _wardrobe_context(request):
         "clothes": WardrobeItem.objects.none(),
         "category_form": None,
         "item_form": None,
-        "search_query": search_query,
         "active_category_id": None,
     }
 
@@ -42,9 +42,6 @@ def _wardrobe_context(request):
         .select_related("category")
         .prefetch_related("images")
     )
-
-    if search_query:
-        clothes = clothes.filter(name__icontains=search_query)
 
     if category_param:
         try:
@@ -293,3 +290,47 @@ def item_photo(request, photo_id):
     response["X-Content-Type-Options"] = "nosniff"
     response["Cross-Origin-Resource-Policy"] = "same-origin"
     return response
+
+@never_cache
+@vary_on_cookie
+@require_safe
+def item_detail(request, item_id):
+    if not request.user.is_authenticated:
+        raise Http404("Pakaian tidak ditemukan.")
+
+    item = get_object_or_404(
+        WardrobeItem.objects.select_related(
+            "category"
+        ).prefetch_related("images"),
+        pk=item_id,
+        owner=request.user,
+    )
+
+    category = None
+
+    if item.category is not None:
+        category = {
+            "id": item.category_id,
+            "name": item.category.name,
+        }
+
+    photos = [
+        {
+            "id": photo.pk,
+            "position": photo.position,
+            "url": reverse(
+                "wardrobe:item_photo",
+                kwargs={"photo_id": photo.pk},
+            ),
+        }
+        for photo in item.images.all()
+    ]
+
+    return JsonResponse({
+        "item": {
+            "id": item.pk,
+            "name": item.name,
+            "category": category,
+            "photos": photos,
+        },
+    })

@@ -21,4 +21,9 @@ urlpatterns = [
         views.item_photo,
         name="item_photo",
     ),
+    path(
+    "items/<int:item_id>/",
+    views.item_detail,
+    name="item_detail",
+    ),
 ]

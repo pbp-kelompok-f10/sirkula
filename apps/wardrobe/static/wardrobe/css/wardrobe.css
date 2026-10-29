@@ -1,5 +1,6 @@
 .category-modal::backdrop,
-.item-modal::backdrop {
+.item-modal::backdrop,
+.item-detail-modal::backdrop {
     background: rgb(0 0 0 / 40%);
 }
 
@@ -62,4 +63,61 @@ html.wardrobe-modal-open {
 
 .item-modal [hidden] {
     display: none !important;
+}
+
+
+.item-detail-modal [hidden] {
+    display: none !important;
+}
+
+.detail-photo-stage {
+    display: grid;
+    place-items: center;
+    min-height: 180px;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background: #ebebed;
+}
+
+.detail-main-photo {
+    width: 100%;
+    height: min(45dvh, 400px);
+    object-fit: contain;
+}
+
+.detail-photo-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.detail-photo-thumbnail {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0.25rem;
+    border: 2px solid transparent;
+    border-radius: 0.5rem;
+    background: white;
+}
+
+.detail-photo-thumbnail[aria-pressed="true"] {
+    border-color: #1c472f;
+}
+
+.detail-photo-thumbnail:focus-visible {
+    outline: 2px solid #1c472f;
+    outline-offset: 2px;
+}
+
+.detail-photo-thumbnail img {
+    width: 100%;
+    aspect-ratio: 1;
+    max-height: 80px;
+    object-fit: contain;
+}
+
+.detail-photo-thumbnail span {
+    font-size: 0.75rem;
 }
