@@ -1,10 +1,20 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction as db_transaction
+from django.db.models import Q
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.marketplace.models import Product
-from .models import BarterOffer
+from .models import BarterOffer, BarterTransaction
+
+
+ACTIVE_OFFER_STATUSES = [
+    BarterOffer.Status.PENDING,
+    BarterOffer.Status.ACCEPTED,
+    BarterOffer.Status.SHIPPING,
+]
 
 @login_required
 def barter_chat(request, product_id):
@@ -58,6 +68,18 @@ def offer_create(request, product_id):
             offered_products,
             pk=request.POST.get("offered_product"),
         )
+        has_active_offer = BarterOffer.objects.filter(
+            status__in=ACTIVE_OFFER_STATUSES,
+        ).filter(
+            Q(requested_product__in=[requested_product, offered_product])
+            | Q(offered_product__in=[requested_product, offered_product])
+        ).exists()
+        if has_active_offer:
+            messages.error(
+                request,
+                "Salah satu produk sedang digunakan dalam barter aktif.",
+            )
+            return redirect("bartering:outgoing")
         BarterOffer.objects.create(
             proposer=request.user,
             recipient=requested_product.seller,
@@ -100,7 +122,13 @@ def outgoing_offers(request):
 def update_offer_status(request, offer_id, status):
     if request.method != "POST":
         return redirect("bartering:incoming")
-    offer = get_object_or_404(BarterOffer, pk=offer_id)
+    offer = get_object_or_404(
+        BarterOffer.objects.select_related(
+            "requested_product",
+            "offered_product",
+        ),
+        pk=offer_id,
+    )
     if status == BarterOffer.Status.ACCEPTED or status == BarterOffer.Status.REJECTED:
         if offer.recipient_id != request.user.id or offer.status != BarterOffer.Status.PENDING:
             return redirect("bartering:incoming")
@@ -109,8 +137,61 @@ def update_offer_status(request, offer_id, status):
             return redirect("bartering:outgoing")
     else:
         return redirect("bartering:incoming")
-    offer.status = status
-    offer.save(update_fields=["status", "updated_at"])
+    if status == BarterOffer.Status.ACCEPTED:
+        with db_transaction.atomic():
+            locked_offer = get_object_or_404(
+                BarterOffer.objects.select_for_update().select_related(
+                    "requested_product",
+                    "offered_product",
+                ),
+                pk=offer_id,
+            )
+            if locked_offer.status != BarterOffer.Status.PENDING:
+                messages.error(request, "Tawaran sudah diproses.")
+                return redirect("bartering:incoming")
+
+            products = list(
+                Product.objects.select_for_update().filter(
+                    pk__in=[
+                        locked_offer.requested_product_id,
+                        locked_offer.offered_product_id,
+                    ],
+                )
+            )
+            if len(products) != 2 or not all(product.is_available for product in products):
+                messages.error(request, "Salah satu produk sudah tidak tersedia.")
+                return redirect("bartering:incoming")
+
+            conflicting_offer = BarterOffer.objects.filter(
+                status__in=ACTIVE_OFFER_STATUSES,
+            ).exclude(pk=locked_offer.pk).filter(
+                Q(requested_product_id__in=[
+                    locked_offer.requested_product_id,
+                    locked_offer.offered_product_id,
+                ])
+                | Q(offered_product_id__in=[
+                    locked_offer.requested_product_id,
+                    locked_offer.offered_product_id,
+                ])
+            ).exists()
+            if conflicting_offer:
+                messages.error(request, "Salah satu produk sedang digunakan dalam barter lain.")
+                return redirect("bartering:incoming")
+
+            locked_offer.status = BarterOffer.Status.ACCEPTED
+            locked_offer.save(update_fields=["status", "updated_at"])
+            BarterTransaction.objects.create(
+                offer=locked_offer,
+                proposer=locked_offer.proposer,
+                recipient=locked_offer.recipient,
+            )
+            Product.objects.filter(pk__in=[
+                locked_offer.requested_product_id,
+                locked_offer.offered_product_id,
+            ]).update(is_available=False)
+    else:
+        offer.status = status
+        offer.save(update_fields=["status", "updated_at"])
     return redirect("bartering:incoming" if status != BarterOffer.Status.CANCELLED else "bartering:outgoing")
 
 
@@ -160,5 +241,9 @@ def confirm_received(request, offer_id):
         offer.recipient_received = True
     if offer.proposer_received and offer.recipient_received:
         offer.status = BarterOffer.Status.COMPLETED
+        BarterTransaction.objects.filter(
+            offer=offer,
+            completed_at__isnull=True,
+        ).update(completed_at=timezone.now())
     offer.save(update_fields=["proposer_received", "recipient_received", "status", "updated_at"])
     return redirect("bartering:outgoing" if request.user.id == offer.proposer_id else "bartering:incoming")

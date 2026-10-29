@@ -48,6 +48,36 @@ class BarterOffer(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["proposer", "requested_product", "offered_product"],
+                condition=models.Q(status="PENDING"),
+                name="one_pending_offer_per_product_pair",
+            ),
+        ]
 
     def __str__(self):
         return f"Barter #{self.pk}: {self.offered_product} → {self.requested_product}"
+
+
+class BarterTransaction(models.Model):
+    offer = models.OneToOneField(
+        BarterOffer,
+        on_delete=models.PROTECT,
+        related_name="transaction",
+    )
+    proposer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="barter_transactions_as_proposer",
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="barter_transactions_as_recipient",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Transaksi barter #{self.pk}"
