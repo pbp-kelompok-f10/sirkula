@@ -8,6 +8,8 @@ class BarterOffer(models.Model):
     class Status(models.TextChoices):
         PENDING = "PENDING", "Menunggu keputusan"
         ACCEPTED = "ACCEPTED", "Diterima"
+        SHIPPING = "SHIPPING", "Dalam pengiriman"
+        COMPLETED = "COMPLETED", "Selesai"
         REJECTED = "REJECTED", "Ditolak"
         CANCELLED = "CANCELLED", "Dibatalkan"
 
@@ -39,6 +41,10 @@ class BarterOffer(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    proposer_tracking_number = models.CharField(max_length=100, blank=True)
+    recipient_tracking_number = models.CharField(max_length=100, blank=True)
+    proposer_received = models.BooleanField(default=False)
+    recipient_received = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at"]

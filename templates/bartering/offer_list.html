@@ -43,6 +43,38 @@
                             <button class="offer-button reject" type="submit">Batalkan</button>
                         </form>
                     {% endif %}
+
+                    {% if offer.status == 'ACCEPTED' or offer.status == 'SHIPPING' %}
+                        <form
+                            method="post"
+                            action="{% url 'bartering:update_shipping' offer.pk %}"
+                            class="shipping-form"
+                        >
+                            {% csrf_token %}
+                            <input
+                                type="text"
+                                name="tracking_number"
+                                placeholder="Nomor resi"
+                                {% if incoming and offer.recipient_tracking_number %}value="{{ offer.recipient_tracking_number }}"{% elif not incoming and offer.proposer_tracking_number %}value="{{ offer.proposer_tracking_number }}"{% endif %}
+                                required
+                            >
+                            <button class="offer-button accept" type="submit">
+                                Simpan Resi
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    {% if offer.status == 'SHIPPING' %}
+                        <form
+                            method="post"
+                            action="{% url 'bartering:confirm_received' offer.pk %}"
+                        >
+                            {% csrf_token %}
+                            <button class="offer-button accept" type="submit">
+                                Konfirmasi Diterima
+                            </button>
+                        </form>
+                    {% endif %}
                 </div>
             </article>
         {% empty %}

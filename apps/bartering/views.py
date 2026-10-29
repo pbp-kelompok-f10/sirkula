@@ -1,4 +1,6 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.marketplace.models import Product
@@ -110,3 +112,53 @@ def update_offer_status(request, offer_id, status):
     offer.status = status
     offer.save(update_fields=["status", "updated_at"])
     return redirect("bartering:incoming" if status != BarterOffer.Status.CANCELLED else "bartering:outgoing")
+
+
+@login_required
+@require_POST
+def update_shipping(request, offer_id):
+    offer = get_object_or_404(BarterOffer, pk=offer_id)
+    if request.user.id not in {offer.proposer_id, offer.recipient_id}:
+        messages.error(request, "Kamu bukan pihak dalam barter ini.")
+        return redirect("bartering:outgoing")
+    if offer.status not in {BarterOffer.Status.ACCEPTED, BarterOffer.Status.SHIPPING}:
+        messages.error(request, "Barter belum siap dikirim.")
+        return redirect("bartering:outgoing")
+
+    tracking_number = request.POST.get("tracking_number", "").strip()
+    if not tracking_number:
+        messages.error(request, "Nomor resi wajib diisi.")
+        return redirect("bartering:outgoing")
+    if request.user.id == offer.proposer_id:
+        offer.proposer_tracking_number = tracking_number
+    else:
+        offer.recipient_tracking_number = tracking_number
+    if offer.proposer_tracking_number and offer.recipient_tracking_number:
+        offer.status = BarterOffer.Status.SHIPPING
+    offer.save(update_fields=[
+        "proposer_tracking_number",
+        "recipient_tracking_number",
+        "status",
+        "updated_at",
+    ])
+    return redirect("bartering:outgoing" if request.user.id == offer.proposer_id else "bartering:incoming")
+
+
+@login_required
+@require_POST
+def confirm_received(request, offer_id):
+    offer = get_object_or_404(BarterOffer, pk=offer_id)
+    if request.user.id not in {offer.proposer_id, offer.recipient_id}:
+        messages.error(request, "Kamu bukan pihak dalam barter ini.")
+        return redirect("bartering:outgoing")
+    if offer.status != BarterOffer.Status.SHIPPING:
+        messages.error(request, "Barter belum masuk tahap pengiriman.")
+        return redirect("bartering:outgoing")
+    if request.user.id == offer.proposer_id:
+        offer.proposer_received = True
+    else:
+        offer.recipient_received = True
+    if offer.proposer_received and offer.recipient_received:
+        offer.status = BarterOffer.Status.COMPLETED
+    offer.save(update_fields=["proposer_received", "recipient_received", "status", "updated_at"])
+    return redirect("bartering:outgoing" if request.user.id == offer.proposer_id else "bartering:incoming")

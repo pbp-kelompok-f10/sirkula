@@ -13,4 +13,6 @@ urlpatterns = [
     path("offers/incoming/", views.incoming_offers, name="incoming"),
     path("offers/outgoing/", views.outgoing_offers, name="outgoing"),
     path("offers/<int:offer_id>/<str:status>/", views.update_offer_status, name="update_offer"),
+    path("offers/<int:offer_id>/shipping/", views.update_shipping, name="update_shipping"),
+    path("offers/<int:offer_id>/received/", views.confirm_received, name="confirm_received"),
 ]
