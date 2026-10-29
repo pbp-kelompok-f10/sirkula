@@ -59,7 +59,7 @@
             <form
                 method="get"
                 action="{% url 'wardrobe:index' %}"
-                class="flex flex-wrap items-center gap-3"
+                class="flex min-w-0 max-w-full flex-wrap items-center gap-3"
                 aria-label="Filter kategori pakaian"
             >
                 <button
@@ -76,7 +76,7 @@
                         name="category"
                         value="{{ category.id }}"
                         aria-pressed="{% if category.id == active_category_id %}true{% else %}false{% endif %}"
-                        class="min-h-11 rounded-full border-2 border-[#1C472F] px-5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] {% if category.id == active_category_id %}bg-[#1C472F] text-white{% else %}bg-transparent text-[#1C472F]{% endif %}"
+                        class="min-h-11 min-w-0 max-w-full whitespace-normal [overflow-wrap:anywhere] rounded-full border-2 border-[#1C472F] px-5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] {% if category.id == active_category_id %}bg-[#1C472F] text-white{% else %}bg-transparent text-[#1C472F]{% endif %}"
                     >
                         {{ category.name }}
                     </button>
