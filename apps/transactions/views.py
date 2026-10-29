@@ -8,6 +8,7 @@ from decimal import Decimal
 from apps.marketplace.models import Product
 
 from .cart import Cart
+from .models import Transaction
 
 
 def cart_detail(request):
@@ -111,9 +112,31 @@ def thrift_checkout(request):
             "admin_fee": str(admin_fee),
             "total": str(checkout_total),
         }
+        buyer = request.user if request.user.is_authenticated else None
+        transactions = Transaction.objects.bulk_create([
+            Transaction(
+                buyer=buyer,
+                product=item,
+                address=address,
+                phone_number=phone_number,
+                purchase_method=purchase_method,
+                shipping_method=shipping_method,
+                shipping_cost=shipping_cost,
+                admin_fee=admin_fee,
+                subtotal=item.price,
+                total=item.price + admin_fee + shipping_cost,
+            )
+            for item in items
+        ])
+        Product.objects.filter(pk__in=[item.pk for item in items]).update(is_available=False)
         request.session.modified = True
         Cart(request).clear()
-        request.session["checkout_success"] = request.session.pop("checkout")
+        request.session["checkout_success"] = {
+            "transaction_ids": [transaction.pk for transaction in transactions],
+            "total": str(checkout_total),
+            "status": Transaction.Status.PENDING,
+        }
+        request.session.pop("checkout", None)
         return redirect("transactions:thrift_success")
 
     admin_fee = Decimal("1000")
