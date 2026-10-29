@@ -12,7 +12,13 @@ from django.http import JsonResponse
 from django.urls import reverse
 
 from .forms import CategoryForm, WardrobeItemForm, WardrobeItemEditForm
-from .models import Category, WardrobeItem, WardrobeItemImage
+from .models import (
+    Category,
+    WardrobeItem,
+    WardrobeItemImage,
+    WardrobePhotoCleanup,
+)
+from .cleanup import cleanup_pending_photos
 
 
 logger = logging.getLogger(__name__)
@@ -539,5 +545,86 @@ def item_detail(request, item_id):
             "name": item.name,
             "category": category,
             "photos": photos,
+        },
+    })
+
+
+@transaction.non_atomic_requests
+@never_cache
+@vary_on_cookie
+@require_POST
+def delete_item(request, item_id):
+    if not request.user.is_authenticated:
+        raise Http404("Pakaian tidak ditemukan.")
+
+    try:
+        with transaction.atomic():
+            item = get_object_or_404(
+                WardrobeItem.objects.select_for_update(),
+                pk=item_id,
+                owner=request.user,
+            )
+
+            photos = list(
+                item.images.select_for_update().all()
+            )
+
+            cleanup_ids = []
+
+            for photo in photos:
+                if not photo.image.name:
+                    continue
+
+                pending, _ = (
+                    WardrobePhotoCleanup.objects.get_or_create(
+                        file_name=photo.image.name,
+                    )
+                )
+                cleanup_ids.append(pending.pk)
+
+            # Baris foto ikut terhapus melalui CASCADE.
+            # File storage belum disentuh pada tahap ini.
+            item.delete()
+
+            transaction.on_commit(
+                lambda ids=tuple(cleanup_ids): (
+                    cleanup_pending_photos(ids)
+                ),
+                robust=True,
+            )
+
+    except Http404:
+        raise
+
+    except Exception:
+        logger.exception(
+            "Penghapusan pakaian gagal untuk "
+            "item_id=%s, user_id=%s.",
+            item_id,
+            request.user.pk,
+        )
+
+        return JsonResponse(
+            {
+                "ok": False,
+                "errors": {
+                    "__all__": [
+                        {
+                            "message": (
+                                "Pakaian gagal dihapus. "
+                                "Silakan coba lagi."
+                            ),
+                            "code": "delete_failed",
+                        }
+                    ],
+                },
+            },
+            status=500,
+        )
+
+    return JsonResponse({
+        "ok": True,
+        "item": {
+            "id": item_id,
         },
     })

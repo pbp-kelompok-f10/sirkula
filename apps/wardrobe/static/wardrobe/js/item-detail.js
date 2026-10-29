@@ -181,6 +181,12 @@
             detail: { item, url: trigger.dataset.itemEditUrl },
         }));
     });
+    document.getElementById("open-item-delete").addEventListener("click", () => {
+        if (!item || !trigger?.dataset.itemDeleteUrl) return;
+        document.dispatchEvent(new CustomEvent("wardrobe:delete-item", {
+            detail: { item, url: trigger.dataset.itemDeleteUrl },
+        }));
+    });
     close.addEventListener("click", () => modal.close());
     retry.addEventListener("click", loadDetail);
     previous.addEventListener("click", () => showPhoto(photoIndex - 1));

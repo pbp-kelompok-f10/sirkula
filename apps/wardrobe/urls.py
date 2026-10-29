@@ -31,4 +31,9 @@ urlpatterns = [
     views.update_item,
     name="update_item",
 ),
+    path(
+        "items/<int:item_id>/delete/",
+        views.delete_item,
+        name="delete_item",
+    ),
 ]

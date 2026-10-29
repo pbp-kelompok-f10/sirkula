@@ -42,7 +42,7 @@ Bantuan AI: Codex menambahkan modal, JS/CSS scoped, tes integrasi modal, dan dok
 
 ## Detail pakaian dan galeri
 
-Klik kartu (atau Enter pada tautan kartu) membuka dialog Detail Pakaian. Nama, kategori dan daftar foto diambil dari wardrobe:item_detail; setiap gambar memakai wardrobe:item_photo. Data pengguna dimasukkan ke DOM lewat textContent/atribut DOM, bukan HTML mentah. Edit tersedia melalui tombol Edit Pakaian; hapus pakaian belum ditambahkan.
+Klik kartu (atau Enter pada tautan kartu) membuka dialog Detail Pakaian. Nama, kategori dan daftar foto diambil dari wardrobe:item_detail; setiap gambar memakai wardrobe:item_photo. Data pengguna dimasukkan ke DOM lewat textContent/atribut DOM, bukan HTML mentah. Edit tersedia melalui tombol Edit Pakaian; hapus permanen tersedia melalui konfirmasi Hapus Pakaian.
 
 File tahap ini: templates/wardrobe/index.html untuk tautan kartu dan dialog; static/wardrobe/js/item-detail.js untuk fetch/galeri; static/wardrobe/css/wardrobe.css untuk foto/thumbnail; tests/test_item_detail.py untuk akses detail. JS upload dan backend pengguna tidak diubah.
 
@@ -68,3 +68,27 @@ File baru: templates/wardrobe/_item_edit_modal.html, static/wardrobe/js/item-edi
 Tes permanen: `python manage.py test apps.wardrobe.tests.test_item_edit` (17 tes), atau `python manage.py test apps.wardrobe.tests` (62 tes). Tes mencakup kepemilikan, CSRF, kategori wajib/privat, foto milik pakaian lain, jumlah/ukuran/file rusak, posisi dan ID foto, rollback database/storage, penghapusan setelah commit, serta kegagalan cleanup. Browser localhost diuji pada desktop dan 390 px menggunakan database/foto uji terpisah: buka dari detail, batal dan fokus kembali, preview/hapus foto baru, penolakan foto keenam, penggantian foto, nama tersimpan, kategori kosong, pergantian kategori, dan filter tetap aktif.
 
 Bantuan AI: Codex menambahkan modal edit, penghubung JS/CSS, tes permanen dan dokumentasi setelah form/view/URL dipasang pengguna. Data asli, .gitignore, dan app lain tidak diubah. Build CSS berhasil dengan warning urutan @import Google Fonts yang sudah ada. Tidak ada staging atau commit.
+
+
+## Hapus permanen dan retry cleanup
+
+Dari detail, tombol Hapus Pakaian membuka dialog krem/hijau sesuai gaya modal yang ada. Dialog menyebut nama pakaian dan sifat permanen penghapusan. Nama dimasukkan melalui textContent. Fokus awal berada di Batal. Batal, Escape, tombol tutup, dan backdrop hanya menutup konfirmasi; detail tetap terbuka dan mendapat kembali fokus. Tidak ada Sampah atau restore.
+
+Ya, Hapus Permanen mengirim POST multipart dengan CSRF ke wardrobe:delete_item. Selama request berlangsung, tombol dinonaktifkan dan dialog tidak dapat ditutup agar penutupan tidak dianggap membatalkan proses server. Error database tampil di dialog dan dapat dicoba ulang. Hasil request yang tidak pasti atau perubahan sesi mengharuskan reload sebelum pengiriman ulang. Sukses memuat ulang URL saat ini sehingga filter kategori tetap aktif, termasuk ketika hasil filter menjadi kosong.
+
+View dan model antrean dipasang pengguna. Command hanya memproses referensi pada WardrobePhotoCleanup; file lain tidak disentuh. File yang gagal dibersihkan tetap di antrean. Jalankan dari root repository:
+
+```sh
+python manage.py cleanup_wardrobe_photos
+python manage.py cleanup_wardrobe_photos --batch-size 100
+```
+
+Antrean diproses berdasarkan ID per batch; setiap ID hanya dicoba satu kali per pemanggilan. Antrean baru setelah command dimulai diproses pada pemanggilan berikutnya. Command menampilkan jumlah diproses/selesai/tertunda, dan keluar dengan status gagal (CommandError) jika antrean yang dicoba masih tertunda. Periksa log/storage lalu jalankan ulang. File yang sudah tidak ada dianggap selesai. Command ini belum dijadwalkan otomatis.
+
+File tambahan: management/commands/cleanup_wardrobe_photos.py, templates/wardrobe/_item_delete_modal.html, static/wardrobe/js/item-delete.js, tests/test_cleanup_command.py, tests/test_item_delete_modal.py. Index, JS detail, dan CSS scoped menghubungkan tombol dan modal. Tidak ada perubahan app lain atau .gitignore.
+
+Validasi: 77 tes Wardrobe lolos, termasuk 6 tes command dan 2 tes render modal baru. Command diuji untuk antrean kosong, batch kecil, file tanpa antrean tidak tersentuh, kegagalan sebagian tanpa menghambat batch berikutnya, retry, file hilang, pemanggilan ulang, input batch tidak valid, dan antrean baru yang ditunda ke run berikutnya. System check, tidak ada migrasi tertinggal, sintaks JS dan diff whitespace lolos. Build CSS berhasil dengan warning urutan @import Google Fonts yang sudah ada.
+
+Browser localhost memakai kode proyek asli dengan database/foto dan middleware simulasi terpisah di workspace uji: Batal/Escape menjaga record dan file, fokus kembali ke Hapus, error database tidak menghapus data, kegagalan storage menyisakan referensi, command retry membersihkan file sisa, penghapusan normal berhasil, dan filter Atasan tetap aktif hingga hasil kosong. Modal diperiksa pada desktop dan 390 px (lebar dan scrollWidth dialog 358 px). Seluruh simulasi hanya memengaruhi data uji.
+
+Bantuan AI: Codex menambahkan command, modal/JS, tes permanen dan dokumentasi setelah backend pengguna lolos review. Tidak ada staging atau commit.

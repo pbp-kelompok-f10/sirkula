@@ -126,3 +126,5 @@ html.wardrobe-modal-open {
 .item-photo-preview.is-pending-delete img { opacity: 0.4; }
 #item-edit-form button:disabled { cursor: wait; opacity: 0.55; }
 #item-edit-form button:focus-visible { outline: 2px solid #1c472f; outline-offset: 2px; }
+
+#item-delete-modal button:disabled { cursor: wait; opacity: 0.55; }
