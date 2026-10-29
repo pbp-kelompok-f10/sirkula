@@ -126,7 +126,7 @@ class ItemEditTests(TestCase):
                 raise OSError("simulated deletion failure")
             return original_delete(name)
 
-        with self.assertLogs("apps.wardrobe.views", level="ERROR"):
+        with self.assertLogs("apps.wardrobe.cleanup", level="ERROR"):
             with patch.object(self.storage, "delete", side_effect=fail_old):
                 with self.captureOnCommitCallbacks(execute=True):
                     response = self.submit(delete_photos=[self.photos[0].pk], photos=[png_upload()])

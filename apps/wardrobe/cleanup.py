@@ -8,6 +8,20 @@ from .models import WardrobeItemImage, WardrobePhotoCleanup
 logger = logging.getLogger(__name__)
 
 
+def queue_photo_cleanup(names):
+    """Catat referensi sebelum mencoba menghapus file storage."""
+    cleanup_ids = []
+    with transaction.atomic():
+        for name in dict.fromkeys(names):
+            if not name:
+                continue
+            pending, _ = WardrobePhotoCleanup.objects.get_or_create(
+                file_name=name,
+            )
+            cleanup_ids.append(pending.pk)
+    return tuple(cleanup_ids)
+
+
 def cleanup_pending_photos(cleanup_ids):
     storage = WardrobeItemImage._meta.get_field("image").storage
 
@@ -24,9 +38,16 @@ def cleanup_pending_photos(cleanup_ids):
                 if pending is None:
                     continue
 
-                storage.delete(pending.file_name)
+                # Periksa semua pengguna; antrean lama tidak boleh
+                # menghapus file yang masih dipakai suatu pakaian.
+                if WardrobeItemImage.objects.filter(image=pending.file_name).exists():
+                    logger.warning(
+                        "Cleanup ditunda karena foto masih dipakai; cleanup_id=%s.",
+                        cleanup_id,
+                    )
+                    continue
 
-                # Hanya hapus antrean setelah storage berhasil.
+                storage.delete(pending.file_name)
                 pending.delete()
 
         except Exception:

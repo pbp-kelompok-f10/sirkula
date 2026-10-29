@@ -18,7 +18,7 @@ from .models import (
     WardrobeItemImage,
     WardrobePhotoCleanup,
 )
-from .cleanup import cleanup_pending_photos
+from .cleanup import cleanup_pending_photos, queue_photo_cleanup
 
 
 logger = logging.getLogger(__name__)
@@ -127,15 +127,18 @@ def create_category(request):
         status=400,
     )
 
-def _cleanup_uploaded_photos(storage, names):
-    for name in reversed(names):
-        try:
-            storage.delete(name)
-        except Exception:
-            logger.exception(
-                "Gagal membersihkan file foto Wardrobe: %s",
-                name,
-            )
+def _cleanup_failed_uploads(names):
+    if not names:
+        return
+    try:
+        cleanup_ids = queue_photo_cleanup(names)
+        cleanup_pending_photos(cleanup_ids)
+    except Exception:
+        logger.exception(
+            "Gagal mencatat antrean cleanup unggahan Wardrobe: %s",
+            names,
+        )
+
 
 def _item_edit_error_response(form, status=400):
     return JsonResponse(
@@ -222,14 +225,14 @@ def create_item(request):
                 photo.save()
 
     except Category.DoesNotExist:
-        _cleanup_uploaded_photos(storage, saved_names)
+        _cleanup_failed_uploads(saved_names)
         form.add_error(
             "category",
             "Kategori tidak lagi tersedia. Pilih kategori milikmu.",
         )
 
     except ValidationError:
-        _cleanup_uploaded_photos(storage, saved_names)
+        _cleanup_failed_uploads(saved_names)
         logger.exception("Validasi penyimpanan pakaian gagal.")
         form.add_error(
             None,
@@ -237,7 +240,7 @@ def create_item(request):
         )
 
     except Exception:
-        _cleanup_uploaded_photos(storage, saved_names)
+        _cleanup_failed_uploads(saved_names)
         logger.exception(
             "Penyimpanan pakaian gagal untuk user_id=%s.",
             request.user.pk,
@@ -389,20 +392,20 @@ def update_item(request, item_id):
                 photo.full_clean()
                 photo.save()
 
-            # Callback tidak dijalankan jika transaksi dibatalkan.
+            # Antrean foto lama ikut di-commit bersama edit, sehingga
+            # tetap tersedia jika callback gagal atau belum dijalankan.
+            cleanup_ids = queue_photo_cleanup(deleted_names)
             transaction.on_commit(
-                lambda names=deleted_names: (
-                    _cleanup_uploaded_photos(storage, names)
-                ),
+                lambda ids=cleanup_ids: cleanup_pending_photos(ids),
                 robust=True,
             )
 
     except Http404:
-        _cleanup_uploaded_photos(storage, saved_names)
+        _cleanup_failed_uploads(saved_names)
         raise
 
     except Category.DoesNotExist:
-        _cleanup_uploaded_photos(storage, saved_names)
+        _cleanup_failed_uploads(saved_names)
 
         form.add_error(
             "category",
@@ -411,7 +414,7 @@ def update_item(request, item_id):
         return _item_edit_error_response(form)
 
     except ValidationError:
-        _cleanup_uploaded_photos(storage, saved_names)
+        _cleanup_failed_uploads(saved_names)
         logger.exception(
             "Validasi edit pakaian gagal untuk item_id=%s.",
             item_id,
@@ -425,7 +428,7 @@ def update_item(request, item_id):
         return _item_edit_error_response(form)
 
     except Exception:
-        _cleanup_uploaded_photos(storage, saved_names)
+        _cleanup_failed_uploads(saved_names)
         logger.exception(
             "Edit pakaian gagal untuk item_id=%s, user_id=%s.",
             item_id,

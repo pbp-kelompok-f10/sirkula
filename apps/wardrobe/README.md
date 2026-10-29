@@ -92,3 +92,14 @@ Validasi: 77 tes Wardrobe lolos, termasuk 6 tes command dan 2 tes render modal b
 Browser localhost memakai kode proyek asli dengan database/foto dan middleware simulasi terpisah di workspace uji: Batal/Escape menjaga record dan file, fokus kembali ke Hapus, error database tidak menghapus data, kegagalan storage menyisakan referensi, command retry membersihkan file sisa, penghapusan normal berhasil, dan filter Atasan tetap aktif hingga hasil kosong. Modal diperiksa pada desktop dan 390 px (lebar dan scrollWidth dialog 358 px). Seluruh simulasi hanya memengaruhi data uji.
 
 Bantuan AI: Codex menambahkan command, modal/JS, tes permanen dan dokumentasi setelah backend pengguna lolos review. Tidak ada staging atau commit.
+
+
+## Cleanup persisten untuk edit dan rollback unggahan
+
+Foto lama yang dilepas saat edit sekarang dicatat ke WardrobePhotoCleanup dalam transaksi yang sama dengan perubahan item. File hanya diproses setelah commit. Jika callback tidak sempat berjalan atau storage gagal, referensi tetap tersedia bagi cleanup_wardrobe_photos. Jika transaksi edit gagal, antrean foto lama ikut dibatalkan sehingga foto yang dipulihkan tidak ikut dibersihkan.
+
+Setelah rollback tambah/edit, nama unggahan baru yang sudah berhasil disimpan dicatat ke antrean sebelum cleanup dicoba. Kegagalan storage tidak lagi meninggalkan file tanpa referensi retry. Bila pencatatan database sendiri gagal, cleanup tidak dilanjutkan dan kegagalan beserta nama file dicatat ke log untuk penanganan operasional.
+
+Worker memeriksa WardrobeItemImage untuk seluruh pengguna sebelum menghapus file. Jika nama file masih direferensikan, file dan antreannya dipertahankan, warning dicatat, dan command melaporkan pekerjaan tertunda. Antrean tersebut bisa diproses setelah file tidak lagi direferensikan. File yang tidak ada tetap aman diproses ulang.
+
+Tes permanen tambahan ada pada tests/test_persistent_cleanup.py: edit cleanup gagal lalu retry, callback tidak berjalan, rollback edit/tambah dengan cleanup gagal, kegagalan unggahan kedua, perlindungan foto aktif lintas pengguna, retry setelah referensi dilepas, deduplikasi antrean, kegagalan penghapusan record antrean, dan kegagalan insert antrean. Pemeriksaan membandingkan isi file foto aktif sebelum/sesudah retry. Tidak ada perubahan model/migrasi atau tampilan pada tahap ini.
