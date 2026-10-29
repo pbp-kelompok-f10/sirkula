@@ -9,7 +9,7 @@ from decimal import Decimal
 from apps.marketplace.models import Product
 
 from .cart import Cart
-from .models import Transaction
+from .models import Order, OrderItem
 
 
 @login_required
@@ -119,28 +119,28 @@ def thrift_checkout(request):
             "total": str(checkout_total),
         }
         buyer = request.user if request.user.is_authenticated else None
-        transactions = Transaction.objects.bulk_create([
-            Transaction(
-                buyer=buyer,
-                product=item,
-                address=address,
-                phone_number=phone_number,
-                purchase_method=purchase_method,
-                shipping_method=shipping_method,
-                shipping_cost=shipping_cost,
-                admin_fee=admin_fee,
-                subtotal=item.price,
-                total=item.price + admin_fee + shipping_cost,
-            )
+        order = Order.objects.create(
+            buyer=buyer,
+            address=address,
+            phone_number=phone_number,
+            purchase_method=purchase_method,
+            shipping_method=shipping_method,
+            shipping_cost=shipping_cost,
+            admin_fee=admin_fee,
+            subtotal=cart.total_price,
+            total=checkout_total,
+        )
+        OrderItem.objects.bulk_create([
+            OrderItem(order=order, product=item, price=item.price)
             for item in items
         ])
         Product.objects.filter(pk__in=[item.pk for item in items]).update(is_available=False)
         request.session.modified = True
         Cart(request).clear()
         request.session["checkout_success"] = {
-            "transaction_ids": [transaction.pk for transaction in transactions],
+            "order_id": order.pk,
             "total": str(checkout_total),
-            "status": Transaction.Status.PENDING,
+            "status": Order.Status.PENDING,
         }
         request.session.pop("checkout", None)
         return redirect("transactions:thrift_success")
@@ -187,13 +187,13 @@ def thrift_success(request):
 @login_required
 def purchase_list(request):
     status = request.GET.get("status", "")
-    transactions = Transaction.objects.filter(buyer=request.user)
-    if status in Transaction.Status.values:
+    transactions = Order.objects.filter(buyer=request.user)
+    if status in Order.Status.values:
         transactions = transactions.filter(status=status)
     transactions = transactions.select_related("product", "product__seller")
     return render(request, "transactions/purchase_list.html", {
         "transactions": transactions,
-        "statuses": Transaction.Status.choices,
+        "statuses": Order.Status.choices,
         "selected_status": status,
     })
 
@@ -201,13 +201,13 @@ def purchase_list(request):
 @login_required
 def sales_list(request):
     status = request.GET.get("status", "")
-    transactions = Transaction.objects.filter(product__seller=request.user)
-    if status in Transaction.Status.values:
+    transactions = Order.objects.filter(items__product__seller=request.user).distinct()
+    if status in Order.Status.values:
         transactions = transactions.filter(status=status)
-    transactions = transactions.select_related("product", "buyer")
+    transactions = transactions.select_related("buyer")
     return render(request, "transactions/sales_list.html", {
         "transactions": transactions,
-        "statuses": Transaction.Status.choices,
+        "statuses": Order.Status.choices,
         "selected_status": status,
     })
 
@@ -215,11 +215,11 @@ def sales_list(request):
 @login_required
 def transaction_detail(request, transaction_id):
     transaction = get_object_or_404(
-        Transaction.objects.select_related("product", "product__seller", "buyer"),
+        Order.objects.select_related("buyer"),
         pk=transaction_id,
     )
     is_buyer = transaction.buyer_id == request.user.id
-    is_seller = transaction.product.seller_id == request.user.id
+    is_seller = transaction.items.filter(product__seller=request.user).exists()
     if not is_buyer and not is_seller:
         messages.error(request, "Kamu tidak memiliki akses ke transaksi ini.")
         return redirect("transactions:purchases")
@@ -234,24 +234,24 @@ def transaction_detail(request, transaction_id):
 @login_required
 def update_transaction_status(request, transaction_id):
     transaction = get_object_or_404(
-        Transaction.objects.select_related("product"),
+        Order.objects.select_related("buyer"),
         pk=transaction_id,
     )
-    if transaction.product.seller_id != request.user.id:
+    if not transaction.items.filter(product__seller=request.user).exists():
         messages.error(request, "Hanya penjual yang dapat mengubah status pesanan.")
         return redirect("transactions:detail", transaction_id=transaction.pk)
 
     next_status = request.POST.get("status")
     allowed_transitions = {
-        Transaction.Status.PENDING: {
-            Transaction.Status.CONFIRMED,
-            Transaction.Status.CANCELLED,
+        Order.Status.PENDING: {
+            Order.Status.CONFIRMED,
+            Order.Status.CANCELLED,
         },
-        Transaction.Status.CONFIRMED: {
-            Transaction.Status.SHIPPED,
-            Transaction.Status.CANCELLED,
+        Order.Status.CONFIRMED: {
+            Order.Status.SHIPPED,
+            Order.Status.CANCELLED,
         },
-        Transaction.Status.SHIPPED: {Transaction.Status.COMPLETED},
+        Order.Status.SHIPPED: {Order.Status.COMPLETED},
     }
     if next_status not in allowed_transitions.get(transaction.status, set()):
         messages.error(request, "Perubahan status tidak valid.")
