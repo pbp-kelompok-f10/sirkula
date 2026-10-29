@@ -23,7 +23,7 @@ urlpatterns = [
     path("", include("apps.core.urls")),
     # path("accounts/", include("apps.accounts.urls")),
     # path("wardrobe/", include("apps.wardrobe.urls")),
-    # path("marketplace/", include("apps.marketplace.urls")),
+    path("marketplace/", include("apps.marketplace.urls")),
     # path("barter/", include("apps.bartering.urls")),
     # path("outfits/", include("apps.outfits.urls")),
 ]

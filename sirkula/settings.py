@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "tailwind",
     "ui",
+    "apps.marketplace",
 ]
 
 # Tailwind definition
