@@ -135,17 +135,36 @@
                         </a>
                     {% endif %}
 
-                    <a
-                        href="#"
-                        class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border-2 border-primary px-6 text-base font-semibold text-primary transition hover:bg-lime-30"
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <circle cx="8" cy="21" r="1"></circle>
-                            <circle cx="19" cy="21" r="1"></circle>
-                            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
-                        </svg>
-                        Masukkan Keranjang
-                    </a>
+                    {% if product.listing_type == 'THRIFT' and product.is_available %}
+                        <form action="{% url 'transactions:cart_add' product.pk %}" method="post" class="flex flex-1">
+                            {% csrf_token %}
+                            <button
+                                type="submit"
+                                class="flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-primary px-6 text-base font-semibold text-primary transition hover:bg-lime-30"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <circle cx="8" cy="21" r="1"></circle>
+                                    <circle cx="19" cy="21" r="1"></circle>
+                                    <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                                </svg>
+                                Masukkan Keranjang
+                            </button>
+                        </form>
+                    {% else %}
+                        <button
+                            type="button"
+                            disabled
+                            title="Barang barter tidak bisa dibeli"
+                            class="flex h-12 flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-xl border-2 border-neutral-30 px-6 text-base font-semibold text-neutral-50"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="8" cy="21" r="1"></circle>
+                                <circle cx="19" cy="21" r="1"></circle>
+                                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                            </svg>
+                            Masukkan Keranjang
+                        </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
