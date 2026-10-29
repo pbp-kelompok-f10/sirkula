@@ -1,12 +1,15 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.marketplace.models import Product
 
+@login_required
 def barter_chat(request, product_id):
     product = get_object_or_404(Product, pk=product_id, listing_type="BARTER")
     return render(request, "bartering/chat.html", {"product": product})
 
 
+@login_required
 def barter_mou(request, product_id):
     product = get_object_or_404(Product, pk=product_id, listing_type="BARTER")
     if request.method == "POST":
@@ -17,6 +20,7 @@ def barter_mou(request, product_id):
     return render(request, "bartering/mou.html", {"product": product})
 
 
+@login_required
 def barter_payment(request, product_id):
     product = get_object_or_404(Product, pk=product_id, listing_type="BARTER")
     if request.method == "POST":
@@ -26,6 +30,7 @@ def barter_payment(request, product_id):
     return render(request, "bartering/payment.html", {"product": product})
 
 
+@login_required
 def barter_success(request):
     if not request.session.pop("barter_success", False):
         return redirect("core:home")

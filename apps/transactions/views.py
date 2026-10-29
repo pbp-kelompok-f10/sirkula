@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 from decimal import Decimal
 
 from apps.marketplace.models import Product
@@ -11,6 +12,7 @@ from .cart import Cart
 from .models import Transaction
 
 
+@login_required
 def cart_detail(request):
     cart = Cart(request)
     context = {
@@ -22,6 +24,7 @@ def cart_detail(request):
 
 
 @require_POST
+@login_required
 def cart_add(request, product_id):
     product = get_object_or_404(Product, pk=product_id)
 
@@ -55,6 +58,7 @@ def cart_add(request, product_id):
 
 
 @require_POST
+@login_required
 def cart_remove(request, product_id):
     product = get_object_or_404(Product, pk=product_id)
     Cart(request).remove(product)
@@ -63,6 +67,7 @@ def cart_remove(request, product_id):
 
 
 @require_POST
+@login_required
 def cart_clear(request):
     Cart(request).clear()
     messages.success(request, "Keranjang dikosongkan.")
@@ -76,6 +81,7 @@ SHIPPING_COSTS = {
 }
 
 
+@login_required
 def thrift_checkout(request):
     cart = Cart(request)
     items = cart.get_items()
@@ -151,6 +157,7 @@ def thrift_checkout(request):
     })
 
 
+@login_required
 def thrift_payment(request):
     checkout = request.session.get("checkout")
     if not checkout:
@@ -167,10 +174,51 @@ def thrift_payment(request):
     })
 
 
+@login_required
 def thrift_success(request):
     checkout = request.session.pop("checkout_success", None)
     if not checkout:
         return redirect("transactions:cart")
     return render(request, "transactions/thrift_success.html", {
         "checkout": checkout,
+    })
+
+
+@login_required
+def purchase_list(request):
+    transactions = Transaction.objects.filter(
+        buyer=request.user,
+    ).select_related("product", "product__seller")
+    return render(request, "transactions/purchase_list.html", {
+        "transactions": transactions,
+        "list_title": "Pesanan Saya",
+    })
+
+
+@login_required
+def sales_list(request):
+    transactions = Transaction.objects.filter(
+        product__seller=request.user,
+    ).select_related("product", "buyer")
+    return render(request, "transactions/sales_list.html", {
+        "transactions": transactions,
+        "list_title": "Pesanan Masuk",
+    })
+
+
+@login_required
+def transaction_detail(request, transaction_id):
+    transaction = get_object_or_404(
+        Transaction.objects.select_related("product", "product__seller", "buyer"),
+        pk=transaction_id,
+    )
+    is_buyer = transaction.buyer_id == request.user.id
+    is_seller = transaction.product.seller_id == request.user.id
+    if not is_buyer and not is_seller:
+        messages.error(request, "Kamu tidak memiliki akses ke transaksi ini.")
+        return redirect("transactions:purchases")
+    return render(request, "transactions/transaction_detail.html", {
+        "transaction": transaction,
+        "is_buyer": is_buyer,
+        "is_seller": is_seller,
     })
