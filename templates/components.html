@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+Components for Development
+{% endblock title %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-10 space-y-12">
+    <header class="border-b pb-4">
+        <h1 class="text-3xl font-bold">DaisyUI Components Showcase</h1>
+        <p class="text-neutral-500">Ini buat preview, kalau deployment jangan ada ini!!!</p>
+    </header>
+
+    <section>
+        <h2 class="text-xl font-semibold">Buttons</h2>
+        <div class="flex flex-wrap items-center gap-4">
+            <button class="btn btn-primary">Primary</button>
+            <button class="btn btn-secondary">Secondary</button>
+            <button class="btn btn-accent">Accent</button>
+            <button class="btn btn-neutral">Neutral</button>
+            <button class="btn btn-outline btn-primary">Outline Primary</button>
+            <button class="btn btn-outline btn-secondary">Outline Secondary</button>
+            <button class="btn btn-outline btn-accent">Outline Accent</button>
+            <button class="btn btn-outline btn-neutral">Outline Neutral</button>
+        </div>
+    </section>
+
+    <section class="space-y-4">
+        <h2 class="text-xl font-semibold">Badges / Chips</h2>
+        <div class="flex flex-wrap items-center gap-4">
+            <span class="badge badge-primary">Primary</span>
+            <span class="badge badge-secondary">Secondary</span>
+            <span class="badge badge-accent">Accent</span>
+            <span class="badge badge-neutral">Neutral</span>
+            <span class="badge badge-outline badge-primary">Outline Primary</span>
+            <span class="badge badge-outline badge-secondary">Outline Secondary</span>
+            <span class="badge badge-outline badge-accent">Outline Accent</span>
+            <span class="badge badge-outline badge-neutral">Outline Neutral</span>
+        </div>
+    </section>
+
+    <section class="space-y-4">
+        <h2 class="text-xl font-semibold">Checkboxes</h2>
+        <div class="flex flex-wrap items-center gap-6">
+            <label class="checkbox-with-text">
+                <input type="checkbox" class="checkbox" checked />
+                <span>Checked State</span>
+            </label>
+            <label class="checkbox-with-text">
+                <input type="checkbox" class="checkbox" />
+                <span>Unchecked State</span>
+            </label>
+        </div>
+    </section>
+
+    <!-- Form Input Field -->
+    <section class="space-y-4">
+        <h2 class="text-xl font-semibold">Input Fields</h2>
+        <div class="space-y-4">
+            <div class="form-control sirkula-field">
+                <label class="label">Username</label>
+                <div class="sirkula-input">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
+                    </svg>
+                    <input type="text" class="input" placeholder="Enter username..." />
+                </div>
+            </div>
+
+            <div class="form-control sirkula-field">
+                <label class="label">Field With Error</label>
+                <div class="sirkula-input">
+                    <input type="text" class="input" value="Invalid input value" />
+                </div>
+                <span class="label-error">Input value is not valid.</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Card -->
+    <section class="space-y-4">
+        <h2 class="text-xl font-semibold">Product Card</h2>
+        <div class="card-product">
+            <div class="card-figure">
+                <img src="{% static 'img/sirkula.png' %}" alt="Product image preview" />
+                <span class="card-label">Thrift</span>
+            </div>
+            <div class="card-body">
+                <span class="card-description">Vintage Category</span>
+                <span class="card-title">Retro Jacket Denim</span>
+                <span class="card-price">Rp 150.000</span>
+                <div class="card-actions">
+                    <button class="btn btn-primary">Lihat Detail</button>
+                    <button class="btn btn-outline btn-neutral btn-square" aria-label="Simpan">★</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock content %}

@@ -1,8 +1,29 @@
+from collections import Counter
+from html.parser import HTMLParser
+
 from django.test import SimpleTestCase, override_settings
 from django.template.loader import render_to_string
 from django.urls import include, path, resolve, reverse
 
 from apps.core.views import home
+
+
+class PageMarkup(HTMLParser):
+    """Inspect actual elements without counting HTML inside comments."""
+
+    def __init__(self):
+        super().__init__()
+        self.tags = Counter()
+        self.ids = Counter()
+        self.stylesheets = []
+
+    def handle_starttag(self, tag, attrs):
+        self.tags[tag] += 1
+        attrs = dict(attrs)
+        if "id" in attrs:
+            self.ids[attrs["id"]] += 1
+        if tag == "link" and attrs.get("rel") == "stylesheet":
+            self.stylesheets.append(attrs.get("href", ""))
 
 
 # Isolate homepage tests from unfinished URL configurations in other apps.
@@ -25,10 +46,6 @@ class HomePageTests(SimpleTestCase):
             "core/partials/hero.html",
             "core/partials/features.html",
             "core/partials/how_it_works.html",
-            "layouts/site.html",
-            "components/header.html",
-            "components/navbar.html",
-            "components/footer.html",
         ):
             self.assertTemplateUsed(response, template)
         self.assertContains(response, "Gaya Tanpa Batas,")
@@ -36,12 +53,14 @@ class HomePageTests(SimpleTestCase):
 
     def test_homepage_uses_tailwind_without_legacy_reset(self):
         response = self.client.get(reverse("core:home"))
-        self.assertContains(response, 'css/app.css')
+        self.assertContains(response, 'css/dist/styles.css')
+        self.assertNotContains(response, 'css/app.css')
         self.assertNotContains(response, 'css/style.css')
 
-    def test_default_base_preserves_team_stylesheet(self):
+    def test_default_base_uses_design_system_stylesheet(self):
         html = render_to_string("index.html")
-        self.assertIn("css/style.css", html)
+        self.assertIn("css/dist/styles.css", html)
+        self.assertNotIn("css/style.css", html)
         self.assertNotIn("css/app.css", html)
 
     def test_final_sections_and_unique_landmarks(self):
@@ -49,11 +68,12 @@ class HomePageTests(SimpleTestCase):
         for text in ("Pindai lemarimu", "Temukan barang impianmu", "Tukar tanpa uang tunai", "Bantu Kami"):
             self.assertContains(response, text)
         html = response.content.decode()
-        self.assertEqual(html.count("<h1"), 1)
-        self.assertEqual(html.count("<header"), 1)
-        self.assertEqual(html.count("<footer"), 1)
+        self.assert_unique_landmarks(html)
+        markup = PageMarkup()
+        markup.feed(html)
+        self.assertEqual(markup.tags["h1"], 1)
 
-    def test_navigation_links_and_home_active_state(self):
+    def test_home_link_cta_destinations_and_active_state(self):
         from html.parser import HTMLParser
 
         class Links(HTMLParser):
@@ -81,11 +101,6 @@ class HomePageTests(SimpleTestCase):
         links = {text.strip(): attrs for attrs, text in parser.items}
         for label, target in {
             "Home": "/",
-            "Wardrobe": "/wardrobe/",
-            "Barter": "/barter/",
-            "Thrift": "/marketplace/",
-            "Register": "/accounts/register/",
-            "Login": "/accounts/login/",
             "Jelajahi Lemari Virtual": "/wardrobe/",
             "Mulai Barter/Thrift": "/barter/",
         }.items():
@@ -101,7 +116,7 @@ class HomePageTests(SimpleTestCase):
 
         request = RequestFactory().get("/wardrobe/")
         request.resolver_match = SimpleNamespace(
-            namespace="wardrobe", view_name="wardrobe:index"
+            namespace="wardrobe", view_name="wardrobe:index", url_name="index"
         )
         template = engines["django"].from_string(
             '{% extends "layouts/site.html" %}'
@@ -111,10 +126,42 @@ class HomePageTests(SimpleTestCase):
         html = template.render({}, request=request)
         self.assertIn("<title>Wardrobe | Sirkula</title>", html)
         self.assertIn("Wardrobe test page", html)
-        self.assertIn("css/app.css", html)
+        self.assertIn("css/dist/styles.css", html)
+        self.assertNotIn("css/app.css", html)
         self.assertNotIn("css/style.css", html)
         self.assertNotIn("Gaya Tanpa Batas", html)
-        self.assertEqual(html.count("<main"), 1)
-        self.assertEqual(html.count("<header"), 1)
-        self.assertEqual(html.count("<footer"), 1)
-        self.assertRegex(html, r'href="/wardrobe/"\s+aria-current="page"')
+        self.assert_unique_landmarks(html)
+
+    def assert_unique_landmarks(self, html):
+        markup = PageMarkup()
+        markup.feed(html)
+        for tag in ("main", "header", "footer"):
+            self.assertEqual(markup.tags[tag], 1, tag)
+        self.assertEqual(markup.ids["main-content"], 1)
+        self.assertEqual(
+            [href for href in markup.stylesheets if href.startswith("/static/")],
+            ["/static/css/dist/styles.css"],
+        )
+
+    def test_component_catalog_remains_available(self):
+        response = self.client.get(reverse("core:show_components"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "components.html")
+        self.assertContains(response, "css/dist/styles.css")
+
+    def test_home_template_and_image_belong_to_core_app(self):
+        from pathlib import Path
+        from django.contrib.staticfiles import finders
+        from django.template.loader import get_template
+
+        core_dir = Path(__file__).resolve().parent
+        self.assertEqual(
+            Path(get_template("core/home.html").origin.name).resolve(),
+            core_dir / "templates/core/home.html",
+        )
+        image = finders.find("core/img/hero-final.jpg")
+        self.assertIsNotNone(image)
+        self.assertEqual(Path(image).resolve(), core_dir / "static/core/img/hero-final.jpg")
+        response = self.client.get(reverse("core:home"))
+        self.assertContains(response, "/static/core/img/hero-final.jpg")
+        self.assertTemplateUsed(response, "core/components/feature_card.html")

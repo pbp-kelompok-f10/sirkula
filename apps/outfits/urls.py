@@ -1,4 +1,5 @@
-"""URL configuration reserved for the outfits app."""
+from django.urls import path
+from . import views
 
 app_name = "outfits"
 

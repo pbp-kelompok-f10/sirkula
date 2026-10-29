@@ -14,5 +14,5 @@ httpx
 # django-storages
 djangorestframework
 
-# tailwind
-django-tailwind
+# tailwind (as in documentation)
+django-tailwind[cookiecutter,honcho,reload]
