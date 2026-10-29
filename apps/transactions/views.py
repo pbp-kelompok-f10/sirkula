@@ -186,23 +186,29 @@ def thrift_success(request):
 
 @login_required
 def purchase_list(request):
-    transactions = Transaction.objects.filter(
-        buyer=request.user,
-    ).select_related("product", "product__seller")
+    status = request.GET.get("status", "")
+    transactions = Transaction.objects.filter(buyer=request.user)
+    if status in Transaction.Status.values:
+        transactions = transactions.filter(status=status)
+    transactions = transactions.select_related("product", "product__seller")
     return render(request, "transactions/purchase_list.html", {
         "transactions": transactions,
-        "list_title": "Pesanan Saya",
+        "statuses": Transaction.Status.choices,
+        "selected_status": status,
     })
 
 
 @login_required
 def sales_list(request):
-    transactions = Transaction.objects.filter(
-        product__seller=request.user,
-    ).select_related("product", "buyer")
+    status = request.GET.get("status", "")
+    transactions = Transaction.objects.filter(product__seller=request.user)
+    if status in Transaction.Status.values:
+        transactions = transactions.filter(status=status)
+    transactions = transactions.select_related("product", "buyer")
     return render(request, "transactions/sales_list.html", {
         "transactions": transactions,
-        "list_title": "Pesanan Masuk",
+        "statuses": Transaction.Status.choices,
+        "selected_status": status,
     })
 
 
@@ -222,3 +228,36 @@ def transaction_detail(request, transaction_id):
         "is_buyer": is_buyer,
         "is_seller": is_seller,
     })
+
+
+@require_POST
+@login_required
+def update_transaction_status(request, transaction_id):
+    transaction = get_object_or_404(
+        Transaction.objects.select_related("product"),
+        pk=transaction_id,
+    )
+    if transaction.product.seller_id != request.user.id:
+        messages.error(request, "Hanya penjual yang dapat mengubah status pesanan.")
+        return redirect("transactions:detail", transaction_id=transaction.pk)
+
+    next_status = request.POST.get("status")
+    allowed_transitions = {
+        Transaction.Status.PENDING: {
+            Transaction.Status.CONFIRMED,
+            Transaction.Status.CANCELLED,
+        },
+        Transaction.Status.CONFIRMED: {
+            Transaction.Status.SHIPPED,
+            Transaction.Status.CANCELLED,
+        },
+        Transaction.Status.SHIPPED: {Transaction.Status.COMPLETED},
+    }
+    if next_status not in allowed_transitions.get(transaction.status, set()):
+        messages.error(request, "Perubahan status tidak valid.")
+        return redirect("transactions:detail", transaction_id=transaction.pk)
+
+    transaction.status = next_status
+    transaction.save(update_fields=["status", "updated_at"])
+    messages.success(request, "Status transaksi berhasil diperbarui.")
+    return redirect("transactions:detail", transaction_id=transaction.pk)

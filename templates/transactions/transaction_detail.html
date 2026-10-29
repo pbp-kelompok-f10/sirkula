@@ -1,1 +1,111 @@
-{% extends 'base.html' %}{% load static %}{% block title %}Detail Transaksi | Sirkula{% endblock %}{% block extra_head %}<link rel="stylesheet" href="{% static 'css/transaction_list.css' %}">{% endblock %}{% block content %}<main class="transaction-page"><section class="transaction-container"><a href="{% if is_seller %}{% url 'transactions:sales' %}{% else %}{% url 'transactions:purchases' %}{% endif %}" class="back-link">← Kembali</a><div class="detail-layout"><article class="detail-card">{% if transaction.product.image %}<img class="transaction-card-image" src="{{ transaction.product.image.url }}" alt="{{ transaction.product.name }}">{% endif %}<h2>{{ transaction.product.name }}</h2><div class="detail-row"><span>Status</span><strong>{{ transaction.get_status_display }}</strong></div><div class="detail-row"><span>Metode</span><strong>{{ transaction.get_purchase_method_display }}</strong></div><div class="detail-row"><span>Alamat</span><strong>{{ transaction.address }}</strong></div><div class="detail-row"><span>Handphone</span><strong>{{ transaction.phone_number }}</strong></div><div class="detail-row"><span>Total</span><strong>Rp {{ transaction.total|floatformat:'0' }}</strong></div></article><article class="detail-card"><h2>Timeline Pesanan</h2><div class="timeline"><div class="timeline-item active">Pesanan dibuat</div><div class="timeline-item {% if transaction.status != 'PENDING' %}active{% endif %}">Menunggu konfirmasi penjual</div><div class="timeline-item {% if transaction.status == 'SHIPPED' or transaction.status == 'COMPLETED' %}active{% endif %}">Pesanan dikirim</div><div class="timeline-item {% if transaction.status == 'COMPLETED' %}active{% endif %}">Pesanan selesai</div></div></article></div></section></main>{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detail Transaksi | Sirkula{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/transaction_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="transaction-page">
+    <section class="transaction-container">
+        <a
+            href="{% if is_seller %}{% url 'transactions:sales' %}{% else %}{% url 'transactions:purchases' %}{% endif %}"
+            class="back-link"
+        >
+            ← Kembali
+        </a>
+
+        <div class="detail-layout">
+            <article class="detail-card">
+                {% if transaction.product.image %}
+                    <img
+                        class="transaction-detail-image"
+                        src="{{ transaction.product.image.url }}"
+                        alt="{{ transaction.product.name }}"
+                    >
+                {% endif %}
+
+                <h2>{{ transaction.product.name }}</h2>
+
+                <div class="detail-row">
+                    <span>Status</span>
+                    <strong class="status-badge status-{{ transaction.status|lower }}">
+                        {{ transaction.get_status_display }}
+                    </strong>
+                </div>
+                <div class="detail-row">
+                    <span>Metode</span>
+                    <strong>{{ transaction.get_purchase_method_display }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Alamat</span>
+                    <strong>{{ transaction.address }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Handphone</span>
+                    <strong>{{ transaction.phone_number }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Total</span>
+                    <strong>Rp {{ transaction.total|floatformat:'0' }}</strong>
+                </div>
+
+                {% if is_seller %}
+                    <div class="transaction-actions">
+                        {% if transaction.status == 'PENDING' %}
+                            <form method="post" action="{% url 'transactions:update_status' transaction.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="CONFIRMED">
+                                <button type="submit" class="action-button confirm">Konfirmasi</button>
+                            </form>
+                            <form method="post" action="{% url 'transactions:update_status' transaction.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="CANCELLED">
+                                <button type="submit" class="action-button cancel">Batalkan</button>
+                            </form>
+                        {% elif transaction.status == 'CONFIRMED' %}
+                            <form method="post" action="{% url 'transactions:update_status' transaction.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="SHIPPED">
+                                <button type="submit" class="action-button confirm">Tandai Dikirim</button>
+                            </form>
+                            <form method="post" action="{% url 'transactions:update_status' transaction.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="CANCELLED">
+                                <button type="submit" class="action-button cancel">Batalkan</button>
+                            </form>
+                        {% elif transaction.status == 'SHIPPED' %}
+                            <form method="post" action="{% url 'transactions:update_status' transaction.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="COMPLETED">
+                                <button type="submit" class="action-button confirm">Tandai Selesai</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </article>
+
+            <article class="detail-card">
+                <h2>Timeline Pesanan</h2>
+                <div class="timeline">
+                    <div class="timeline-item active">Pesanan dibuat</div>
+                    <div class="timeline-item {% if transaction.status != 'PENDING' and transaction.status != 'CANCELLED' %}active{% endif %}">
+                        Pesanan dikonfirmasi
+                    </div>
+                    <div class="timeline-item {% if transaction.status == 'SHIPPED' or transaction.status == 'COMPLETED' %}active{% endif %}">
+                        Pesanan dikirim
+                    </div>
+                    <div class="timeline-item {% if transaction.status == 'COMPLETED' %}active{% endif %}">
+                        Pesanan selesai
+                    </div>
+                    {% if transaction.status == 'CANCELLED' %}
+                        <div class="timeline-item cancelled active">Pesanan dibatalkan</div>
+                    {% endif %}
+                </div>
+            </article>
+        </div>
+    </section>
+</main>
+{% endblock %}

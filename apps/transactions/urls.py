@@ -15,4 +15,9 @@ urlpatterns = [
     path("purchases/", views.purchase_list, name="purchases"),
     path("sales/", views.sales_list, name="sales"),
     path("<int:transaction_id>/", views.transaction_detail, name="detail"),
+    path(
+        "<int:transaction_id>/status/",
+        views.update_transaction_status,
+        name="update_status",
+    ),
 ]

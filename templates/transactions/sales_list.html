@@ -1,1 +1,60 @@
-{% extends 'base.html' %}{% load static %}{% block title %}Pesanan Masuk | Sirkula{% endblock %}{% block extra_head %}<link rel="stylesheet" href="{% static 'css/transaction_list.css' %}">{% endblock %}{% block content %}<main class="transaction-page"><section class="transaction-container"><h1 class="transaction-title">Pesanan Masuk</h1>{% if transactions %}<div class="transaction-list">{% for transaction in transactions %}<a class="transaction-card" href="{% url 'transactions:detail' transaction.pk %}">{% if transaction.product.image %}<img src="{{ transaction.product.image.url }}" alt="{{ transaction.product.name }}">{% else %}<div class="transaction-image-placeholder">Sirkula</div>{% endif %}<div class="transaction-info"><h2>{{ transaction.product.name }}</h2><p>Pembeli: {{ transaction.buyer.username|default:'Guest' }}</p><p>{{ transaction.created_at|date:'d M Y H:i' }}</p></div><div class="transaction-meta"><span class="status-badge">{{ transaction.get_status_display }}</span><span class="transaction-total">Rp {{ transaction.total|floatformat:'0' }}</span></div></a>{% endfor %}</div>{% else %}<div class="empty-transactions"><h2>Belum ada pesanan masuk</h2><p>Pesanan untuk produk kamu akan muncul di sini.</p></div>{% endif %}</section></main>{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pesanan Masuk | Sirkula{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/transaction_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="transaction-page">
+    <section class="transaction-container">
+        <h1 class="transaction-title">Pesanan Masuk</h1>
+
+        <form method="get" class="transaction-filter">
+            <label for="sales-status">Filter status</label>
+            <select id="sales-status" name="status" onchange="this.form.submit()">
+                <option value="">Semua status</option>
+                {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+
+        {% if transactions %}
+            <div class="transaction-list">
+                {% for transaction in transactions %}
+                    <a class="transaction-card" href="{% url 'transactions:detail' transaction.pk %}">
+                        {% if transaction.product.image %}
+                            <img src="{{ transaction.product.image.url }}" alt="{{ transaction.product.name }}">
+                        {% else %}
+                            <div class="transaction-image-placeholder">Sirkula</div>
+                        {% endif %}
+                        <div class="transaction-info">
+                            <h2>{{ transaction.product.name }}</h2>
+                            <p>Pembeli: {{ transaction.buyer.username|default:'Guest' }}</p>
+                            <p>{{ transaction.created_at|date:'d M Y H:i' }}</p>
+                        </div>
+                        <div class="transaction-meta">
+                            <span class="status-badge status-{{ transaction.status|lower }}">
+                                {{ transaction.get_status_display }}
+                            </span>
+                            <span class="transaction-total">
+                                Rp {{ transaction.total|floatformat:'0' }}
+                            </span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-transactions">
+                <h2>Belum ada pesanan masuk</h2>
+                <p>Pesanan untuk produk kamu akan muncul di sini.</p>
+            </div>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}
