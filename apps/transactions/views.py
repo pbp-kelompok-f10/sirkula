@@ -90,7 +90,10 @@ def thrift_checkout(request):
 
         address = request.POST.get("address", "").strip()
         phone_number = request.POST.get("phone_number", "").strip()
-        payment_method = request.POST.get("payment_method", "QRIS")
+        purchase_method = request.POST.get("purchase_method", "COD")
+        if purchase_method not in {"COD", "PICKUP"}:
+            messages.error(request, "Metode pembelian tidak valid.")
+            return redirect("transactions:thrift_checkout")
         if not address or not phone_number:
             messages.error(request, "Alamat dan nomor handphone wajib diisi.")
             return redirect("transactions:thrift_checkout")
@@ -103,13 +106,15 @@ def thrift_checkout(request):
             "phone_number": phone_number,
             "shipping_method": shipping_method,
             "shipping_cost": str(shipping_cost),
-            "payment_method": payment_method,
+            "purchase_method": purchase_method,
             "subtotal": str(cart.total_price),
             "admin_fee": str(admin_fee),
             "total": str(checkout_total),
         }
         request.session.modified = True
-        return redirect("transactions:thrift_payment")
+        Cart(request).clear()
+        request.session["checkout_success"] = request.session.pop("checkout")
+        return redirect("transactions:thrift_success")
 
     admin_fee = Decimal("1000")
     shipping_cost = SHIPPING_COSTS["REGULAR"]

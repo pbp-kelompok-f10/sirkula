@@ -128,10 +128,10 @@
                         </a>
                     {% else %}
                         <a
-                            href="#"
+                            href="{% url 'transactions:cart' %}"
                             class="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-base font-semibold text-white transition hover:bg-green-90"
                         >
-                            Beli Sekarang
+                            Lihat Keranjang
                         </a>
                     {% endif %}
 

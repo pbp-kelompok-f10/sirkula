@@ -20,12 +20,16 @@
           <label class="shipping-option"><input type="radio" name="shipping_method" value="REGULAR" checked><span><b>Reguler</b><strong>Rp 2.500</strong><small>Sampai dalam: 1 Hari</small></span></label>
           <label class="shipping-option"><input type="radio" name="shipping_method" value="ECONOMY"><span><b>Hemat</b><strong>Rp 0</strong><small>Sampai dalam: 3 Hari</small></span></label>
         </div>
-        <h2>Metode Pembayaran</h2>
-        <select name="payment_method" class="payment-select"><option value="QRIS">QRIS</option><option value="TRANSFER">Transfer Bank</option><option value="COD">Cash on Delivery</option></select>
+        <h2>Metode Pembelian</h2>
+        <div class="purchase-methods">
+          <label class="purchase-method"><input type="radio" name="purchase_method" value="COD" checked required><span><strong>COD</strong><small>Bayar saat barang diterima</small></span></label>
+          <label class="purchase-method"><input type="radio" name="purchase_method" value="PICKUP"><span><strong>Pickup</strong><small>Ambil langsung di lokasi penjual</small></span></label>
+        </div>
+        <p class="checkout-information">Pesanan akan menunggu konfirmasi dari penjual.</p>
         <div class="total-section"><h2>Total Pembayaran</h2><div class="price-row"><span>Harga Produk</span><span>Rp {{ total_price|floatformat:"0" }}</span></div><div class="price-row"><span>Biaya Admin</span><span>Rp {{ admin_fee|floatformat:"0" }}</span></div><div class="price-row"><span>Biaya Pengiriman</span><span>Rp {{ shipping_cost|floatformat:"0" }}</span></div><div class="price-row total"><span>Total</span><strong>Rp {{ checkout_total|floatformat:"0" }}</strong></div></div>
-        <button type="submit" class="primary-button">Lanjutkan Pembayaran</button>
+        <button type="submit" class="primary-button">Konfirmasi Pesanan</button>
       </div>
-      <aside class="payment-preview-card"><h2>Ringkasan Produk</h2>{% for item in items %}<div class="checkout-product">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}">{% else %}<div class="product-placeholder">Sirkula</div>{% endif %}<div><strong>{{ item.name }}</strong><small>{{ item.seller.username }}</small><span>Rp {{ item.price|floatformat:"0" }}</span></div></div>{% endfor %}<div class="secure-note">Pembayaran dummy untuk kebutuhan demonstrasi.</div></aside>
+      <aside class="payment-preview-card"><h2>Ringkasan Produk</h2>{% for item in items %}<div class="checkout-product">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}">{% else %}<div class="product-placeholder">Sirkula</div>{% endif %}<div><strong>{{ item.name }}</strong><small>{{ item.seller.username }}</small><span>Rp {{ item.price|floatformat:"0" }}</span></div></div>{% endfor %}<div class="secure-note">Pesanan akan diproses setelah penjual mengonfirmasi.</div></aside>
     </form>
   </section>
 </main>
