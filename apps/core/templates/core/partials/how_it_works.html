@@ -4,18 +4,19 @@
             <p lang="en" class="text-sm text-primary">In case you miss this</p>
             <h2 id="steps-title" lang="en" class="mt-2 text-2xl font-semibold leading-tight sm:text-3xl">What’s Different From Us?</h2>
         </div>
-        <ol class="mt-12 grid items-stretch gap-6 lg:grid-cols-3">
-            <li class="rounded-3xl bg-base-100 p-6 shadow-md lg:min-h-52 origin-bottom motion-safe:transition-transform motion-safe:duration-200 lg:motion-safe:hover:scale-105 hover:shadow-lg">
+        <ol class="mt-12 grid items-end gap-6 lg:min-h-80 lg:grid-cols-3
+            lg:[@media(hover:hover)_and_(pointer:fine)]:[&:has(>li:hover)>li:not(:hover)]:min-h-52">
+            <li class="rounded-3xl bg-base-100 p-6 shadow-md lg:min-h-80 motion-safe:transition-[min-height] motion-safe:duration-300 motion-safe:ease-out">
                 <span aria-hidden="true" class="inline-flex size-9 items-center justify-center rounded-full bg-lime-30 font-semibold text-primary">1</span>
                 <h3 class="mt-4 text-lg font-semibold">Pindai lemarimu</h3>
                 <p class="mt-4 text-sm leading-6 text-neutral-80">Pindai pakaian yang sudah kamu miliki agar AI bisa menganalisis palet warna, siluet, dan gaya pribadimu.</p>
             </li>
-            <li class="rounded-3xl bg-base-100 p-6 shadow-md lg:min-h-52 origin-bottom motion-safe:transition-transform motion-safe:duration-200 lg:motion-safe:hover:scale-105 hover:shadow-lg">
+            <li class="rounded-3xl bg-base-100 p-6 shadow-md lg:min-h-80 motion-safe:transition-[min-height] motion-safe:duration-300 motion-safe:ease-out">
                 <span aria-hidden="true" class="inline-flex size-9 items-center justify-center rounded-full bg-lime-30 font-semibold text-primary">2</span>
                 <h3 class="mt-4 text-lg font-semibold">Temukan barang impianmu</h3>
                 <p class="mt-4 text-sm leading-6 text-neutral-80">Cari item preloved berkualitas tinggi dari komunitas sekitarmu, atau tukar barang yang sudah tidak terpakai dengan barang yang kamu inginkan.</p>
             </li>
-            <li class="rounded-3xl bg-base-100 p-6 shadow-md lg:min-h-52 origin-bottom motion-safe:transition-transform motion-safe:duration-200 lg:motion-safe:hover:scale-105 hover:shadow-lg">
+            <li class="rounded-3xl bg-base-100 p-6 shadow-md lg:min-h-80 motion-safe:transition-[min-height] motion-safe:duration-300 motion-safe:ease-out">
                 <span aria-hidden="true" class="inline-flex size-9 items-center justify-center rounded-full bg-lime-30 font-semibold text-primary">3</span>
                 <h3 class="mt-4 text-lg font-semibold">Tukar tanpa uang tunai</h3>
                 <p class="mt-4 text-sm leading-6 text-neutral-80">Setujui barter berbasis kesetaraan valuasi, lalu ambil barang yang kamu inginkan tanpa perlu membayar uang tunai.</p>
