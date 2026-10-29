@@ -8,16 +8,20 @@
             <time datetime="{{ review.created_at|date:'c' }}" class="text-xs text-neutral-80">{{ review.created_at|date:"d M Y" }}</time>
         </div>
     </div>
+    {% if user.is_authenticated and user.pk == review.author_id and review_filter == 'mine' %}
+        <p data-review-owner-info class="mt-4 rounded-lg bg-lime-10 p-3 text-xs leading-5 text-primary">Informasi pengelolaan pribadi<br>Terakhir diperbarui: <time datetime="{{ review.updated_at|date:'c' }}">{{ review.updated_at|date:"d M Y, H:i" }}</time></p>
+    {% endif %}
     <div class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-base-300 pt-4">
         {% if user.is_authenticated and user.pk != review.author_id %}
-            <form method="post" action="{% url 'core:review_like' review.pk %}">
+            <form data-review-like method="post" action="{% url 'core:review_like' review.pk %}">
                 {% csrf_token %}
                 <input type="hidden" name="page" value="{{ reviews_page.number }}">
-                <button type="submit" name="action" value="{% if review.liked_by_me %}unlike{% else %}like{% endif %}"
+                <input type="hidden" name="filter" value="{{ review_filter }}">
+                <button data-author="{{ review.author.get_username }}" type="submit" name="action" value="{% if review.liked_by_me %}unlike{% else %}like{% endif %}"
                         aria-pressed="{{ review.liked_by_me|yesno:'true,false' }}"
                         aria-label="{% if review.liked_by_me %}Batalkan suka{% else %}Sukai ulasan{% endif %} {{ review.author.get_username }}"
                         class="btn btn-outline btn-primary">
-                    <span aria-hidden="true">{% if review.liked_by_me %}♥{% else %}♡{% endif %}</span> {{ review.like_count }} suka
+                    <span data-like-icon aria-hidden="true">{% if review.liked_by_me %}♥{% else %}♡{% endif %}</span> <span data-like-count>{{ review.like_count }}</span> suka
                 </button>
             </form>
         {% else %}

@@ -106,7 +106,7 @@ class HomePageTests(TestCase):
         }.items():
             self.assertEqual(links[label]["href"], target)
         active = [text.strip() for attrs, text in parser.items if attrs.get("aria-current") == "page"]
-        self.assertEqual(active, ["Home"])
+        self.assertEqual(active, ["Home", "Semua ulasan"])
 
     def test_shared_layout_can_render_another_apps_page(self):
         from types import SimpleNamespace
@@ -361,3 +361,70 @@ class ReviewTests(TestCase):
         from .models import Review
         with self.assertRaises(IntegrityError), transaction.atomic():
             Review.objects.create(author=self.owner, content="Ulasan kedua dari akun biasa.")
+
+    def test_ajax_like_returns_updated_state_without_redirect(self):
+        self.client.force_login(self.reader)
+        url = reverse("core:review_like", args=[self.review.pk])
+        for action, expected in (("like", True), ("like", True), ("unlike", False)):
+            response = self.client.post(url, {"action": action}, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["liked"], expected)
+            self.assertEqual(response.json()["like_count"], int(expected))
+
+    def test_ajax_expired_session_and_permissions(self):
+        url = reverse("core:review_like", args=[self.review.pk])
+        self.assertEqual(self.client.post(url, {"action": "like"}, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 401)
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.post(url, {"action": "like"}, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 403)
+        self.client.force_login(self.reader)
+        self.assertEqual(self.client.post(url, {"action": "bad"}, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 400)
+
+    def test_private_filters_reject_anonymous_requests(self):
+        for value in ("mine", "liked"):
+            self.assertEqual(self.client.get(reverse("core:home"), {"filter": value}).status_code, 403)
+        response = self.client.get(reverse("core:home"))
+        self.assertNotContains(response, "data-review-owner-info")
+        self.assertNotContains(response, "Ulasan Saya")
+
+    def test_mine_filter_and_private_metadata_are_owner_only(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("core:home"), {"filter": "mine"})
+        self.assertEqual([r.pk for r in response.context["reviews_page"]], [self.review.pk])
+        self.assertContains(response, "data-review-owner-info")
+        self.assertContains(response, "Terakhir diperbarui:")
+        self.client.force_login(self.reader)
+        response = self.client.get(reverse("core:home"), {"filter": "mine", "author": self.owner.pk})
+        self.assertEqual(len(response.context["reviews_page"]), 0)
+        self.assertNotContains(response, "data-review-owner-info")
+        response = self.client.get(reverse("core:home"))
+        self.assertNotContains(response, "data-review-owner-info")
+
+    def test_liked_filter_and_ajax_unlike_refresh_filtered_results(self):
+        from .models import ReviewLike
+        ReviewLike.objects.create(review=self.review, user=self.reader)
+        self.client.force_login(self.reader)
+        response = self.client.get(reverse("core:home"), {"filter": "liked"})
+        self.assertEqual([r.pk for r in response.context["reviews_page"]], [self.review.pk])
+        response = self.client.post(reverse("core:review_like", args=[self.review.pk]), {
+            "action": "unlike", "filter": "liked", "page": "1",
+        }, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Belum ada ulasan yang kamu sukai.", response.json()["html"])
+        self.assertNotIn(self.review.content, response.json()["html"])
+
+    def test_ajax_requires_csrf_even_with_request_header(self):
+        from django.test import Client
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.reader)
+        url = reverse("core:review_like", args=[self.review.pk])
+        self.assertEqual(client.post(url, {"action": "like"}, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 403)
+        client.get(reverse("core:home"))
+        token = client.cookies["csrftoken"].value
+        self.assertEqual(client.post(url, {"action": "like", "csrfmiddlewaretoken": token}, HTTP_X_REQUESTED_WITH="XMLHttpRequest").status_code, 200)
+
+    def test_non_ajax_like_preserves_filter_and_page(self):
+        self.client.force_login(self.reader)
+        response = self.client.post(reverse("core:review_like", args=[self.review.pk]), {
+            "action": "like", "filter": "liked", "page": "2",
+        })
+        self.assertEqual(response.url, "/?reviews_page=2&filter=liked#reviews")

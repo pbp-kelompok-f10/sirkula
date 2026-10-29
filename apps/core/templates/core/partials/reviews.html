@@ -7,12 +7,21 @@
         </div>
         {% for message in messages %}<p role="status" class="mt-6 rounded-card-small bg-lime-30 p-4 text-primary">{{ message }}</p>{% endfor %}
 
+        <nav aria-label="Filter ulasan" class="mt-8 flex flex-wrap justify-center gap-2">
+            <a href="?filter=all#reviews" {% if review_filter == 'all' %}aria-current="page"{% endif %} class="rounded-full border border-primary/20 px-4 py-2 text-sm text-primary hover:bg-lime-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {% if review_filter == 'all' %}bg-lime-30 font-semibold{% endif %}">Semua ulasan</a>
+            {% if user.is_authenticated %}
+                <a href="?filter=mine#reviews" {% if review_filter == 'mine' %}aria-current="page"{% endif %} class="rounded-full border border-primary/20 px-4 py-2 text-sm text-primary hover:bg-lime-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {% if review_filter == 'mine' %}bg-lime-30 font-semibold{% endif %}">Ulasan Saya</a>
+                <a href="?filter=liked#reviews" {% if review_filter == 'liked' %}aria-current="page"{% endif %} class="rounded-full border border-primary/20 px-4 py-2 text-sm text-primary hover:bg-lime-30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {% if review_filter == 'liked' %}bg-lime-30 font-semibold{% endif %}">Saya Sukai</a>
+            {% endif %}
+        </nav>
+        <p id="review-action-status" role="status" aria-live="polite" class="mt-3 text-center text-sm text-primary"></p>
+
         <div class="mt-10 grid min-w-0 gap-5 lg:grid-cols-[16rem_minmax(0,1fr)]">
             <aside aria-label="Ringkasan ulasan" class="flex flex-col justify-between rounded-card-medium bg-primary p-7 text-lime-10">
                 <div>
                     <span aria-hidden="true" class="text-5xl leading-none text-lime-70">“</span>
                     <p class="mt-4 text-5xl font-semibold">{{ reviews_page.paginator.count }}</p>
-                    <p class="mt-2 text-lg font-medium">cerita komunitas</p>
+                    <p class="mt-2 text-lg font-medium">{% if review_filter == "mine" %}ulasan milikmu{% elif review_filter == "liked" %}ulasan kamu sukai{% else %}cerita komunitas{% endif %}</p>
                     <p class="mt-3 text-sm leading-6 text-lime-20">Setiap pengalaman berarti. Yuk, bagikan ceritamu bersama Sirkula.</p>
                 </div>
                 <div class="mt-8">
@@ -43,8 +52,8 @@
                     </div>
                 {% else %}
                     <div class="flex h-full min-h-64 flex-col justify-center rounded-card-medium border border-base-300 bg-base-100 p-8 text-center">
-                        <h3 class="text-xl font-semibold text-primary">Cerita pertama bisa datang darimu.</h3>
-                        <p class="mt-3 text-neutral-80">Belum ada ulasan. Bagikan pengalamanmu menggunakan Sirkula.</p>
+                        <h3 class="text-xl font-semibold text-primary">{% if review_filter == "mine" %}Kamu belum menulis ulasan.{% elif review_filter == "liked" %}Belum ada ulasan yang kamu sukai.{% else %}Cerita pertama bisa datang darimu.{% endif %}</h3>
+                        <p class="mt-3 text-neutral-80">{% if review_filter == "liked" %}Buka semua ulasan dan beri suka pada cerita yang kamu apresiasi.{% else %}Bagikan pengalamanmu menggunakan Sirkula.{% endif %}</p>
                     </div>
                 {% endif %}
             </div>
@@ -52,9 +61,9 @@
         {% if reviews_page.object_list %}
             {% if reviews_page.has_other_pages %}
                 <nav aria-label="Halaman ulasan" class="mt-5 flex flex-wrap items-center justify-center gap-4">
-                    {% if reviews_page.has_previous %}<a class="btn btn-outline btn-primary" href="?reviews_page={{ reviews_page.previous_page_number }}#reviews">Sebelumnya</a>{% endif %}
+                    {% if reviews_page.has_previous %}<a class="btn btn-outline btn-primary" href="?filter={{ review_filter }}&amp;reviews_page={{ reviews_page.previous_page_number }}#reviews">Sebelumnya</a>{% endif %}
                     <span class="text-sm">Halaman {{ reviews_page.number }} dari {{ reviews_page.paginator.num_pages }}</span>
-                    {% if reviews_page.has_next %}<a class="btn btn-outline btn-primary" href="?reviews_page={{ reviews_page.next_page_number }}#reviews">Berikutnya</a>{% endif %}
+                    {% if reviews_page.has_next %}<a class="btn btn-outline btn-primary" href="?filter={{ review_filter }}&amp;reviews_page={{ reviews_page.next_page_number }}#reviews">Berikutnya</a>{% endif %}
                 </nav>
             {% endif %}
         {% endif %}
