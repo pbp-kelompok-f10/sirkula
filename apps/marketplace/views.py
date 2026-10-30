@@ -14,6 +14,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 from django.core.paginator import Paginator
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from .models import Listing, PredefinedLocation, Product, Store
 from .forms import ProductForm, ProductImageFormSet
@@ -172,6 +173,7 @@ DEFAULT_PAGE_RADIUS_KM = 3
 
 
 @require_GET
+@xframe_options_sameorigin
 def discovery_map(request):
     locations = list(PredefinedLocation.objects.filter(is_active=True))
     selected_location = locations[0] if locations else None
@@ -200,6 +202,7 @@ def discovery_map(request):
             listings.append(listing)
     listings.sort(key=lambda listing: listing.distance_km)
     return render(request, "marketplace/discovery_map.html", {
+        "map_base_template": "marketplace/map_embed_base.html" if request.GET.get("embed") == "1" else "base.html",
         "locations": locations,
         "selected_location": selected_location,
         "nearby_stores": stores[:3],

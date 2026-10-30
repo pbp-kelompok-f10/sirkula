@@ -10,6 +10,9 @@ from django.urls import reverse
 from PIL import Image
 
 from .models import Profile
+from apps.bartering.models import BarterOffer
+from apps.marketplace.models import Product
+from apps.wardrobe.models import Category, WardrobeItem, WardrobeItemImage
 
 User = get_user_model()
 PW = "Sup3rSecret!x"
@@ -20,6 +23,131 @@ def png(name="a.png", size=(10, 10)):
     buf = io.BytesIO()
     Image.new("RGB", size, "red").save(buf, "PNG")
     return SimpleUploadedFile(name, buf.getvalue(), "image/png")
+
+
+class ProfileDashboardTests(TestCase):
+    def setUp(self):
+        self.private_root = tempfile.TemporaryDirectory()
+        self.addCleanup(self.private_root.cleanup)
+        settings_override = override_settings(WARDROBE_PRIVATE_ROOT=self.private_root.name)
+        settings_override.enable()
+        self.addCleanup(settings_override.disable)
+        self.owner = User.objects.create_user("closet-owner")
+        self.other = User.objects.create_user("closet-other")
+        self.category = Category.objects.create(owner=self.owner, name="My category")
+        self.item = WardrobeItem.objects.create(
+            owner=self.owner, name="My real jacket", category=self.category,
+        )
+        self.photo = WardrobeItemImage.objects.create(item=self.item, image=png(), position=1)
+        self.no_photo = WardrobeItem.objects.create(owner=self.owner, name="My no-photo item")
+        self.draft = WardrobeItem.objects.create(
+            owner=self.owner, name="Unfinished secret", status=WardrobeItem.Status.DRAFT,
+        )
+        self.foreign = WardrobeItem.objects.create(owner=self.other, name="Other private coat")
+        self.url = reverse("accounts:profile", args=[self.owner.username])
+
+    def test_gallery_shows_only_active_owned_items_and_private_photo_route(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(self.url)
+        self.assertContains(response, self.item.name)
+        self.assertContains(response, self.no_photo.name)
+        self.assertContains(response, self.category.name)
+        self.assertContains(response, "Belum ada foto")
+        self.assertContains(response, reverse("wardrobe:item_detail", args=[self.item.pk]))
+        self.assertContains(response, reverse("wardrobe:item_photo", args=[self.photo.pk]))
+        self.assertNotContains(response, self.photo.image.name)
+        self.assertNotContains(response, self.foreign.name)
+        self.assertNotContains(response, self.draft.name)
+        self.assertEqual(response.context["wardrobe_count"], 2)
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertIn("Cookie", response["Vary"])
+        photo_response = self.client.get(reverse("wardrobe:item_photo", args=[self.photo.pk]))
+        self.assertEqual(photo_response.status_code, 200)
+        photo_response.close()
+
+    def test_anonymous_and_other_viewers_cannot_see_private_gallery_or_photos(self):
+        for viewer in [None, self.other]:
+            with self.subTest(viewer=viewer):
+                if viewer:
+                    self.client.force_login(viewer)
+                response = self.client.get(self.url)
+                for secret in [self.item.name, self.draft.name, self.category.name,
+                               "Tambah Barang", "Dashboard Saya", "Barang di Lemari",
+                               reverse("wardrobe:item_photo", args=[self.photo.pk])]:
+                    self.assertNotContains(response, secret)
+                self.assertFalse(response.context["wardrobe_items"])
+                self.assertIsNone(response.context["wardrobe_count"])
+                self.assertEqual(self.client.get(reverse(
+                    "wardrobe:item_photo", args=[self.photo.pk],
+                )).status_code, 404)
+        self.assertEqual(response.context["user"], self.other)
+        self.assertEqual(response.context["profile_user"], self.owner)
+
+    def test_empty_state_identity_and_no_sample_or_placeholder_scores(self):
+        self.client.force_login(self.other)
+        self.other.profile.display_name = "Actual display name"
+        self.other.profile.bio = "Actual biography"
+        self.other.profile.save()
+        self.foreign.delete()
+        response = self.client.get(reverse("accounts:profile", args=[self.other.username]))
+        self.assertContains(response, "Actual display name")
+        self.assertContains(response, "Actual biography")
+        self.assertContains(response, "Lemari Anda masih kosong")
+        for mock in ["Contoh tampilan", "Contoh item", "TeddyIndra", "Prabowo",
+                     "Reputasi Transaksi", "Kualitas Barang", "100%"]:
+            self.assertNotContains(response, mock)
+
+    def test_add_action_opens_existing_draft_aware_form_without_creating_item(self):
+        url = reverse("accounts:add_wardrobe_item")
+        self.assertRedirects(self.client.get(url), reverse("accounts:login") + "?next=" + url)
+        self.client.force_login(self.owner)
+        response = self.client.get(self.url)
+        self.assertContains(response, f'href="{url}"')
+        before = WardrobeItem.objects.count()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "wardrobe/index.html")
+        self.assertContains(response, 'data-open-on-load="true"')
+        self.assertContains(response, reverse("wardrobe:complete_draft"))
+        self.assertContains(response, reverse("wardrobe:current_draft"))
+        self.assertEqual(WardrobeItem.objects.count(), before)
+        self.assertNotContains(response, self.foreign.name)
+        self.assertEqual(self.client.post(url).status_code, 405)
+
+    def test_existing_create_endpoint_saves_item_that_appears_in_gallery(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("wardrobe:create_item"), {
+            "name": "Newly uploaded shirt", "category": self.category.pk, "photos": png(),
+        }, HTTP_ACCEPT="application/json")
+        self.assertEqual(response.status_code, 200, response.content)
+        created = WardrobeItem.objects.get(name="Newly uploaded shirt")
+        self.assertEqual(created.owner, self.owner)
+        self.assertContains(self.client.get(self.url), created.name)
+
+    def test_barter_counts_include_both_roles_and_exclude_other_and_closed_offers(self):
+        third = User.objects.create_user("third-trader")
+        requested = Product.objects.create(seller=self.other, name="Requested", price=0)
+        offered = Product.objects.create(seller=self.owner, name="Offered", price=0)
+        for proposer, recipient, status in [
+            (self.owner, self.other, BarterOffer.Status.PENDING),
+            (self.other, self.owner, BarterOffer.Status.ACCEPTED),
+            (self.owner, self.other, BarterOffer.Status.SHIPPING),
+            (self.owner, self.other, BarterOffer.Status.COMPLETED),
+            (self.other, self.owner, BarterOffer.Status.COMPLETED),
+            (self.owner, self.other, BarterOffer.Status.REJECTED),
+            (self.owner, self.other, BarterOffer.Status.CANCELLED),
+            (self.other, third, BarterOffer.Status.COMPLETED),
+            (self.other, third, BarterOffer.Status.PENDING),
+        ]:
+            BarterOffer.objects.create(proposer=proposer, recipient=recipient,
+                requested_product=requested, offered_product=offered, status=status)
+        self.owner.profile.successful_transactions = 999
+        self.owner.profile.save()
+        self.client.force_login(self.owner)
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["active_barter_count"], 3)
+        self.assertEqual(response.context["completed_barter_count"], 2)
+        self.assertNotContains(response, '<p class="profile-stat-value">999</p>')
 
 
 @override_settings(MEDIA_ROOT=TMP_MEDIA)
@@ -132,7 +260,7 @@ class AccountsTests(TestCase):
 
     def test_profile_public_view_hides_owner_controls(self):
         h = self.client.get(reverse("accounts:profile", args=["mutcuy"])).content.decode()
-        self.assertIn("Reputasi Transaksi", h)
+        self.assertIn("Barter Selesai", h)
         self.assertNotIn("Edit Profil", h)
         self.assertNotIn("Dashboard Saya", h)
 

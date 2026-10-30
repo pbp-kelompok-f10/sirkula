@@ -13,9 +13,9 @@ from django.urls import reverse
 
 from apps.wardrobe.models import Category, WardrobeItem, WardrobeItemImage
 from apps.wardrobe.tests.test_private_photos import png_upload
-from .demo_data import DEMO_RECOMMENDATIONS
+from .test_fixtures import DEMO_RECOMMENDATIONS
 from .models import Conversation, Message
-from .providers import DemoStylistProvider
+from .test_fixtures import DemoStylistProvider
 from .services import get_landing_content, send_message
 from .wardrobe_context import build_result, get_wardrobe_context, prepare_results_for_display
 
@@ -23,6 +23,9 @@ from .wardrobe_context import build_result, get_wardrobe_context, prepare_result
 @override_settings(OUTFITS_PROVIDER="demo")
 class OutfitsConversationTests(TestCase):
     def setUp(self):
+        provider_patch = patch("apps.outfits.services.get_stylist_provider", return_value=DemoStylistProvider())
+        provider_patch.start()
+        self.addCleanup(provider_patch.stop)
         directory = TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         settings = override_settings(WARDROBE_PRIVATE_ROOT=Path(directory.name))
@@ -67,7 +70,7 @@ class OutfitsConversationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         for text in ("Mix and Match", "Ke Lemari Virtual", "Rekomendasi Outfit", "Riwayat", "Belum ada riwayat."):
             self.assertContains(response, text)
-        self.assertContains(response, 'class="mix-card"', count=4)
+        self.assertNotContains(response, 'class="mix-card"')
         for text in ("Outfit Tersimpan", "Simpan Outfit", "Acak Outfit", "Chat Baru"):
             self.assertNotContains(response, text)
         self.assertContains(response, 'aria-label="Kirim kebutuhan outfit"')
@@ -84,11 +87,18 @@ class OutfitsConversationTests(TestCase):
         self.assertEqual(len(conversation.result["pieces"]), 3)
 
     def test_recommendation_card_starts_canonical_prompt_not_forged_content(self):
-        entry = DEMO_RECOMMENDATIONS[0]
-        response, conversation = self.start("Forged", recommendation=entry["id"])
+        from .services import get_landing_content
+        self.items[0].category = self.owner.wardrobe_categories.get(name="Kaos")
+        self.items[0].save()
+        self.items[1].category = self.owner.wardrobe_categories.get(name="Celana")
+        self.items[1].save()
+        with override_settings(OUTFITS_PROVIDER="api"):
+            entry = get_landing_content(user=self.owner)["recommendations"][0]
+        with override_settings(OUTFITS_PROVIDER="api"):
+            response, conversation = self.start("Forged", recommendation=entry["id"])
         self.assertEqual(response.status_code, 302)
         self.assertEqual(conversation.initial_recommendation, entry["id"])
-        self.assertEqual(conversation.messages.first().content, f"Tolong buatkan outfit dengan {entry['title'].lower()}.")
+        self.assertEqual(conversation.messages.first().content, entry["prompt"])
 
     def test_invalid_prompt_key_and_recommendation_do_not_create_rows(self):
         for data in (
@@ -344,8 +354,8 @@ class OutfitsConversationTests(TestCase):
         reply.result["item_ids"].clear()
         self.assertEqual(len(provider.reply(prompt="Kasual", history=(), wardrobe=wardrobe).result["item_ids"]), 3)
         payload = get_landing_content()
-        payload["recommendations"][0]["title"] = "changed"
-        self.assertNotEqual(get_landing_content()["recommendations"][0]["title"], "changed")
+        payload["recommendations"].append({"title": "changed"})
+        self.assertEqual(get_landing_content()["recommendations"], [])
 
     def test_database_constraints_and_owner_scoped_creation_key(self):
         key = uuid4()
@@ -531,7 +541,7 @@ class OutfitsConversationTests(TestCase):
         conversation.save(update_fields=["result"])
         old_messages = list(conversation.messages.values_list("content", flat=True))
         for url in (self.index, self.url(conversation)):
-            self.assertContains(self.client.get(url), "workspace-reference.png")
+            self.assertNotContains(self.client.get(url), "workspace-reference.png")
         conversation.refresh_from_db()
         self.assertEqual(conversation.result, legacy)
         self.items[0].name = "Nama pakaian terbaru"

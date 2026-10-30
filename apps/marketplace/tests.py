@@ -288,6 +288,38 @@ class MarketplaceApiTests(TestCase):
         self.assertContains(response, self.near_store.name)
         self.assertContains(response, self.listing.title)
 
+    def test_discovery_map_preserves_shared_chrome_and_interaction_hooks(self):
+        response = self.client.get(reverse("marketplace:discovery_map"))
+
+        self.assertContains(response, 'class="navbar-brand"')
+        self.assertContains(response, 'img/sirkula-mark-figma.svg')
+        self.assertContains(response, 'class="footer-site"')
+        self.assertContains(response, 'class="footer-mark"')
+        self.assertContains(response, reverse("wardrobe:index"))
+        self.assertContains(response, reverse("marketplace:shop"))
+        self.assertContains(response, 'id="location-search"')
+        self.assertContains(response, 'id="radius-slider"')
+        self.assertContains(response, 'id="locate-me"')
+        self.assertContains(response, 'id="saved-place-list"')
+        self.assertContains(response, 'marketplace/js/discovery-map.js')
+        self.assertContains(response, 'disabled title="Login diperlukan')
+        self.assertNotContains(response, 'id="saved-place-form"')
+
+    def test_authenticated_map_keeps_saved_place_form_and_secure_logout(self):
+        user = get_user_model().objects.create_user(
+            username="map-chrome-user", password="test-password"
+        )
+        self.client.force_login(user)
+        response = self.client.get(reverse("marketplace:discovery_map"))
+
+        self.assertContains(response, 'id="saved-place-form"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertContains(
+            response, f'method="post" action="{reverse("accounts:logout")}"'
+        )
+        self.assertContains(response, reverse("accounts:me"))
+        self.assertNotContains(response, 'disabled title="Login diperlukan')
+
     def test_nearby_accepts_exact_coordinates_and_sorts_by_distance(self):
         response = self.client.get(
             reverse("marketplace:api_nearby"),

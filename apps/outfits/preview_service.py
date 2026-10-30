@@ -4,6 +4,7 @@ import json
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F
 from django.http import Http404
 
 from .api_client import WardrobeAPIClient, WardrobeAPIError, identifier
@@ -58,6 +59,8 @@ def _status(user, conversation, client, account, ids, pair_key):
     attempt = OutfitPreviewAttempt.objects.filter(account=account, pair_key=pair_key).first()
     key = conversation.result["api"].get("preview_id") or (attempt.api_preview_id if attempt else "")
     if not key and attempt:
+        if conversation.result["api"].get("preview_start_status") == "disabled":
+            return {"preview_status": "disabled", "preview_label": PREVIEW_LABEL}
         # A timed-out enqueue may have been accepted. Matching manual is free and
         # reveals an existing job; it must never be replaced with another enqueue.
         data = client.match(account.api_owner, {"mode": "manual", "baju_id": ids[0], "celana_id": ids[1]})
@@ -106,7 +109,16 @@ def enqueue_preview(user, conversation):
             attempt = OutfitPreviewAttempt.objects.create(account=account, pair_key=pair_key)
         renew()
         # An uncertain POST consumes the attempt. Only status reconciliation can retry.
-        data = client.preview(account.api_owner, *ids)
+        try:
+            data = client.preview(account.api_owner, *ids)
+        except WardrobeAPIError as error:
+            if error.code == "preview_disabled":
+                # Definitive rejection: no job was accepted, unlike a timeout.
+                # Do not permanently poison this pair or consume local quota.
+                with transaction.atomic():
+                    attempt.delete()
+                    OutfitUserPreviewBudget.objects.filter(owner=user, attempts__gt=0).update(attempts=F("attempts") - 1)
+            raise
         result = _validated_status(data, ids)
         attempt.api_preview_id = result["preview_id"]
         attempt.status = result["preview_status"]

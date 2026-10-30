@@ -125,7 +125,5 @@ def prepare_results_for_display(results, user):
                 if exists[photo_id]:
                     container[key] = {"kind": "url", "url": reverse("wardrobe:item_photo", kwargs={"photo_id": photo_id})}
                     continue
-        elif _legacy_reference(image):
-            continue
         container[key] = {"kind": "unavailable"}
     return prepared

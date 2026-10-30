@@ -73,7 +73,11 @@ class WardrobeAPIClient:
                 return value
         except HTTPError as error:
             status = error.code
+            # Only translate known responses; never expose upstream bodies or secrets.
+            reason = error.read(4096).decode("utf-8", "replace").casefold() if status == 503 and path == "/v2/previews" else ""
             error.close()
+            if "preview belum diaktifkan" in reason or "preview generation is disabled" in reason:
+                raise WardrobeAPIError("Generate gambar belum diaktifkan oleh host AI. Administrator perlu mengaktifkan PREVIEW_ENABLED pada backend AI.", code="preview_disabled") from None
             if status == 404 and missing_ok:
                 return None
             messages = {401: "Autentikasi layanan pencocokan gagal.", 413: "Foto terlalu besar untuk layanan pencocokan.",

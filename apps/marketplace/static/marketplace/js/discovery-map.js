@@ -394,7 +394,7 @@
 
       const open = document.createElement("span");
       open.className = "store-open-label";
-      open.textContent = "Buka";
+      open.textContent = "Aktif";
       article.append(rank, copy, open);
       elements.storeList.append(article);
       createResultMarker(store, "store");

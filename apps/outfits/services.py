@@ -6,7 +6,6 @@ from django.urls import reverse
 from django.db import transaction
 from django.http import Http404
 
-from .demo_data import DEMO_RECOMMENDATIONS
 from .models import Conversation, Message
 from .providers import get_stylist_provider
 from .preview_service import start_preview_after_match
@@ -25,18 +24,17 @@ def get_landing_content(*, user=None):
     rendered = prepare_results_for_display([entry.result for entry in history], user) if history else []
     for entry, result in zip(history, rendered):
         entry.result = result
-    recommendations = deepcopy(list(DEMO_RECOMMENDATIONS))
+    recommendations = []
     if settings.OUTFITS_PROVIDER == "api":
         from .sync import category_type
         wardrobe = get_wardrobe_context(user) if user is not None and user.is_authenticated else ()
         eligible = [item for item in wardrobe if category_type(item) and item["photos"]]
         recommendations = []
-        if eligible:
-            for index in range(4):
-                item = eligible[index % len(eligible)]
-                mode = "best" if index % 2 == 0 else "random"
+        if {category_type(item) for item in eligible} == {"baju", "celana"}:
+            for mode, title in (("best", "Paduan terbaik"), ("random", "Paduan acak")):
+                item = eligible[0]
                 recommendations.append({
-                    "id": DEMO_RECOMMENDATIONS[index]["id"], "title": mode.title(), "prompt": mode,
+                    "id": mode, "title": title, "prompt": mode,
                     "image": {"kind": "url", "url": reverse("wardrobe:item_photo", kwargs={"photo_id": item["photos"][0]["id"]})},
                 })
     return {
@@ -52,7 +50,7 @@ def conversation_history(user):
 
 def _validated_reply(*, user, prompt, history, key, recommendation=""):
     wardrobe = get_wardrobe_context(user)
-    if settings.OUTFITS_PROVIDER == "demo" and not any(item["photos"] for item in wardrobe):
+    if settings.OUTFITS_PROVIDER != "api" and not any(item["photos"] for item in wardrobe):
         raise WardrobeUnavailable("Tambahkan pakaian aktif dengan foto di Wardrobe terlebih dahulu.")
     provider = get_stylist_provider()
     if hasattr(provider, "reply_for_user"):

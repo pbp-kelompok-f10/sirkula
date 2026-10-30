@@ -93,7 +93,7 @@
                     stale: "Pasangan pakaian berubah. Preview lama tidak ditampilkan.",
                     failed_or_unknown: "Preview gagal atau hasilnya belum pasti. Generate tidak diulang otomatis.",
                     limit_reached: "Kuota preview pengguna sudah habis. Foto pakaian tetap ditampilkan.",
-                    disabled: "Generate preview sedang dinonaktifkan.",
+                    disabled: "Generate gambar belum diaktifkan oleh host AI. Administrator perlu mengaktifkan preview pada backend AI. Foto pakaian tetap tersedia.",
                     not_generated: "Preview belum dibuat untuk riwayat ini. Foto pakaian tetap ditampilkan.",
                 };
                 status.textContent = messages[data.preview_status] || "Preview belum tersedia.";
@@ -127,7 +127,9 @@
         status.textContent = "Menyiapkan rekomendasi…";
         status.hidden = false;
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000);
+        // Sync, matching and optional preview enqueue are separate API calls.
+        // A cold model or first wardrobe upload can exceed thirty seconds.
+        const timeout = setTimeout(() => controller.abort(), 180000);
         try {
             const response = await fetch(form.action, {
                 method: "POST", body: data, credentials: "same-origin", cache: "no-store",

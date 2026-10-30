@@ -18,7 +18,7 @@
             <label for="mix-prompt" class="sr-only">Kebutuhan outfit</label>
             <p id="mix-demo-help" class="sr-only">Layanan mencocokkan foto pakaian, bukan chatbot. Ketik acak untuk random; input lain memakai best. Login diperlukan untuk menyimpan riwayat.</p>
             <div class="mix-input-wrap">
-                <input id="mix-prompt" name="prompt" type="text" required maxlength="500" placeholder="Placeholder"
+                <input id="mix-prompt" name="prompt" type="text" required maxlength="500" placeholder="Ketik best atau acak untuk memadukan pakaian"
                     value="{{ prompt_form.prompt.value|default_if_none:'' }}"
                     aria-describedby="mix-demo-help{% if prompt_form.prompt.errors %} mix-prompt-errors{% endif %}"
                     {% if prompt_form.prompt.errors %}aria-invalid="true" autofocus{% endif %}>
@@ -37,7 +37,7 @@
         <section aria-labelledby="mix-recommendations-title">
             <h2 id="mix-recommendations-title">Rekomendasi Outfit</h2>
             <div class="mix-grid">
-                {% for outfit in recommendations %}{% include 'outfits/_card.html' %}{% endfor %}
+                {% for outfit in recommendations %}{% include 'outfits/_card.html' %}{% empty %}<p>Tambahkan minimal satu atasan dan satu celana aktif dengan foto di Lemari Virtual untuk mulai mencocokkan.</p>{% endfor %}
             </div>
         </section>
         <section class="mix-history" aria-labelledby="mix-history-title">

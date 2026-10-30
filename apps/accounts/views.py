@@ -3,10 +3,18 @@ from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, PasswordChangeView
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_safe
+from django.views.decorators.cache import never_cache
+from django.views.decorators.vary import vary_on_cookie
+
+from apps.bartering.models import BarterOffer
+from apps.wardrobe.models import WardrobeItem
+from apps.wardrobe.views import _wardrobe_context
 
 from .forms import (
     AccountForm,
@@ -150,14 +158,43 @@ def my_profile(request):
     return redirect("accounts:profile", username=request.user.username)
 
 
+@never_cache
+@vary_on_cookie
 def profile_detail(request, username):
     user = get_object_or_404(User, username=username)
     profile = get_profile(user)
+    is_owner = request.user == user
+    wardrobe_items = WardrobeItem.objects.none()
+    if is_owner:
+        wardrobe_items = list(
+            WardrobeItem.objects.filter(owner=user, status=WardrobeItem.Status.ACTIVE)
+            .select_related("category").prefetch_related("images")
+        )
     return render(request, "profile.html", {
         "profile": profile,
-        "is_owner": request.user == user,
-        "user": user,
+        "is_owner": is_owner,
+        "profile_user": user,
+        "wardrobe_items": wardrobe_items,
+        "wardrobe_count": len(wardrobe_items) if is_owner else None,
+        "active_barter_count": BarterOffer.objects.filter(
+            Q(proposer=user) | Q(recipient=user),
+            status__in=[BarterOffer.Status.PENDING, BarterOffer.Status.ACCEPTED,
+                        BarterOffer.Status.SHIPPING],
+        ).count() if is_owner else None,
+        "completed_barter_count": BarterOffer.objects.filter(
+            Q(proposer=user) | Q(recipient=user), status=BarterOffer.Status.COMPLETED,
+        ).count(),
     })
+
+
+@login_required
+@never_cache
+@require_safe
+def add_wardrobe_item(request):
+    """Open the existing draft-aware wardrobe form; saving stays in wardrobe."""
+    context = _wardrobe_context(request)
+    context["open_item_modal"] = True
+    return render(request, "wardrobe/index.html", context)
 
 
 @login_required

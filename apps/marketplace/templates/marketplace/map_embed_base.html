@@ -1,0 +1,27 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="id" data-theme="sirkula">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Discovery Map{% endblock %}</title>
+    {% tailwind_css %}
+    {% block extra_head %}{% endblock %}
+    <style>
+        html, body { margin: 0; background: #fff; }
+        .discovery-page .discovery-hero { padding: 0; }
+        .discovery-page .discovery-container { width: 100%; padding: 0 8px; }
+        .discovery-title, .discovery-ambient { display: none; }
+        .discovery-page .map-shell { margin-top: 0; border-radius: 12px; }
+        .discovery-page .discovery-map { height: 290px; min-height: 290px; }
+        .discovery-page .discovery-results { padding-top: 12px; }
+        .discovery-section-heading, .saved-places-panel, .location-layout,
+        .nearby-products { display: none; }
+        .discovery-page .discovery-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+        .discovery-search-wrapper { min-width: 0; width: 100%; }
+        .discovery-status { font: 12px/1.5 sans-serif; }
+        .map-save-place-button { max-width: 150px; }
+    </style>
+</head>
+<body>{% block content %}{% endblock %}{% block extra_js %}{% endblock %}</body>
+</html>

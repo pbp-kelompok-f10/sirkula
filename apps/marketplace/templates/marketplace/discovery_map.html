@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends map_base_template|default:"base.html" %}
 {% load static %}
 
 {% block title %}Discovery Map | Sirkula{% endblock title %}
@@ -33,15 +33,6 @@
 
             <div class="map-shell">
                 <div id="discovery-map" class="discovery-map" role="region" aria-label="Peta produk dan toko di sekitar">
-                    <div class="map-placeholder" aria-hidden="true">
-                        <span class="map-road map-road-one"></span>
-                        <span class="map-road map-road-two"></span>
-                        <span class="map-road map-road-three"></span>
-                        <span class="map-radius-preview"></span>
-                        <span class="map-pin-preview map-pin-one"></span>
-                        <span class="map-pin-preview map-pin-two"></span>
-                        <span class="map-pin-preview map-pin-three"></span>
-                    </div>
                     <p class="map-loading-message" id="map-loading-message">Peta interaktif sedang disiapkan</p>
                 </div>
                 <button id="locate-me" class="map-locate-button" type="button" aria-label="Gunakan lokasi saya">
@@ -175,7 +166,7 @@
                                 <h4>{{ store.name }}</h4>
                                 <p>{{ store.distance_km }} km &bull; {{ store.address }}</p>
                             </div>
-                            <span class="store-open-label">Buka</span>
+                            <span class="store-open-label">Aktif</span>
                         </article>
                         {% empty %}
                         <div class="discovery-empty-state">Belum ada toko di dalam radius ini.</div>

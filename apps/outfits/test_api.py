@@ -220,9 +220,9 @@ class APIIntegrationTests(TestCase):
         calls=[call for call in self.remote.calls if call[0]=="match"]
         self.assertEqual(calls[-1][2],{"mode":"random","seed":key.int%2147483648})
         response=self.client.get(self.index)
-        self.assertEqual([card["title"] for card in response.context["recommendations"]],["Best","Random","Best","Random"])
+        self.assertEqual([card["title"] for card in response.context["recommendations"]],["Paduan terbaik","Paduan acak"])
         self.assertNotContains(response,"landing-reference.png")
-        response,card=self.start("forged",recommendation="demo-rec-2")
+        response,card=self.start("forged",recommendation="random")
         self.assertEqual(response.status_code,302)
         self.assertEqual(card.messages.first().content,"random")
         self.assertEqual(card.result["api"]["match_mode"],"random")

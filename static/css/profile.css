@@ -1016,6 +1016,44 @@
 .wardrobe-placeholder-art--rose { background: #f1e4df; }
 .wardrobe-placeholder-art--cream { background: #ebe8d9; }
 
+.profile-page .profile-wardrobe-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .65rem;
+  overflow: hidden;
+  padding: .75rem;
+  border: 1px solid rgb(17 86 42 / 10%);
+  border-radius: 1.1rem;
+  background: #fff;
+  color: #25372b;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.profile-page .profile-wardrobe-item:focus-visible {
+  outline: 3px solid #11562a;
+  outline-offset: 3px;
+}
+
+.profile-page .profile-wardrobe-photo,
+.profile-page .profile-wardrobe-no-photo {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: .8rem;
+  background: #e8eee4;
+}
+
+.profile-page .profile-wardrobe-no-photo {
+  display: grid;
+  place-items: center;
+}
+
+.profile-page .profile-wardrobe-item h4,
+.profile-page .profile-wardrobe-item p { margin: 0; }
+.profile-page .profile-wardrobe-empty { grid-column: 1 / -1; }
+
 .profile-button:disabled {
   cursor: not-allowed;
   opacity: .65;

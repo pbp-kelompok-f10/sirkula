@@ -1,7 +1,5 @@
 from django import forms
 
-from .demo_data import DEMO_RECOMMENDATIONS
-
 
 class MixAndMatchPromptForm(forms.Form):
     prompt = forms.CharField(max_length=500, strip=True, error_messages={
@@ -9,7 +7,7 @@ class MixAndMatchPromptForm(forms.Form):
         "max_length": "Kebutuhan outfit maksimal 500 karakter.",
     })
     request_key = forms.UUIDField(widget=forms.HiddenInput)
-    recommendation = forms.ChoiceField(required=False, choices=[("", ""), *((entry["id"], entry["title"]) for entry in DEMO_RECOMMENDATIONS)])
+    recommendation = forms.ChoiceField(required=False, choices=[("", ""), ("best", "Terbaik"), ("random", "Acak")])
 
 
 class ChatMessageForm(forms.Form):

@@ -45,7 +45,7 @@
                 </div>
                 <label for="chat-prompt" class="sr-only">Pesan untuk SirkulaAI</label>
                 <div class="mix-input-wrap">
-                    <input id="chat-prompt" name="prompt" type="text" required maxlength="500" placeholder="Placeholder"
+                    <input id="chat-prompt" name="prompt" type="text" required maxlength="500" placeholder="Ketik best atau acak untuk paduan berikutnya"
                         value="{{ chat_form.prompt.value|default_if_none:'' }}" aria-describedby="chat-errors chat-demo-help"
                         {% if chat_form.prompt.errors %}aria-invalid="true"{% endif %}>
                     <button type="submit" aria-label="Kirim pesan">

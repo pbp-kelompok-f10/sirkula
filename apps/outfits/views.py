@@ -9,7 +9,6 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 
-from .demo_data import DEMO_RECOMMENDATIONS
 from .forms import ChatMessageForm, MixAndMatchPromptForm
 from .models import Conversation
 from .api_client import WardrobeAPIError

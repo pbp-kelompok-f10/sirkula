@@ -13,6 +13,7 @@ urlpatterns = [
 
     # profil
     path("me/", views.my_profile, name="me"),
+    path("wardrobe/add/", views.add_wardrobe_item, name="add_wardrobe_item"),
     path("u/<str:username>/", views.profile_detail, name="profile"),
 
     # pengaturan

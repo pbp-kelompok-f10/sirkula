@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev:css": "tailwindcss -i ./static/css/input.css -o ./static/css/app.css --watch",
-    "build:css": "tailwindcss -i ./static/css/input.css -o ./static/css/app.css --minify",
+    "build:css": "tailwindcss -i ./static/css/input.css -o ./static/css/app.css --minify && npm run build:ui",
+    "build:ui": "pnpm --dir ui/static_src run build",
     "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/app.css --watch"
   },
   "devDependencies": {
