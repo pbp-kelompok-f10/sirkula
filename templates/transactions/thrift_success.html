@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency %}
+
+{% block title %}Checkout Selesai | Sirkula{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="checkout-page">
+  <section class="checkout-container">
+
+    <div class="dummy-payment-card success-card">
+      <div class="success-icon" aria-hidden="true">✓</div>
+      
+      <h1>Pesanan Berhasil Dibuat!</h1>
+      <p>Pesanan kamu sedang menunggu konfirmasi dari penjual.</p>
+
+      <div class="payment-total">
+        Total pesanan:
+        <strong>Rp {{ order.total|rupiah }}</strong>
+      </div>
+
+      <a href="{% url 'core:home' %}" class="primary-button success-home">
+        Kembali ke Home
+      </a>
+    </div>
+
+  </section>
+</main>
+{% endblock %}

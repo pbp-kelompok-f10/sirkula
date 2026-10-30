@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} | Sirkula{% endblock %}
+
+{% block content %}
+<main class="min-h-screen bg-[#f7f9ec] px-6 py-10">
+    <section class="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
+        <h1 class="text-3xl font-bold text-primary">{{ page_title }}</h1>
+        <form method="post" enctype="multipart/form-data" class="mt-8 space-y-5">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <h2 class="text-xl font-bold text-primary">Galeri Foto</h2>
+            {{ image_formset.management_form }}
+            {% for image_form in image_formset %}
+                <div class="rounded-xl border border-neutral-30 p-4">
+                    {{ image_form.as_p }}
+                </div>
+            {% endfor %}
+            <button type="submit" class="rounded-xl bg-primary px-6 py-3 font-semibold text-white">
+                Simpan Produk
+            </button>
+        </form>
+    </section>
+</main>
+{% endblock %}

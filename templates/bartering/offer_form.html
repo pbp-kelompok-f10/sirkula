@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ajukan Barter | Sirkula{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/barter-checkout.css' %}">
+<link rel="stylesheet" href="{% static 'css/barter-offers.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="barter-page">
+    <section class="barter-container">
+        <div class="barter-card offer-form-card">
+            <header>
+                <h1>Ajukan Tawaran Barter</h1>
+                <p>Pilih barang milikmu untuk ditawarkan.</p>
+            </header>
+
+            <form method="post" class="offer-form">
+                {% csrf_token %}
+                <p class="offer-target">
+                    Kamu ingin menukar dengan:
+                    <strong>{{ requested_product.name }}</strong>
+                </p>
+
+                <label for="offered_product">Barang yang ditawarkan</label>
+                <select id="offered_product" name="offered_product" required>
+                    <option value="">Pilih barang</option>
+                    {% for product in offered_products %}
+                        <option value="{{ product.pk }}">{{ product.name }}</option>
+                    {% empty %}
+                        <option value="">Kamu belum memiliki barang barter</option>
+                    {% endfor %}
+                </select>
+
+                <label for="message">Pesan</label>
+                <textarea id="message" name="message" rows="4" placeholder="Tulis pesan untuk pemilik barang..."></textarea>
+
+                <button type="submit" class="barter-button">Kirim Tawaran</button>
+            </form>
+        </div>
+    </section>
+</main>
+{% endblock %}

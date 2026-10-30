@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency %}
+
+{% block title %}Checkout Thrift | Sirkula{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/checkout.css' %}">{% endblock %}
+
+{% block content %}
+<main class="checkout-page">
+  <section class="checkout-container">
+    <div class="checkout-steps"><div class="step active"><span>1</span><strong>Pembayaran</strong></div><div class="step-line"></div><div class="step"><span>2</span><strong>Selesai</strong></div></div>
+    <form method="post" class="checkout-layout">
+      {% csrf_token %}
+      <div class="checkout-form-card">
+        <h1>Informasi Pribadi</h1>
+        <div class="form-group"><label for="address">Alamat</label><input id="address" name="address" placeholder="Jl. Istana Negara" required></div>
+        <div class="form-group"><label for="phone_number">Nomor Handphone</label><input id="phone_number" name="phone_number" placeholder="+62 8000 0000" required></div>
+        <h2>Pengiriman</h2>
+        <div class="shipping-options">
+          <label class="shipping-option"><input type="radio" name="shipping_method" value="FAST"><span><b>Cepat</b><strong>Rp 10.000</strong><small>Sampai dalam: 1 Jam</small></span></label>
+          <label class="shipping-option"><input type="radio" name="shipping_method" value="REGULAR" checked><span><b>Reguler</b><strong>Rp 2.500</strong><small>Sampai dalam: 1 Hari</small></span></label>
+          <label class="shipping-option"><input type="radio" name="shipping_method" value="ECONOMY"><span><b>Hemat</b><strong>Rp 0</strong><small>Sampai dalam: 3 Hari</small></span></label>
+        </div>
+        <h2>Metode Pembelian</h2>
+        <div class="purchase-methods">
+          <label class="purchase-method"><input type="radio" name="purchase_method" value="COD" checked required><span><strong>COD</strong><small>Bayar saat barang diterima</small></span></label>
+          <label class="purchase-method"><input type="radio" name="purchase_method" value="PICKUP"><span><strong>Pickup</strong><small>Ambil langsung di lokasi penjual</small></span></label>
+        </div>
+        <p class="checkout-information">Pesanan akan menunggu konfirmasi dari penjual.</p>
+        <div class="total-section"><h2>Total Pembayaran</h2><div class="price-row"><span>Harga Produk</span><span>Rp {{ total_price|rupiah }}</span></div><div class="price-row"><span>Biaya Admin</span><span>Rp {{ admin_fee|rupiah }}</span></div><div class="price-row"><span>Biaya Pengiriman</span><span>Rp {{ shipping_cost|rupiah }}</span></div><div class="price-row total"><span>Total</span><strong>Rp {{ checkout_total|rupiah }}</strong></div></div>
+        <button type="submit" class="primary-button">Konfirmasi Pesanan</button>
+      </div>
+      <aside class="payment-preview-card"><h2>Ringkasan Produk</h2>{% for item in items %}<div class="checkout-product">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}">{% else %}<div class="product-placeholder">Sirkula</div>{% endif %}<div><strong>{{ item.name }}</strong><small>{{ item.seller.username }}</small><span>Rp {{ item.price|rupiah }}</span></div></div>{% endfor %}<div class="secure-note">Pesanan akan diproses setelah penjual mengonfirmasi.</div></aside>
+    </form>
+  </section>
+</main>
+{% endblock %}

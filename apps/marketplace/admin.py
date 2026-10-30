@@ -1,32 +1,45 @@
 from django.contrib import admin
 
-from .models import Listing, PredefinedLocation, Store
+from .models import Listing, PredefinedLocation, Product, ProductImage, Store
+
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 3
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "listing_type",
+        "price",
+        "seller",
+        "is_available",
+        "created_at",
+    )
+    list_filter = ("listing_type", "is_available", "created_at")
+    search_fields = ("name", "seller__username")
+    inlines = (ProductImageInline,)
+    ordering = ("-created_at",)
 
 
 @admin.register(PredefinedLocation)
 class PredefinedLocationAdmin(admin.ModelAdmin):
-    list_display = ("name", "region_type", "latitude", "longitude", "is_active")
+    list_display = ("name", "region_type", "is_active", "sort_order")
     list_filter = ("region_type", "is_active")
-    list_editable = ("is_active",)
-    search_fields = ("name", "address_label")
-    prepopulated_fields = {"slug": ("name",)}
+    search_fields = ("name", "address_label", "slug")
 
 
 @admin.register(Store)
 class StoreAdmin(admin.ModelAdmin):
-    list_display = ("name", "address", "latitude", "longitude", "is_active")
+    list_display = ("name", "owner", "address", "is_active")
     list_filter = ("is_active",)
-    list_editable = ("is_active",)
-    search_fields = ("name", "address", "description")
-    prepopulated_fields = {"slug": ("name",)}
-    raw_id_fields = ("owner",)
+    search_fields = ("name", "address", "slug")
 
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ("title", "store", "listing_type", "price", "is_available")
-    list_filter = ("listing_type", "is_available", "store")
-    list_editable = ("is_available",)
-    search_fields = ("title", "description", "store__name")
-    prepopulated_fields = {"slug": ("title",)}
-    raw_id_fields = ("seller",)
+    list_display = ("title", "listing_type", "store", "seller", "price", "is_available")
+    list_filter = ("listing_type", "is_available")
+    search_fields = ("title", "slug", "store__name")

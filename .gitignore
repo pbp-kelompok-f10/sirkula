@@ -85,8 +85,13 @@ target/
 __pycache__/
 local_settings.py
 
+.codex/
 .env
 db.sqlite3
+db.sqlite3.backup
+Syarat.pdf
+Barter.zip
+Thrift.zip
 
 # Node modules
 node_modules
