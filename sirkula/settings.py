@@ -82,6 +82,9 @@ NPM_BIN_PATH = os.getenv('NPM_BIN_PATH', "npm")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Serve collected static assets from the application image in production.
+    # This keeps /static/ working on PWS without an ephemeral filesystem mapping.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -162,12 +165,21 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 # Media files (upload produk shop)
 MEDIA_URL = '/media/'
