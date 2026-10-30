@@ -1,0 +1,11 @@
+{% load static %}
+{% if image.kind == 'unavailable' %}
+<span class="{{ image_class }}" role="img" aria-label="{{ image_title }} — foto tidak tersedia">Foto tidak tersedia</span>
+{% elif image.kind == 'url' %}
+<img class="{{ image_class }}" src="{{ image.url }}" alt="{{ image_title }}" decoding="async">
+{% else %}
+<svg class="{{ image_class }}" viewBox="{{ image.viewbox }}" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="{{ image_id }}-image-title">
+    <title id="{{ image_id }}-image-title">{{ image_title }}</title>
+    <image href="{% static image.source %}" width="{{ image.width }}" height="{{ image.height }}"/>
+</svg>
+{% endif %}

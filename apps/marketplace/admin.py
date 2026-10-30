@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Listing, PredefinedLocation, Product, ProductImage, Store
+from .models import Listing, PredefinedLocation, Product, ProductImage, SavedPlace, Store
 
 
 class ProductImageInline(admin.TabularInline):

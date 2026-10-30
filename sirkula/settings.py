@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 import os
 from dotenv import load_dotenv
 
@@ -18,6 +19,18 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Private photos are stored outside the checkout and served through authorized views.
+private_root = os.getenv("WARDROBE_PRIVATE_ROOT")
+if not private_root:
+    raise ImproperlyConfigured("WARDROBE_PRIVATE_ROOT harus diatur untuk foto privat.")
+
+WARDROBE_PRIVATE_ROOT = Path(private_root).expanduser()
+if not WARDROBE_PRIVATE_ROOT.is_absolute():
+    raise ImproperlyConfigured("WARDROBE_PRIVATE_ROOT harus berupa path absolut.")
+WARDROBE_PRIVATE_ROOT = WARDROBE_PRIVATE_ROOT.resolve()
+if WARDROBE_PRIVATE_ROOT.is_relative_to(BASE_DIR.resolve()):
+    raise ImproperlyConfigured("Penyimpanan foto privat harus berada di luar repository.")
 
 
 # Quick-start development settings - unsuitable for production
@@ -45,16 +58,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'main.apps.MainConfig',  # Keep legacy migration history.
+    'apps.wardrobe.apps.WardrobeConfig',
+    'apps.outfits.apps.OutfitsConfig',
     "tailwind",
     "ui",
 
     # Feature apps
     "apps.core",
     "apps.accounts",
-    "apps.wardrobe",
     "apps.marketplace",
     "apps.bartering",
-    "apps.outfits",
     "apps.transactions",
 ]
 
@@ -167,6 +181,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# Server-only Sirkula v2 API. Never expose these values in templates or JSON.
+WARDROBE_API_URL = os.getenv("WARDROBE_API_URL", "")
+WARDROBE_SECRET = os.getenv("WARDROBE_SECRET", "")
+OUTFITS_PROVIDER = os.getenv("OUTFITS_PROVIDER", "api")
+OUTFITS_API_TIMEOUT_SECONDS = 25
+# Preview generation authorized by the user: up to 20 attempts per user.
+OUTFITS_PREVIEW_ENABLED = os.getenv("OUTFITS_PREVIEW_ENABLED", "true").lower() == "true"
+OUTFITS_PREVIEW_MAX_REQUESTS = min(20, max(0, int(os.getenv("OUTFITS_PREVIEW_MAX_REQUESTS", "20"))))
+
 # Discovery Map providers
 NOMINATIM_BASE_URL = os.getenv("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org")
 IP_GEOLOCATION_URL = os.getenv("IP_GEOLOCATION_URL", "https://ipapi.co/{ip}/json/")
@@ -174,3 +198,8 @@ LOCATION_USER_AGENT = os.getenv("LOCATION_USER_AGENT", "Sirkula/1.0 (development
 LOCATION_REQUEST_TIMEOUT = float(os.getenv("LOCATION_REQUEST_TIMEOUT", "5"))
 LOCATION_CACHE_SECONDS = int(os.getenv("LOCATION_CACHE_SECONDS", "86400"))
 MARKETPLACE_DEFAULT_CENTER = (-6.186486, 106.834091)
+
+# Partner authentication routes use the same Django sessions/user model.
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "accounts:me"
+LOGOUT_REDIRECT_URL = "core:home"
