@@ -138,6 +138,14 @@ class SavedPlaceApiTests(TestCase):
         self.assertEqual(result_ids, [self.place.pk])
         self.assertNotIn(self.other_place.pk, result_ids)
 
+    def test_discovery_map_exposes_saved_place_controls_to_authenticated_user(self):
+        response = self.client.get(reverse("marketplace:discovery_map"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("marketplace:api_saved_places"))
+        self.assertContains(response, 'id="saved-place-dialog"')
+        self.assertContains(response, 'id="saved-place-form"')
+
     def test_create_assigns_current_user(self):
         response = self.client.post(
             reverse("marketplace:api_saved_places"),

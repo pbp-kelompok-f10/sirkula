@@ -19,6 +19,9 @@
     data-locations-url="{% url 'marketplace:api_locations' %}"
     data-geocode-url="{% url 'marketplace:api_geocode' %}"
     data-reverse-geocode-url="{% url 'marketplace:api_reverse_geocode' %}"
+    data-saved-places-url="{% url 'marketplace:api_saved_places' %}"
+    data-saved-place-url-template="{% url 'marketplace:api_saved_place_detail' 0 %}"
+    data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
     data-initial-latitude="{{ map_center.latitude }}"
     data-initial-longitude="{{ map_center.longitude }}"
     data-initial-radius="{{ radius_km }}"
@@ -48,6 +51,18 @@
                         <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
                         <circle cx="12" cy="12" r="8"></circle>
                     </svg>
+                </button>
+                <button
+                    id="open-saved-place-dialog"
+                    class="map-save-place-button"
+                    type="button"
+                    {% if not user.is_authenticated %}disabled title="Login diperlukan untuk menyimpan tempat"{% endif %}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 21s7-6.1 7-12A7 7 0 1 0 5 9c0 5.9 7 12 7 12Z"></path>
+                        <circle cx="12" cy="9" r="2.5"></circle>
+                    </svg>
+                    Simpan titik ini
                 </button>
             </div>
         </div>
@@ -99,6 +114,23 @@
             <p id="discovery-status" class="discovery-status" role="status" aria-live="polite">
                 Menampilkan hasil di sekitar {{ selected_location.name|default:"Jakarta Pusat" }}.
             </p>
+
+            <section class="saved-places-panel" aria-labelledby="saved-places-heading">
+                <div class="saved-places-heading">
+                    <div>
+                        <h3 id="saved-places-heading">Tempat tersimpan</h3>
+                        <p>Pin pribadi agar tempat favoritmu mudah ditemukan kembali.</p>
+                    </div>
+                    <span id="saved-place-count" class="result-count">0 tempat</span>
+                </div>
+                <div id="saved-place-list" class="saved-place-list">
+                    {% if user.is_authenticated %}
+                    <div class="discovery-empty-state">Memuat tempat tersimpan…</div>
+                    {% else %}
+                    <div class="discovery-empty-state">Login diperlukan untuk menyimpan dan mengelola pin pribadi.</div>
+                    {% endif %}
+                </div>
+            </section>
 
             <div class="location-layout">
                 <div id="location-list" class="location-list" aria-label="Pilihan wilayah JABODETABEK">
@@ -192,6 +224,44 @@
             </section>
         </div>
     </section>
+
+    {% if user.is_authenticated %}
+    <dialog id="saved-place-dialog" class="saved-place-dialog" aria-labelledby="saved-place-dialog-title">
+        <form id="saved-place-form" class="saved-place-form">
+            {% csrf_token %}
+            <input id="saved-place-id" type="hidden">
+            <input id="saved-place-latitude" name="latitude" type="hidden">
+            <input id="saved-place-longitude" name="longitude" type="hidden">
+
+            <div class="saved-place-dialog-heading">
+                <div>
+                    <h2 id="saved-place-dialog-title">Simpan tempat</h2>
+                    <p>Tambahkan nama dan catatan untuk titik yang dipilih.</p>
+                </div>
+                <button class="saved-place-close" type="button" data-close-saved-place-dialog aria-label="Tutup">&times;</button>
+            </div>
+
+            <label class="saved-place-field" for="saved-place-name">
+                <span>Nama tempat</span>
+                <input id="saved-place-name" name="name" type="text" maxlength="120" required>
+            </label>
+            <label class="saved-place-field" for="saved-place-address">
+                <span>Label alamat</span>
+                <input id="saved-place-address" name="address_label" type="text" maxlength="255" required>
+            </label>
+            <label class="saved-place-field" for="saved-place-notes">
+                <span>Catatan <small>(opsional)</small></span>
+                <textarea id="saved-place-notes" name="notes" rows="3"></textarea>
+            </label>
+
+            <p id="saved-place-form-error" class="saved-place-form-error" role="alert" hidden></p>
+            <div class="saved-place-form-actions">
+                <button class="btn btn-outline btn-primary" type="button" data-close-saved-place-dialog>Batal</button>
+                <button id="saved-place-submit" class="btn btn-primary" type="submit">Simpan tempat</button>
+            </div>
+        </form>
+    </dialog>
+    {% endif %}
 </div>
 {% endblock content %}
 
