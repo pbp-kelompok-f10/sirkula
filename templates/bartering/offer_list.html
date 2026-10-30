@@ -12,6 +12,7 @@
 <main class="barter-page">
     <section class="barter-container">
         <h1 class="offer-list-title">{{ page_title }}</h1>
+        <p><a href="{% url 'bartering:transactions' %}">Lihat transaksi barter</a></p>
 
         {% for offer in offers %}
             <article class="offer-card">

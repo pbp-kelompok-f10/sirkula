@@ -251,3 +251,197 @@
     max-width: 90%;
   }
 }
+
+/* UI reference alignment */
+:root {
+  --ui-green: #0d4d2d;
+  --ui-green-soft: #3ca76e;
+  --ui-cream: #fbfcf1;
+  --ui-lime: #f4fbc5;
+  --ui-muted: #969ca8;
+}
+
+.barter-page {
+  padding: 54px 24px 88px;
+  background: var(--ui-cream);
+}
+
+.barter-container {
+  width: min(1310px, 100%);
+}
+
+.barter-steps {
+  gap: 18px;
+  margin: 8px auto 48px;
+}
+
+.barter-steps b {
+  display: inline-flex;
+  min-width: 92px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ui-muted);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.barter-steps b::first-letter {
+  color: inherit;
+}
+
+.barter-steps b span {
+  display: inline-grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ui-muted);
+  color: #fff;
+  font-size: 22px;
+}
+
+.barter-steps b.active span,
+.barter-steps b.done span {
+  background: var(--ui-green-soft);
+}
+
+.barter-steps b.active,
+.barter-steps b.done {
+  color: var(--ui-green-soft);
+}
+
+.barter-steps i {
+  width: min(116px, 12vw);
+  background: #a2a6ae;
+}
+
+.barter-card {
+  border: 1px solid #e9eadf;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgb(13 77 45 / 10%);
+}
+
+.barter-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 82px;
+  padding: 18px 30px;
+  text-align: left;
+  background: var(--ui-green);
+}
+
+.barter-card > header h1 {
+  font-size: 26px;
+}
+
+.chat-header-badge {
+  border: 1px solid #fff;
+  border-radius: 999px;
+  padding: 8px 18px;
+  color: #fff;
+  font-size: 13px;
+}
+
+.chat-body {
+  min-height: 520px;
+  padding: 40px 36px;
+  background: #fff;
+}
+
+.message {
+  border-radius: 0 15px 15px 15px;
+  line-height: 1.5;
+}
+
+.message.sent {
+  border-radius: 15px 0 15px 15px;
+  background: var(--ui-lime);
+}
+
+.product-preview {
+  border: 1px solid #edf0ca;
+  border-radius: 0 0 14px 14px;
+  background: #fffef0;
+}
+
+.barter-button {
+  min-height: 54px;
+  margin: 0 28px 28px;
+  width: calc(100% - 56px);
+  border-radius: 10px;
+  background: var(--ui-green);
+}
+
+.barter-button:hover {
+  background: #17683d;
+}
+
+.mou-content {
+  padding: 42px 48px 46px;
+  background: #fff;
+}
+
+.mou-content h2,
+.mou-content h3 {
+  color: #161b18;
+}
+
+.agree-check {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--ui-lime);
+}
+
+.payment-grid {
+  gap: 30px;
+}
+
+.personal-card,
+.payment-card {
+  border-radius: 20px;
+  padding: 34px;
+}
+
+.personal-card input {
+  border-color: #d9ddd7;
+  background: #f5f6f5;
+}
+
+.dummy-qr {
+  border: 14px solid #f1f2ee;
+  border-radius: 8px;
+  background: repeating-linear-gradient(45deg, #183c28 0 8px, #fff 8px 16px);
+}
+
+@media (max-width: 800px) {
+  .barter-page {
+    padding-inline: 14px;
+  }
+
+  .barter-steps {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+
+  .barter-steps b {
+    min-width: 68px;
+    font-size: 13px;
+  }
+
+  .barter-steps b span {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .barter-steps i {
+    width: 30px;
+  }
+
+  .mou-content {
+    padding: 28px 22px;
+  }
+}

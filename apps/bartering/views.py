@@ -63,6 +63,9 @@ def offer_create(request, product_id):
         listing_type=Product.ListingType.BARTER,
         is_available=True,
     ).exclude(pk=requested_product.pk)
+    if requested_product.seller_id == request.user.id:
+        messages.error(request, "Kamu tidak dapat menawar produk milik sendiri.")
+        return redirect("marketplace:shop")
     if request.method == "POST":
         offered_product = get_object_or_404(
             offered_products,
@@ -115,6 +118,39 @@ def outgoing_offers(request):
         "offers": offers,
         "page_title": "Tawaran Barter Keluar",
         "incoming": False,
+    })
+
+
+@login_required
+def barter_transactions(request):
+    transactions = BarterTransaction.objects.filter(
+        Q(proposer=request.user) | Q(recipient=request.user),
+    ).select_related(
+        "offer",
+        "offer__requested_product",
+        "offer__offered_product",
+        "proposer",
+        "recipient",
+    )
+    return render(request, "bartering/transaction_list.html", {
+        "transactions": transactions,
+    })
+
+
+@login_required
+def barter_transaction_detail(request, transaction_id):
+    transaction = get_object_or_404(
+        BarterTransaction.objects.select_related(
+            "offer",
+            "offer__requested_product",
+            "offer__offered_product",
+            "proposer",
+            "recipient",
+        ).filter(Q(proposer=request.user) | Q(recipient=request.user)),
+        pk=transaction_id,
+    )
+    return render(request, "bartering/transaction_detail.html", {
+        "transaction": transaction,
     })
 
 
