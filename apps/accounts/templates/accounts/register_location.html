@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lengkapi Profil | Sirkula{% endblock title %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock extra_head %}
+
+{% block content %}
+<main class="register-page">
+    <aside class="register-art" aria-hidden="true">
+        <div class="register-art-shade"></div>
+        <svg class="register-art-logo" viewBox="0 0 560 420" role="presentation" aria-hidden="true">
+            <path d="M127 164C109 142 103 120 119 100C150 60 231 71 267 125C282 146 287 168 281 189C273 215 257 233 221 244C184 255 160 279 155 314C148 364 192 391 234 390C286 388 328 369 352 337" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M432 255C451 277 457 300 440 320C410 360 331 350 294 294C279 272 273 250 280 229C287 203 304 186 340 175C377 164 401 140 406 105C413 55 369 28 327 29C274 30 233 49 208 81" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M178 166L219 184L197 220" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M381 253L340 236L362 199" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </aside>
+
+    <section class="register-panel" aria-labelledby="register-title">
+        <div class="register-heading">
+            <h1 id="register-title">Di mana kamu tinggal?</h1>
+            <p>Masukkan detail lokasi agar profilmu lebih mudah ditemukan.</p>
+        </div>
+
+        <form method="post" action="{% url 'accounts:register_location' %}" class="register-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-error register-errors" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="register-fields">
+                {% for field in form %}
+                    <div class="form-control sirkula-field">
+                        <label class="label" for="{{ field.id_for_label }}">
+                            <span class="label-text">{{ field.label }}</span>
+                        </label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <span class="label-error" role="alert">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="register-actions">
+                <button type="submit" class="btn btn-primary register-submit">
+                    Buat Akun
+                </button>
+                <p class="register-login-prompt">
+                    Sudah punya akun?
+                    <a href="{% url 'accounts:login' %}">Masuk</a>
+                </p>
+            </div>
+        </form>
+    </section>
+</main>
+{% endblock content %}
