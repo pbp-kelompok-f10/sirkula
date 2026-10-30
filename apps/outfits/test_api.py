@@ -19,7 +19,7 @@ from django.urls import reverse
 from apps.wardrobe.models import WardrobeItem, WardrobeItemImage
 from apps.wardrobe.tests.test_private_photos import png_upload
 from .api_client import WardrobeAPIClient, WardrobeAPIError, signed_headers
-from .models import Conversation, Message, WardrobeAPIAccount, WardrobeAPIMapping, OutfitPreviewAttempt, OutfitPreviewBudget
+from .models import Conversation, Message, WardrobeAPIAccount, WardrobeAPIMapping, OutfitPreviewAttempt, OutfitUserPreviewBudget
 from .preview_service import PREVIEW_LABEL
 from .sync import canonical_photo, category_type
 
@@ -134,7 +134,7 @@ class MemoryAPI:
 
     def preview(self, owner, top, bottom):
         self.preview_calls+=1
-        data={"preview_id":"a"*64,"preview_status":"queued","baju_id":top,"celana_id":bottom,"preview_label":PREVIEW_LABEL}
+        data={"preview_id":hashlib.sha256(f"{owner}:{top}:{bottom}".encode()).hexdigest(),"preview_status":"queued","baju_id":top,"celana_id":bottom,"preview_label":PREVIEW_LABEL}
         self.jobs[(owner,top,bottom)]=data
         if self.preview_lost:
             self.preview_lost=False
@@ -341,9 +341,9 @@ class APIIntegrationTests(TestCase):
         self.assertEqual(response.status_code,403)
         self.assertEqual(self.remote.preview_calls,0)
         self.assertFalse(OutfitPreviewAttempt.objects.exists())
-        self.assertFalse(OutfitPreviewBudget.objects.exists())
+        self.assertFalse(OutfitUserPreviewBudget.objects.exists())
         response=self.client.get(self.preview_url(conversation))
-        self.assertEqual(response.json()["preview_status"],"not_generated")
+        self.assertEqual(response.json()["preview_status"],"disabled")
         self.assertEqual(self.remote.preview_calls,0)
 
     @override_settings(OUTFITS_PREVIEW_ENABLED=True,OUTFITS_PREVIEW_MAX_REQUESTS=1)
@@ -353,19 +353,20 @@ class APIIntegrationTests(TestCase):
         self.assertEqual(self.client.post(url).status_code,200)
         self.assertEqual(self.client.post(url).status_code,200)
         self.assertEqual(self.remote.preview_calls,1)
-        self.assertEqual(OutfitPreviewBudget.objects.get().attempts,1)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get().attempts,1)
         self.assertEqual(self.client.get(url).json()["preview_status"],"queued")
         self.assertEqual(self.remote.preview_calls,1)
 
     @override_settings(OUTFITS_PREVIEW_ENABLED=True,OUTFITS_PREVIEW_MAX_REQUESTS=1)
     def test_lost_preview_enqueue_response_only_checks_existing_job(self):
-        _,conversation=self.start()
         self.remote.preview_lost=True
+        response,conversation=self.start()
+        self.assertEqual(response.status_code,302)
         url=self.preview_url(conversation)
-        self.assertEqual(self.client.post(url).status_code,503)
+        self.assertEqual(self.client.get(url).status_code,200)
         self.assertEqual(self.client.post(url).status_code,200)
         self.assertEqual(self.remote.preview_calls,1)
-        self.assertEqual(OutfitPreviewBudget.objects.get().attempts,1)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get().attempts,1)
 
     @override_settings(OUTFITS_PREVIEW_ENABLED=True,OUTFITS_PREVIEW_MAX_REQUESTS=1)
     def test_ready_preview_is_proxied_privately_and_stale_pair_is_denied(self):
@@ -419,7 +420,7 @@ class APIIntegrationTests(TestCase):
         _, second = self.start()
         self.assertEqual(self.client.post(self.preview_url(second)).status_code, 429)
         self.assertEqual(self.remote.preview_calls, 1)
-        self.assertEqual(OutfitPreviewBudget.objects.get().attempts, 1)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get().attempts, 1)
 
     def test_valid_owned_ids_with_nonfinite_score_or_swapped_categories_are_rejected(self):
         _, first = self.start()
@@ -431,3 +432,154 @@ class APIIntegrationTests(TestCase):
             self.assertEqual(response.status_code, 503)
             self.assertIsNone(conversation)
         self.assertEqual(Conversation.objects.count(), 1)
+
+
+    @override_settings(OUTFITS_PREVIEW_ENABLED=True, OUTFITS_PREVIEW_MAX_REQUESTS=20)
+    def test_new_match_starts_preview_once_and_refresh_or_replay_only_reads(self):
+        key = uuid4()
+        response, conversation = self.start(key=key)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.remote.preview_calls, 1)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get(owner=self.owner).attempts, 1)
+        self.assertEqual(conversation.result["api"]["preview_start_status"], "queued")
+        for _ in range(3):
+            self.client.get(self.url(conversation))
+            self.client.get(self.preview_url(conversation))
+        self.start(key=key)
+        self.assertEqual(self.remote.preview_calls, 1)
+        self.assertEqual(conversation.messages.count(), 2)
+
+    @override_settings(OUTFITS_PREVIEW_ENABLED=True, OUTFITS_PREVIEW_MAX_REQUESTS=20)
+    def test_twenty_attempt_limit_is_per_user_not_global(self):
+        OutfitUserPreviewBudget.objects.create(owner=self.owner, attempts=20)
+        _, conversation = self.start()
+        self.assertEqual(conversation.result["api"]["preview_start_status"], "limit_reached")
+        self.assertEqual(self.remote.preview_calls, 0)
+        self.item(self.other, "Celana pengguna lain", "Celana")
+        self.client.force_login(self.other)
+        response = self.client.post(self.index, {"prompt": "best", "request_key": uuid4()})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.remote.preview_calls, 1)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get(owner=self.owner).attempts, 20)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get(owner=self.other).attempts, 1)
+
+    @override_settings(OUTFITS_PREVIEW_ENABLED=True, OUTFITS_PREVIEW_MAX_REQUESTS=20)
+    def test_twentieth_attempt_is_allowed_and_twenty_first_is_rejected(self):
+        OutfitUserPreviewBudget.objects.create(owner=self.owner, attempts=19)
+        _, first = self.start()
+        self.assertEqual(self.remote.preview_calls, 1)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get(owner=self.owner).attempts, 20)
+        self.top.delete()
+        self.item(self.owner, "Baju berikutnya", "Kemeja")
+        _, second = self.start()
+        self.assertEqual(second.result["api"]["preview_start_status"], "limit_reached")
+        self.assertEqual(self.remote.preview_calls, 1)
+
+    @override_settings(OUTFITS_PREVIEW_ENABLED=True, OUTFITS_PREVIEW_MAX_REQUESTS=20)
+    def test_generation_timeout_never_auto_retries_on_refresh_or_new_same_pair(self):
+        with patch.object(self.remote, "preview", side_effect=WardrobeAPIError(code="timeout")) as generate:
+            _, conversation = self.start()
+            self.client.get(self.url(conversation))
+            self.client.get(self.preview_url(conversation))
+            self.start()
+        self.assertEqual(generate.call_count, 1)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get(owner=self.owner).attempts, 1)
+        self.assertEqual(self.client.get(self.preview_url(conversation)).json()["preview_status"], "failed_or_unknown")
+
+    @override_settings(OUTFITS_PREVIEW_ENABLED=True, OUTFITS_PREVIEW_MAX_REQUESTS=20)
+    def test_status_reads_handle_queued_running_ready_stale_and_failed_without_generate(self):
+        _, conversation = self.start()
+        job = next(iter(self.remote.jobs.values()))
+        for state in ("queued", "running", "ready", "stale", "failed_or_unknown"):
+            job["preview_status"] = state
+            response = self.client.get(self.preview_url(conversation))
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["preview_status"], state)
+        self.assertEqual(self.remote.preview_calls, 1)
+
+
+@override_settings(WARDROBE_API_URL="https://wardrobe.example", WARDROBE_SECRET="test-only-secret-" * 3, OUTFITS_API_TIMEOUT_SECONDS=1)
+class APITransportContractTests(SimpleTestCase):
+    def test_catalog_validates_shape_status_ids_revision_and_uniqueness(self):
+        client = WardrobeAPIClient()
+        row = {"item_id": "top-1", "category": "baju", "revision": "revision-1", "status": "ready"}
+        with patch.object(client, "request", return_value={"results": [row]}):
+            self.assertEqual(client.catalog("owner"), {"top-1": row})
+        for data in ({"results": None}, {"results": [{}]}, {"results": [row, row]}, {"results": [{**row, "revision": None}]}):
+            with patch.object(client, "request", return_value=data), self.assertRaises(WardrobeAPIError):
+                client.catalog("owner")
+
+    def test_upload_replace_delete_and_image_routes_follow_the_contract(self):
+        client = WardrobeAPIClient()
+        with patch.object(client, "request", return_value={"item_id": "top-1", "status": "ready"}) as request:
+            self.assertEqual(client.put("owner", "baju", b"photo"), "top-1")
+            request.assert_called_with("owner", "POST", "/v2/items/baju", image=b"photo")
+            self.assertEqual(client.put("owner", "baju", b"new", "top-1"), "top-1")
+            request.assert_called_with("owner", "PUT", "/v2/items/top-1/baju", image=b"new")
+        with patch.object(client, "request", return_value={"item_id": "wrong", "status": "ready"}), self.assertRaises(WardrobeAPIError):
+            client.put("owner", "baju", b"photo", "top-1")
+        with patch.object(client, "request", return_value=None) as request:
+            client.delete("owner", "top-1")
+            request.assert_called_with("owner", "DELETE", "/v2/items/top-1", missing_ok=True)
+            client.item_image("owner", "top-1")
+            request.assert_called_with("owner", "GET", "/v2/items/top-1/image", binary=True)
+            client.preview_status("owner", "a" * 64)
+            request.assert_called_with("owner", "GET", "/v2/previews/" + "a" * 64, missing_ok=True)
+            client.preview_image("owner", "a" * 64)
+            request.assert_called_with("owner", "GET", "/v2/previews/" + "a" * 64 + "/image", binary=True)
+            client.preview("owner", "top-1", "bottom-1")
+            request.assert_called_with("owner", "POST", "/v2/previews", payload={"baju_id": "top-1", "celana_id": "bottom-1"})
+        from .api_client import identifier
+        for value in (None, "../image", "", "x" * 65):
+            with self.assertRaises(WardrobeAPIError): identifier(value)
+        with self.assertRaises(WardrobeAPIError): identifier("not-a-preview", preview=True)
+
+    def test_transport_handles_binary_content_types_no_content_and_missing_items(self):
+        client = WardrobeAPIClient()
+        for path, media in (("/v2/items/top/image", "image/jpeg"), ("/v2/previews/" + "a"*64 + "/image", "image/png")):
+            response = BytesIO(b"image-bytes")
+            response.status = 200
+            response.headers = Headers()
+            response.headers["Content-Type"] = media
+            with patch("apps.outfits.api_client.build_opener") as opener:
+                opener.return_value.open.return_value.__enter__.return_value = response
+                self.assertEqual(client.request("owner", "GET", path, binary=True), b"image-bytes")
+        response = BytesIO(b"not-image")
+        response.status = 200
+        response.headers = Headers()
+        response.headers["Content-Type"] = "text/html"
+        with patch("apps.outfits.api_client.build_opener") as opener:
+            opener.return_value.open.return_value.__enter__.return_value = response
+            with self.assertRaises(WardrobeAPIError): client.item_image("owner", "top")
+        response = BytesIO(b"")
+        response.status = 204
+        with patch("apps.outfits.api_client.build_opener") as opener:
+            opener.return_value.open.return_value.__enter__.return_value = response
+            self.assertIsNone(client.delete("owner", "top"))
+        with patch("apps.outfits.api_client.build_opener") as opener:
+            opener.return_value.open.side_effect = HTTPError("https://wardrobe.example", 404, "missing", {}, None)
+            self.assertIsNone(client.preview_status("owner", "a"*64))
+
+    def test_redirect_handler_never_forwards_signed_requests_to_another_host(self):
+        from .api_client import NoRedirect
+        self.assertIsNone(NoRedirect().redirect_request(None, None, 302, "redirect", {}, "https://external.example"))
+
+
+class PreviewBudgetMigrationTests(TestCase):
+    def test_backfill_preserves_each_owners_consumed_attempts_and_legacy_counter(self):
+        from importlib import import_module
+        from types import SimpleNamespace
+        from django.apps import apps
+        from .models import OutfitPreviewBudget
+        first = get_user_model().objects.create_user(username="budget-migration-one")
+        second = get_user_model().objects.create_user(username="budget-migration-two")
+        for owner, total in ((first, 2), (second, 3)):
+            account = WardrobeAPIAccount.objects.create(owner=owner, endpoint="https://wardrobe.example")
+            for number in range(total):
+                OutfitPreviewAttempt.objects.create(account=account, pair_key=str(number))
+        OutfitPreviewBudget.objects.create(pk=1, attempts=5)
+        migration = import_module("apps.outfits.migrations.0003_outfituserpreviewbudget")
+        migration.preserve_attempt_counts(apps, SimpleNamespace(connection=SimpleNamespace(alias="default")))
+        self.assertEqual(OutfitUserPreviewBudget.objects.get(owner=first).attempts, 2)
+        self.assertEqual(OutfitUserPreviewBudget.objects.get(owner=second).attempts, 3)
+        self.assertEqual(OutfitPreviewBudget.objects.get(pk=1).attempts, 5)

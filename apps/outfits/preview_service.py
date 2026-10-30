@@ -7,7 +7,7 @@ from django.db import transaction
 from django.http import Http404
 
 from .api_client import WardrobeAPIClient, WardrobeAPIError, identifier
-from .models import OutfitPreviewAttempt, OutfitPreviewBudget, WardrobeAPIAccount, WardrobeAPIMapping
+from .models import OutfitPreviewAttempt, OutfitUserPreviewBudget, WardrobeAPIAccount, WardrobeAPIMapping
 from .sync import account_lease, category_type
 
 PREVIEW_LABEL = "Ilustrasi AI; detail pakaian dan ukuran dapat berbeda."
@@ -69,7 +69,8 @@ def _status(user, conversation, client, account, ids, pair_key):
         if not key:
             return {"preview_status": "failed_or_unknown", "preview_label": PREVIEW_LABEL}
     if not key:
-        return {"preview_status": "not_generated", "preview_label": PREVIEW_LABEL}
+        state = conversation.result["api"].get("preview_start_status", "not_generated")
+        return {"preview_status": state, "preview_label": PREVIEW_LABEL}
     data = client.preview_status(account.api_owner, identifier(key, preview=True))
     if data is None:
         return {"preview_status": "stale", "preview_label": PREVIEW_LABEL}
@@ -96,10 +97,10 @@ def enqueue_preview(user, conversation):
         if existing or conversation.result["api"].get("preview_id"):
             return _status(user, conversation, client, account, ids, pair_key)
         with transaction.atomic():
-            budget, _ = OutfitPreviewBudget.objects.get_or_create(pk=1)
-            budget = OutfitPreviewBudget.objects.select_for_update().get(pk=budget.pk)
-            if budget.attempts >= settings.OUTFITS_PREVIEW_MAX_REQUESTS:
-                raise WardrobeAPIError("Batas percobaan preview aplikasi tercapai.", code="preview_limit")
+            budget, _ = OutfitUserPreviewBudget.objects.get_or_create(owner=user)
+            budget = OutfitUserPreviewBudget.objects.select_for_update().get(pk=budget.pk)
+            if budget.attempts >= min(20, settings.OUTFITS_PREVIEW_MAX_REQUESTS):
+                raise WardrobeAPIError("Kuota preview pengguna sudah habis.", code="preview_limit")
             budget.attempts += 1
             budget.save(update_fields=["attempts"])
             attempt = OutfitPreviewAttempt.objects.create(account=account, pair_key=pair_key)
@@ -120,3 +121,23 @@ def read_preview_image(user, conversation):
     if data["preview_status"] != "ready":
         raise Http404("Preview belum tersedia.")
     return client.preview_image(account.api_owner, data["preview_id"])
+
+
+def start_preview_after_match(user, conversation):
+    """Called only for a newly committed API match; replay/GET must never enqueue."""
+    if "api" not in conversation.result:
+        return conversation
+    try:
+        data = enqueue_preview(user, conversation)
+        state = data["preview_status"]
+    except Http404:
+        state = "stale"
+    except WardrobeAPIError as error:
+        state = {"preview_disabled": "disabled", "preview_limit": "limit_reached"}.get(error.code, "failed_or_unknown")
+    result = dict(conversation.result)
+    result["api"] = {**result["api"], "preview_start_status": state}
+    # Another tab may have advanced the conversation while the preview was queued.
+    from .models import Conversation
+    Conversation.objects.filter(pk=conversation.pk, owner=user, version=conversation.version).update(result=result)
+    conversation.result = result
+    return conversation

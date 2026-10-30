@@ -26,6 +26,8 @@ def preview(request, conversation_id):
     conversation = owned_conversation(request, conversation_id)
     try:
         data = enqueue_preview(request.user, conversation) if request.method == "POST" else read_preview_status(request.user, conversation)
+    except Http404:
+        return JsonResponse({"ok": True, "preview_status": "stale", "preview_url": None})
     except WardrobeAPIError as error:
         status = 403 if error.code == "preview_disabled" else 429 if error.code == "preview_limit" else 503
         return JsonResponse({"ok": False, "detail": str(error)}, status=status)

@@ -1,0 +1,12 @@
+[run]
+branch = True
+source = apps,sirkula,main
+omit =
+    */tests/*
+    */test*.py
+    */migrations/*
+
+[report]
+fail_under = 80
+precision = 2
+show_missing = True

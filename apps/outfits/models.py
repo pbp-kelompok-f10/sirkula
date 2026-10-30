@@ -75,7 +75,7 @@ class WardrobeAPIMapping(models.Model):
 
 
 class OutfitPreviewBudget(models.Model):
-    # A single installation-wide counter; increasing the allowance requires host configuration.
+    # Legacy installation-wide counter retained for audit; new attempts use the per-user budget.
     id = models.PositiveSmallIntegerField(primary_key=True, default=1)
     attempts = models.PositiveIntegerField(default=0)
 
@@ -88,3 +88,8 @@ class OutfitPreviewAttempt(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["account", "pair_key"], name="outfits_preview_once_per_pair")]
+
+
+class OutfitUserPreviewBudget(models.Model):
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="outfits_preview_budget")
+    attempts = models.PositiveIntegerField(default=0)

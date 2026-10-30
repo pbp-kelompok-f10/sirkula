@@ -21,18 +21,21 @@ Kontrak sumber yang dibaca: `sirkula-ai-contract/auth.py`, `app.py`, `core.py`, 
 - Transaksi percakapan, versi, dan request key lama tetap dipakai. Gagal API/validasi tidak menambah percakapan/pesan. Retry hasil yang sudah disimpan tidak memanggil API lagi. Sebelum menyimpan, item/foto/versi diperiksa ulang.
 - Jika hanya ada satu kategori pakaian, layanan meminta minimal satu baju dan satu celana; tidak mengarang pasangan.
 
-## Preview berbayar
+## Preview dan kuota per pengguna
 
-Default `OUTFITS_PREVIEW_ENABLED=False` dan `OUTFITS_PREVIEW_MAX_REQUESTS=0`. Tetap nonaktif sampai operator menerima persetujuan batas/kuota. Tidak ada tombol baru atau trigger generate otomatis dari kartu/input/polling.
+Preview telah diizinkan: `OUTFITS_PREVIEW_ENABLED=True` dan `OUTFITS_PREVIEW_MAX_REQUESTS=20`. Backend membatasi maksimal 20 **percobaan** per pengguna, termasuk hasil timeout yang belum pasti. Counter baru `OutfitUserPreviewBudget` mengikuti pengguna Django; namespace API tetap unik per pengguna. Counter global lama dipertahankan untuk audit dan tidak lagi digunakan untuk membatasi request baru.
 
-- GET `/outfits/conversations/<uuid>/preview/`: status saja, tidak enqueue. Jika request enqueue sebelumnya timeout, pencocokan manual (tanpa generate) digunakan untuk mencari job yang mungkin sudah ada.
-- POST endpoint yang sama: hanya setelah login pemilik, CSRF, flag host, dan kuota persisten instalasi mengizinkan. Satu attempt per pasangan/revisi; timeout tetap mengonsumsi attempt. Pemanggilan ulang hanya memeriksa status, bukan POST enqueue baru.
-- GET `.../preview/image/`: proxy privat setelah memeriksa owner, pakaian aktif, versi/foto/revisi pasangan, dan status ready. Tidak menyediakan URL langsung API. Cache private/no-store, Vary Cookie, nosniff dan same-origin.
-- Browser hanya membaca status, polling setiap sekitar 3 detik selama queued/running (maksimal 40 kali); ready mengganti area preview existing dan menampilkan label ilustrasi. Polling dihentikan saat berpindah halaman/mengirim input. Request preview terikat versi percakapan agar gambar pasangan lama tidak tercampur.
+Setelah pencocokan API baru berhasil disimpan, backend memulai preview satu kali. Request key yang diputar ulang, GET halaman, refresh, dan GET status tidak memanggil enqueue baru. Pasangan/revisi yang sudah mempunyai attempt hanya diperiksa statusnya. Tidak ada UI/tombol baru atau layanan tambahan.
+
+- GET `/outfits/conversations/<uuid>/preview/`: status saja. Job dari request timeout dicari melalui pencocokan manual yang tidak generate.
+- POST endpoint yang sama: tetap dibatasi session pemilik, CSRF, flag host, kuota, lease, dan attempt per pasangan/revisi. Timeout tidak mengembalikan kuota atau memicu POST ulang otomatis.
+- GET `.../preview/image/`: proxy privat yang memeriksa pemilik, status aktif, versi/foto/revisi pasangan, dan status ready. Cache private/no-store, Vary Cookie, nosniff dan same-origin.
+- Polling status queued/running setiap sekitar 3 detik, maksimal 100 kali. Ready memakai area preview existing dan label ilustrasi. Stale, gagal/unknown, disabled, quota habis, HTTP error, serta gambar gagal dimuat menampilkan status aplikasi dan mempertahankan foto pakaian. Halaman ditutup atau input baru dikirim menghentikan update preview lama.
+- Kontrak lokal `sirkula-ai-contract/previews.py` masih menggunakan counter global `settings.preview_attempts`. Health server tidak memuat kuota; konfirmasi kuota server 20 per pengguna belum dapat diverifikasi dari kontrak yang diberikan. Counter lokal tidak dapat mengubah pembatasan host.
 
 ## Migrasi dan verifikasi
 
-Migrasi `outfits.0002` menambah namespace/pemetaan, lease, kuota/attempt preview, dan role status. Database lokal dicadangkan sebelum migrate; fingerprint kategori, pakaian, foto, percakapan, dan pesan lama identik sesudahnya. Tidak ada perubahan model Wardrobe atau UI baru.
+Migrasi `outfits.0003` menambah counter per pengguna dan mengisi jumlah attempt lama berdasarkan pemilik tanpa mereset konsumsi. Counter global tetap disimpan. Migrasi `outfits.0002` menambah namespace/pemetaan, lease, kuota/attempt preview, dan role status. Database lokal dicadangkan sebelum migrate; fingerprint kategori, pakaian, foto, percakapan, dan pesan lama identik sesudahnya. Tidak ada perubahan model Wardrobe atau UI baru.
 
 ```sh
 python manage.py migrate
@@ -41,6 +44,15 @@ python manage.py check
 python manage.py makemigrations --check --dry-run
 ```
 
-235 tes lolos (termasuk 27 tes kontrak/integrasi API baru). Endpoint health HMAC, sinkronisasi dua foto sintetis, best, dan random telah diuji dengan API nyata melalui localhost memakai database/foto uji terpisah. Generate berbayar tidak pernah dipanggil. Foto sintetis remote dibersihkan setelah pengujian. Desktop 1440 px dan mobile 390 px diperiksa; overflow navbar/footer tim yang sudah ada tetap di luar perubahan ini.
+245 tes Python dan 11 unit test JavaScript lolos. Coverage kode aplikasi (statement + branch) 90,36%; app Outfits 93,13%; JavaScript chat/polling 100% baris, 92,31% cabang, 90% fungsi. File tes dan migrasi tidak dihitung untuk menaikkan metrik. Unit test migrasi tetap memeriksa backfill counter. Konfigurasi `.coveragerc` menetapkan fail_under=80.
 
-File utama: api_client.py, sync.py, api_provider.py, preview_service.py, preview_views.py, models.py/migration0002, services/providers/views/urls.py, template dan JS/CSS existing, test_api.py dan tes regresi. Tidak staging/commit/push/merge; .gitignore dan .env tidak diubah.
+```sh
+pip install -r requirements-dev.txt
+python -m coverage run manage.py test
+python -m coverage report --fail-under=80
+node --test --experimental-test-coverage --test-coverage-include='apps/outfits/static/outfits/js/chat.js' --test-coverage-lines=80 --test-coverage-branches=80 apps/outfits/js_tests/preview.test.cjs
+```
+
+Pengujian end-to-end telah dihentikan atas instruksi pengguna. Sebelum penghentian, satu request generate dilakukan melalui akun/foto sintetis dengan guard persisten maksimal satu panggilan; job belum terdeteksi dan status lokal failed_or_unknown. Tidak ada generate kedua. Alur ready dan gambar privat dibuktikan dengan unit test/fake API, bukan klaim keberhasilan generate nyata. Kesiapan/kecocokan konfigurasi server tetap perlu dikonfirmasi partner.
+
+Tidak staging/commit/push/merge; .env diabaikan Git, nilai secret tidak ada pada file perubahan, .env.example hanya placeholder.

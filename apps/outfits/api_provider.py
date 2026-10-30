@@ -44,5 +44,5 @@ class WardrobeAPIProvider:
             if pair.get("preview_id"):
                 result["api"]["preview_id"] = identifier(pair["preview_id"], preview=True)
             label = "acak" if mode == "random" else "terbaik"
-            text = f"Pencocokan {label} selesai: {top['name']} dan {bottom['name']}. Preview belum dibuat; foto pakaian ditampilkan."
+            text = f"Pencocokan {label} selesai: {top['name']} dan {bottom['name']}. Status preview ditampilkan di area gambar; foto pakaian tetap tersedia."
             return StylistReply(text=text, title=prompt[:100], result={"mode": "ai", "item_ids": [top["id"], bottom["id"]]}), result

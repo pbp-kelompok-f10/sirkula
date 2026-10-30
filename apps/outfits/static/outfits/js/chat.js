@@ -49,7 +49,7 @@
     let previewPolls = 0;
     window.addEventListener("pagehide", () => { previewStopped = true; });
     async function checkPreview() {
-        if (!workspace || previewStopped || ++previewPolls > 40 || busy) return;
+        if (!workspace || previewStopped || ++previewPolls > 100 || busy) return;
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 10000);
         try {
@@ -57,22 +57,54 @@
                 credentials: "same-origin", cache: "no-store", signal: controller.signal,
                 headers: { Accept: "application/json" },
             });
-            if (previewStopped || !response.ok) return;
+            if (previewStopped) return;
+            if (!response.ok) {
+                status.textContent = "Status preview belum dapat diperiksa. Foto pakaian tetap ditampilkan.";
+                status.hidden = false;
+                return;
+            }
             const data = await response.json();
             if (previewStopped || busy) return;
             if (data.preview_status === "ready" && data.preview_url) {
                 const url = new URL(data.preview_url, window.location.href);
                 if (url.origin !== window.location.origin) return;
                 const image = workspace.querySelector(".result-preview img");
-                if (image) { image.src = url.href; image.alt = data.preview_label; }
+                if (image) {
+                    const original = image.src;
+                    image.onerror = () => {
+                        image.onerror = null;
+                        image.src = original;
+                        image.alt = "Foto pakaian";
+                        status.textContent = "Gambar preview belum tersedia. Foto pakaian tetap ditampilkan.";
+                        status.hidden = false;
+                    };
+                    image.src = url.href;
+                    image.alt = data.preview_label;
+                }
                 status.textContent = data.preview_label;
                 status.hidden = false;
             } else if (["queued", "running"].includes(data.preview_status)) {
-                status.textContent = "Preview sedang diproses.";
+                status.textContent = data.preview_status === "queued" ? "Preview masuk antrean." : "Preview sedang dibuat.";
                 status.hidden = false;
-                setTimeout(checkPreview, 3000);
+                if (previewPolls < 100) setTimeout(checkPreview, 3000);
+                else status.textContent = "Preview masih diproses. Buka ulang riwayat untuk memeriksa status; generate tidak diulang.";
+            } else {
+                const messages = {
+                    stale: "Pasangan pakaian berubah. Preview lama tidak ditampilkan.",
+                    failed_or_unknown: "Preview gagal atau hasilnya belum pasti. Generate tidak diulang otomatis.",
+                    limit_reached: "Kuota preview pengguna sudah habis. Foto pakaian tetap ditampilkan.",
+                    disabled: "Generate preview sedang dinonaktifkan.",
+                    not_generated: "Preview belum dibuat untuk riwayat ini. Foto pakaian tetap ditampilkan.",
+                };
+                status.textContent = messages[data.preview_status] || "Preview belum tersedia.";
+                status.hidden = false;
             }
-        } catch { /* Keep the private wardrobe photos when preview is unavailable. */ }
+        } catch {
+            if (!previewStopped) {
+                status.textContent = "Status preview belum dapat dipastikan. Buka ulang riwayat untuk memeriksa; generate tidak diulang.";
+                status.hidden = false;
+            }
+        }
         finally { clearTimeout(timer); }
     }
     setTimeout(checkPreview, 0);

@@ -9,6 +9,7 @@ from django.http import Http404
 from .demo_data import DEMO_RECOMMENDATIONS
 from .models import Conversation, Message
 from .providers import get_stylist_provider
+from .preview_service import start_preview_after_match
 from .wardrobe_context import (
     WardrobeUnavailable, build_result, get_wardrobe_context,
     lock_and_validate_selection, prepare_results_for_display,
@@ -100,7 +101,7 @@ def start_conversation(*, user, prompt, key, recommendation=""):
             title=reply.title.strip(), result=result,
         )
         _write_pair(conversation, prompt, reply.text, key, 1, status="api" in result)
-    return conversation
+    return start_preview_after_match(user, conversation)
 
 
 def _existing_turn(conversation, key, prompt):
@@ -131,4 +132,4 @@ def send_message(*, user, conversation_id, prompt, key, version):
         conversation.version += 1
         conversation.result = result
         conversation.save(update_fields=["version", "result", "updated_at"])
-    return conversation
+    return start_preview_after_match(user, conversation)
