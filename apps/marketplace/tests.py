@@ -1,10 +1,12 @@
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
-from .models import Listing, PredefinedLocation, Store
+from .models import Listing, PredefinedLocation, SavedPlace, Store
 from .services import ResolvedCenter, geolocate_ip, haversine_distance_km
 
 # === Geolocation test (buat discovery map) === #
@@ -39,6 +41,58 @@ class IpGeolocationTests(TestCase):
 
         self.assertEqual(result, ResolvedCenter(-6.2, 106.8, "Jakarta", "ip"))
 # === Geolocation test (buat discovery map) === #
+
+
+class SavedPlaceModelTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(
+            username="saved-place-owner",
+            password="test-password",
+        )
+
+    def test_saved_place_stores_personal_map_pin(self):
+        place = SavedPlace.objects.create(
+            user=self.user,
+            name="Pasar Santa",
+            address_label="Jl. Cipaku I, Kebayoran Baru",
+            notes="Cari toko pakaian vintage.",
+            latitude=Decimal("-6.239889"),
+            longitude=Decimal("106.811928"),
+        )
+
+        self.assertEqual(str(place), "Pasar Santa")
+        self.assertEqual(place.user, self.user)
+        self.assertEqual(place.notes, "Cari toko pakaian vintage.")
+
+    def test_saved_place_rejects_invalid_coordinates_on_validation(self):
+        place = SavedPlace(
+            user=self.user,
+            name="Pin tidak valid",
+            address_label="Di luar jangkauan koordinat",
+            latitude=Decimal("91"),
+            longitude=Decimal("181"),
+        )
+
+        with self.assertRaises(ValidationError) as error:
+            place.full_clean()
+
+        self.assertIn("latitude", error.exception.message_dict)
+        self.assertIn("longitude", error.exception.message_dict)
+
+    def test_deleting_user_deletes_their_saved_places(self):
+        SavedPlace.objects.create(
+            user=self.user,
+            name="Pin sementara",
+            address_label="Jakarta",
+            latitude=Decimal("-6.200000"),
+            longitude=Decimal("106.816666"),
+        )
+
+        self.user.delete()
+
+        self.assertFalse(SavedPlace.objects.exists())
+
 
 # Marketplace test (nanti diubah abis pr)
 class MarketplaceApiTests(TestCase):

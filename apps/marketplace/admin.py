@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Listing, PredefinedLocation, Store
+from .models import Listing, PredefinedLocation, SavedPlace, Store
 
 
 @admin.register(PredefinedLocation)
@@ -10,6 +10,15 @@ class PredefinedLocationAdmin(admin.ModelAdmin):
     list_editable = ("is_active",)
     search_fields = ("name", "address_label")
     prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(SavedPlace)
+class SavedPlaceAdmin(admin.ModelAdmin):
+    list_display = ("name", "user", "address_label", "latitude", "longitude", "updated_at")
+    list_filter = ("created_at", "updated_at")
+    search_fields = ("name", "address_label", "notes", "user__username")
+    raw_id_fields = ("user",)
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(Store)
