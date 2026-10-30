@@ -27,6 +27,7 @@ class Message(models.Model):
     class Role(models.TextChoices):
         USER = "user", "Pengguna"
         ASSISTANT = "assistant", "SirkulaAI"
+        STATUS = "status", "Status aplikasi"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="messages")
@@ -42,5 +43,48 @@ class Message(models.Model):
             models.UniqueConstraint(fields=["conversation", "sequence"], name="outfits_unique_message_sequence"),
             models.UniqueConstraint(fields=["conversation", "request_key", "role"], name="outfits_unique_message_request_role"),
             models.CheckConstraint(condition=models.Q(sequence__gte=1), name="outfits_message_sequence_positive"),
-            models.CheckConstraint(condition=models.Q(role__in=["user", "assistant"]), name="outfits_message_role_valid"),
+            models.CheckConstraint(condition=models.Q(role__in=["user", "assistant", "status"]), name="outfits_message_role_valid"),
         ]
+
+
+class WardrobeAPIAccount(models.Model):
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="outfits_api_account")
+    namespace = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    endpoint = models.URLField()
+    lease_token = models.UUIDField(null=True, editable=False)
+    lease_until = models.DateTimeField(null=True, editable=False)
+
+    @property
+    def api_owner(self):
+        return f"sirkula:{self.namespace.hex}"
+
+
+class WardrobeAPIMapping(models.Model):
+    account = models.ForeignKey(WardrobeAPIAccount, on_delete=models.CASCADE, related_name="mappings")
+    item = models.OneToOneField("wardrobe.WardrobeItem", null=True, on_delete=models.SET_NULL, related_name="api_mapping")
+    api_id = models.CharField(max_length=64, null=True)
+    category = models.CharField(max_length=6, choices=[("baju", "Baju"), ("celana", "Celana")])
+    checksum = models.CharField(max_length=64)
+    photo_id = models.PositiveBigIntegerField()
+    item_version = models.CharField(max_length=40)
+    revision = models.CharField(max_length=64, blank=True)
+    upload_pending = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["account", "api_id"], name="outfits_api_id_per_account")]
+
+
+class OutfitPreviewBudget(models.Model):
+    # A single installation-wide counter; increasing the allowance requires host configuration.
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1)
+    attempts = models.PositiveIntegerField(default=0)
+
+
+class OutfitPreviewAttempt(models.Model):
+    account = models.ForeignKey(WardrobeAPIAccount, on_delete=models.CASCADE)
+    pair_key = models.CharField(max_length=64)
+    api_preview_id = models.CharField(max_length=64, blank=True)
+    status = models.CharField(max_length=24, default="pending")
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["account", "pair_key"], name="outfits_preview_once_per_pair")]

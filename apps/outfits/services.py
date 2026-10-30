@@ -1,6 +1,8 @@
 from copy import deepcopy
 
 from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.urls import reverse
 from django.db import transaction
 from django.http import Http404
 
@@ -22,9 +24,23 @@ def get_landing_content(*, user=None):
     rendered = prepare_results_for_display([entry.result for entry in history], user) if history else []
     for entry, result in zip(history, rendered):
         entry.result = result
+    recommendations = deepcopy(list(DEMO_RECOMMENDATIONS))
+    if settings.OUTFITS_PROVIDER == "api":
+        from .sync import category_type
+        wardrobe = get_wardrobe_context(user) if user is not None and user.is_authenticated else ()
+        eligible = [item for item in wardrobe if category_type(item) and item["photos"]]
+        recommendations = []
+        if eligible:
+            for index in range(4):
+                item = eligible[index % len(eligible)]
+                mode = "best" if index % 2 == 0 else "random"
+                recommendations.append({
+                    "id": DEMO_RECOMMENDATIONS[index]["id"], "title": mode.title(), "prompt": mode,
+                    "image": {"kind": "url", "url": reverse("wardrobe:item_photo", kwargs={"photo_id": item["photos"][0]["id"]})},
+                })
     return {
-        "mode": "demo",
-        "recommendations": deepcopy(list(DEMO_RECOMMENDATIONS)),
+        "mode": settings.OUTFITS_PROVIDER,
+        "recommendations": recommendations,
         "history": history,
     }
 
@@ -33,11 +49,15 @@ def conversation_history(user):
     return Conversation.objects.filter(owner=user).only("id", "title", "result", "updated_at")
 
 
-def _validated_reply(*, user, prompt, history, recommendation=""):
+def _validated_reply(*, user, prompt, history, key, recommendation=""):
     wardrobe = get_wardrobe_context(user)
-    if not any(item["photos"] for item in wardrobe):
+    if settings.OUTFITS_PROVIDER == "demo" and not any(item["photos"] for item in wardrobe):
         raise WardrobeUnavailable("Tambahkan pakaian aktif dengan foto di Wardrobe terlebih dahulu.")
-    reply = get_stylist_provider().reply(
+    provider = get_stylist_provider()
+    if hasattr(provider, "reply_for_user"):
+        return provider.reply_for_user(user=user, prompt=prompt, history=history,
+                                       wardrobe=wardrobe, key=key, recommendation=recommendation)
+    reply = provider.reply(
         prompt=prompt, history=history, wardrobe=deepcopy(wardrobe), recommendation=recommendation,
     )
     if not isinstance(reply.text, str) or not 1 <= len(reply.text.strip()) <= 4000:
@@ -47,10 +67,10 @@ def _validated_reply(*, user, prompt, history, recommendation=""):
     return reply, build_result(reply.result, wardrobe)
 
 
-def _write_pair(conversation, prompt, reply_text, key, version):
+def _write_pair(conversation, prompt, reply_text, key, version, *, status=False):
     Message.objects.bulk_create([
         Message(conversation=conversation, role=Message.Role.USER, content=prompt, sequence=2 * version - 1, request_key=key),
-        Message(conversation=conversation, role=Message.Role.ASSISTANT, content=reply_text, sequence=2 * version, request_key=key),
+        Message(conversation=conversation, role=Message.Role.STATUS if status else Message.Role.ASSISTANT, content=reply_text, sequence=2 * version, request_key=key),
     ])
 
 
@@ -67,7 +87,7 @@ def start_conversation(*, user, prompt, key, recommendation=""):
     existing = _existing_start(user, key, prompt, recommendation)
     if existing:
         return existing
-    reply, result = _validated_reply(user=user, prompt=prompt, history=(), recommendation=recommendation)
+    reply, result = _validated_reply(user=user, prompt=prompt, history=(), key=key, recommendation=recommendation)
     with transaction.atomic():
         # Serialize creation keys for this owner; inference happens before the lock.
         get_user_model().objects.select_for_update().get(pk=user.pk)
@@ -79,7 +99,7 @@ def start_conversation(*, user, prompt, key, recommendation=""):
             owner=user, creation_key=key, initial_recommendation=recommendation,
             title=reply.title.strip(), result=result,
         )
-        _write_pair(conversation, prompt, reply.text, key, 1)
+        _write_pair(conversation, prompt, reply.text, key, 1, status="api" in result)
     return conversation
 
 
@@ -99,7 +119,7 @@ def send_message(*, user, conversation_id, prompt, key, version):
     if conversation.version != version:
         raise ConversationConflict("Percakapan berubah di tab lain. Buka ulang percakapan dari menu riwayat sebelum melanjutkan.")
     history = list(conversation.messages.order_by("-sequence").values("role", "content")[:20])
-    reply, result = _validated_reply(user=user, prompt=prompt, history=tuple(reversed(history)))
+    reply, result = _validated_reply(user=user, prompt=prompt, history=tuple(reversed(history)), key=key)
     with transaction.atomic():
         conversation = Conversation.objects.select_for_update().get(pk=conversation_id, owner=user)
         if _existing_turn(conversation, key, prompt):
@@ -107,7 +127,7 @@ def send_message(*, user, conversation_id, prompt, key, version):
         if conversation.version != version:
             raise ConversationConflict("Percakapan berubah di tab lain. Buka ulang percakapan dari menu riwayat sebelum melanjutkan.")
         lock_and_validate_selection(user, result)
-        _write_pair(conversation, prompt, reply.text, key, version + 1)
+        _write_pair(conversation, prompt, reply.text, key, version + 1, status="api" in result)
         conversation.version += 1
         conversation.result = result
         conversation.save(update_fields=["version", "result", "updated_at"])

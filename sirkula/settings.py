@@ -161,3 +161,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Server-only Sirkula v2 API. Never expose these values in templates or JSON.
+WARDROBE_API_URL = os.getenv("WARDROBE_API_URL", "")
+WARDROBE_SECRET = os.getenv("WARDROBE_SECRET", "")
+OUTFITS_PROVIDER = os.getenv("OUTFITS_PROVIDER", "api")
+OUTFITS_API_TIMEOUT_SECONDS = 25
+# Disabled until the host explicitly approves a budget; no UI action auto-enqueues.
+OUTFITS_PREVIEW_ENABLED = os.getenv("OUTFITS_PREVIEW_ENABLED", "false").lower() == "true"
+OUTFITS_PREVIEW_MAX_REQUESTS = int(os.getenv("OUTFITS_PREVIEW_MAX_REQUESTS", "0"))

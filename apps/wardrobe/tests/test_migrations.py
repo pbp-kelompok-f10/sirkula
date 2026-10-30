@@ -10,8 +10,8 @@ class CategoryMoveMigrationTests(TransactionTestCase):
     def setUp(self):
         executor = MigrationExecutor(connection)
         self.latest = executor.loader.graph.leaf_nodes()
-        self.other_targets = [node for node in self.latest if node[0] not in {"main", "wardrobe"}]
-        self.old_target = self.other_targets + [("main", "0001_initial")]
+        self.other_targets = [node for node in self.latest if node[0] not in {"main", "wardrobe", "outfits"}]
+        self.old_target = self.other_targets + [("main", "0001_initial"), ("outfits", "0001_initial")]
         executor.migrate(self.old_target + [("wardrobe", None)])
         self.old_apps = executor.loader.project_state(self.old_target).apps
         HistoricalUser = self.old_apps.get_model("auth", "User")

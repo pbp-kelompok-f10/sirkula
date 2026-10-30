@@ -1,66 +1,46 @@
-# Mix and Match: hasil, chat, dan riwayat
+# Outfits: integrasi Sirkula API v2
 
-Referensi halaman awal: Desktop - 4 (1).png. Workspace mengikuti Desktop - 3.png: preview outfit, kolom foto penyusun (1–3 pakaian aktif pada simulasi), panel SirkulaAI, pesan, dan input kirim. Menu riwayat dan Chat Baru mengikuti Desktop - 5.png. Tidak menambahkan UI Outfit Tersimpan, tombol simpan/hapus percakapan, atau kontrol lain.
+Kontrak sumber yang dibaca: `sirkula-ai-contract/auth.py`, `app.py`, `core.py`, `previews.py`, dan contoh bridge Django. API mencocokkan gambar pakaian; API ini **bukan chatbot**. Tidak ada layanan chat/LLM tambahan atau fallback AI palsu.
 
-## Alur pengguna
+## Konfigurasi dan alur
 
-1. `/outfits/` tetap bisa dilihat sebagai halaman awal publik. Pengguna harus login untuk memulai percakapan; modul login tidak dibuat ulang. Selama accounts belum aktif, pengujian lokal dapat memakai login admin Django.
-2. Mengirim input awal atau menekan kartu rekomendasi membuat percakapan milik `request.user`, menyimpan pesan pengguna/balasan simulasi, lalu redirect ke `/outfits/conversations/<uuid>/`.
-3. Pesan lanjutan menyimpan satu pasangan pesan dan memperbarui preview terakhir. POST memiliki fallback HTML/redirect; JS memakai respons JSON untuk status kirim/error dan kembali ke GET setelah berhasil.
-4. Riwayat halaman awal dan menu chat menampilkan percakapan pengguna sendiri, diurutkan berdasarkan aktivitas terakhir. Semua riwayat tetap tersedia melalui area yang dapat digulir. Tanggal menu memakai bahasa Indonesia dan Asia/Jakarta.
-5. Chat Baru kembali ke input awal tanpa membuat percakapan kosong atau menghapus percakapan lama. Klik riwayat membuka seluruh pesan tersimpan dan preview terakhir.
-6. Filter kategori asal dipertahankan melalui tautan kembali. UUID, judul, kategori, dan isi dari browser tidak menentukan pemilik record.
+- `WARDROBE_API_URL` dan `WARDROBE_SECRET` dibaca server dari environment/.env. .env diabaikan Git; .env.example hanya placeholder. URL harus origin HTTPS tanpa userinfo/query/path; secret minimal 32 karakter sesuai kontrak. Redirect upstream ditolak.
+- `OUTFITS_PROVIDER=api` adalah default. `demo` hanya untuk simulasi eksplisit/regresi; kegagalan API tidak berubah menjadi jawaban demo.
+- HMAC-SHA256 menandatangani `METHOD\nPATH\nOWNER\nTIMESTAMP\nNONCE\nSHA256(BODY)`. Empat header X-Wardrobe dikirim hanya oleh Django. Nonce baru pada setiap request; body yang ditandatangani persis body yang dikirim. Owner API menggunakan UUID namespace permanen per pengguna, bukan input browser.
+- Kaos/Kemeja/Outer → `baju`; Celana → `celana`, tanpa membedakan kapital. Sepatu, kategori khusus yang tidak terdaftar, kategori kosong, draft, dan pakaian pengguna lain tidak disinkronkan. Tidak ada kategori fallback menjadi baju.
+- API memiliki satu foto per item: sinkronisasi memakai foto utama pertama yang tersedia. Maksimal lima foto asli tetap disimpan privat di Wardrobe; foto lainnya tidak diunggah.
+- Sebelum pencocokan, GET katalog memeriksa pemetaan. Item baru diunggah sebagai bytes melalui POST; foto/kategori berubah memakai PUT dengan ID API yang sama. Item yang sudah dihapus/nonaktif/tidak didukung dihapus dari katalog saat sinkronisasi berikutnya. Membuka halaman saja tidak melakukan upload atau generate.
+- Kartu rekomendasi yang sudah ada menjadi pintasan Best/Random dengan foto privat pengguna. Ketik `acak`, `random`, atau `acak outfit` untuk random; input lain menggunakan best. Teks bebas tidak ditafsirkan oleh chatbot. Random memakai seed dari UUID request agar retry tetap konsisten.
+- Hasil API wajib memetakan satu baju dan satu celana yang benar-benar dimiliki pengguna; skor harus finite dan dalam rentang kontrak. Foto/path upstream tidak diteruskan mentah ke browser. Area percakapan menyimpan input dan **status aplikasi** (role status); pesan dan riwayat lama tetap dibaca.
 
-## Pembagian kode
+## Retry dan kegagalan
 
-- `models.py`, `migrations/0001_initial.py`: Conversation (owner, judul, hasil terakhir, versi, kunci pembuatan) dan Message (role, isi, urutan, kunci request). Model Wardrobe tidak diubah.
-- `providers.py`: `DemoStylistProvider` tanpa akses database/network, `StylistReply`, dan factory `get_stylist_provider()` sebagai titik pergantian adapter AI.
-- `wardrobe_context.py`: metadata pakaian aktif milik pengguna, whitelist pilihan provider, pemeriksaan ulang versi/foto dalam transaksi, dan resolusi foto privat saat riwayat dibuka.
-- `services.py`: validasi respons provider, transaksi penyimpanan, pemilik, urutan, idempotensi, versi, dan daftar riwayat. Provider dipanggil sebelum lock transaksi; versi dicek lagi sebelum menulis agar hasil lama tidak menimpa pesan baru.
-- `forms.py`, `views.py`, `urls.py`: input nonkosong/maksimal 500 karakter, UUID request, versi, respons JSON/HTML, CSRF dan owner checks.
-- `templates/outfits/`: landing, workspace, hero, kartu rekomendasi/riwayat, serta komponen gambar.
-- `static/outfits/js/chat.js`: kirim/status/error, pencegahan submit ganda, scroll pesan, menu riwayat, Escape/klik luar/fokus, dan Chat Baru melalui tautan biasa.
-- `static/outfits/css/chat.css`: layout desktop/mobile dan styling komponen sesuai referensi. Header/footer tetap memakai base tim.
+- Timeout HTTP dibatasi 25 detik; tidak ada retry POST otomatis. Respons dibatasi ukurannya, pesan error upstream tidak dicetak, dan log hanya berisi kode error terkontrol.
+- Lease per pengguna mencegah dua sinkronisasi bersamaan. Pemetaan dan status upload pending disimpan sebelum POST. Jika respons upload hilang, request berikutnya mencari satu item remote yang kategori dan hash JPEG normalisasinya cocok, lalu memulihkan ID tanpa POST ulang.
+- Kontrak upload belum mempunyai idempotency key. Bila upload tidak pernah diterima atau tidak bisa dibuktikan secara unik, retry diblokir dengan upload_unknown, tanpa menciptakan duplikat. Administrator perlu memastikan request lama selesai dan merekonsiliasi katalog sebelum memperbaiki record pending; jangan menghapus pending secara buta. Perbedaan encoder JPEG antarserver dapat menyebabkan rekonsiliasi hash ditolak secara aman.
+- Transaksi percakapan, versi, dan request key lama tetap dipakai. Gagal API/validasi tidak menambah percakapan/pesan. Retry hasil yang sudah disimpan tidak memanggil API lagi. Sebelum menyimpan, item/foto/versi diperiksa ulang.
+- Jika hanya ada satu kategori pakaian, layanan meminta minimal satu baju dan satu celana; tidak mengarang pasangan.
 
-## Kontrak provider
+## Preview berbayar
 
-Adapter dipanggil melalui `reply(prompt=..., history=..., wardrobe=..., recommendation=...)` dan mengembalikan `StylistReply(text, title, result)`. `history` berisi maksimal 20 pesan terakhir dalam bentuk `role` dan `content`; seluruh pesan tetap tersimpan dalam database.
+Default `OUTFITS_PREVIEW_ENABLED=False` dan `OUTFITS_PREVIEW_MAX_REQUESTS=0`. Tetap nonaktif sampai operator menerima persetujuan batas/kuota. Tidak ada tombol baru atau trigger generate otomatis dari kartu/input/polling.
 
-`wardrobe` merupakan metadata biasa: ID/nama pakaian, kategori (boleh `null`), versi `updated_at`, serta ID/posisi foto yang filenya tersedia. Hanya pakaian aktif milik pengguna yang masuk. Provider tidak menerima ORM object, path storage, URL foto, atau isi file. Draft dan pakaian akun lain tidak dikirim.
+- GET `/outfits/conversations/<uuid>/preview/`: status saja, tidak enqueue. Jika request enqueue sebelumnya timeout, pencocokan manual (tanpa generate) digunakan untuk mencari job yang mungkin sudah ada.
+- POST endpoint yang sama: hanya setelah login pemilik, CSRF, flag host, dan kuota persisten instalasi mengizinkan. Satu attempt per pasangan/revisi; timeout tetap mengonsumsi attempt. Pemanggilan ulang hanya memeriksa status, bukan POST enqueue baru.
+- GET `.../preview/image/`: proxy privat setelah memeriksa owner, pakaian aktif, versi/foto/revisi pasangan, dan status ready. Tidak menyediakan URL langsung API. Cache private/no-store, Vary Cookie, nosniff dan same-origin.
+- Browser hanya membaca status, polling setiap sekitar 3 detik selama queued/running (maksimal 40 kali); ready mengganti area preview existing dan menampilkan label ilustrasi. Polling dihentikan saat berpindah halaman/mengirim input. Request preview terikat versi percakapan agar gambar pasangan lama tidak tercampur.
 
-Provider mengembalikan `result = {"mode": "demo", "item_ids": [1, 2]}`. Service memeriksa ID terhadap metadata semula, menolak duplikat/ID asing, lalu membentuk hasil kanonis sendiri. Snapshot nama/kategori dan referensi `{"kind": "wardrobe", "item_id": ..., "photo_id": ...}` disimpan pada JSON Conversation; URL foto tidak disimpan. Versi, status, pemilik, relasi foto, dan keberadaan file diperiksa lagi setelah lock sebelum menulis pasangan pesan.
+## Migrasi dan verifikasi
 
-`DemoStylistProvider` memilih maksimal tiga pakaian berfoto, mendukung satu/dua pakaian, dan menyebut nama pilihan aktual dalam balasan. Pilihan berikutnya dirotasi secara deterministik menggunakan panjang konteks; ini simulasi, belum penilaian kecocokan outfit maupun API AI. Preview besar memakai foto pertama pilihan, bukan gambar outfit gabungan hasil AI. Kartu rekomendasi halaman awal tetap memakai fixture desain publik; hasil setelah kartu diklik menggunakan pakaian pengguna saat itu.
-
-Saat riwayat dibuka, referensi foto diverifikasi ulang terhadap pemilik/status aktif dan diubah menjadi URL endpoint privat Wardrobe dalam salinan untuk render. Foto yang hilang/dihapus, pakaian yang tidak lagi aktif, atau referensi yang tidak sesuai menampilkan “Foto tidak tersedia” pada area gambar yang sama. File tidak disalin ke static atau dipertahankan setelah penghapusan. Riwayat lama dengan metadata SVG referensi tetap dapat dibuka tanpa diubah. Pesan lanjutan memakai kondisi Wardrobe terbaru; hanya hasil terbaru diperbarui saat penyimpanan berhasil.
-
-## Keamanan dan kegagalan
-
-- GET/POST percakapan pengguna lain, anonim, atau ID tidak ada menghasilkan 404. Halaman dengan riwayat diberi no-store/private dan Vary: Cookie.
-- POST dilindungi CSRF. Teks di-render dengan escaping Django; JavaScript menulis error melalui textContent.
-- Creation key unik per pemilik; request key dan role unik per percakapan. Retry dengan key/isi yang sama mengembalikan hasil yang sudah ada tanpa menggandakan pesan. Key yang dipakai untuk isi berbeda ditolak 409.
-- Tanpa pakaian aktif berfoto, permintaan ditolak 400 melalui pesan validasi yang ada, tanpa membuat percakapan/pasangan pesan. Pakaian atau foto berubah selama provider berjalan ditolak 409.
-- Versi stale ditolak 409 dan pengguna diarahkan lewat pesan error untuk membuka ulang percakapan dari menu riwayat.
-- Pasangan pesan dan hasil disimpan dalam satu transaksi. Provider/database gagal tidak meninggalkan percakapan atau setengah pasangan pesan baru.
-- Jika respons terputus, browser mempertahankan key yang sama untuk retry. Batas waktu kirim 30 detik tidak dianggap membatalkan proses backend yang mungkin sudah menyimpan.
-
-## Migrasi dan pengujian
-
-Cadangan database lokal dibuat di luar repository sebelum `migrate outfits`. Migrasi awal Outfits sudah diterapkan pada database lokal. Data kategori, pakaian, dan referensi foto Wardrobe dibandingkan sebelum/sesudah dan tetap identik. Tidak ada migrasi yang memindahkan atau mengubah data Wardrobe.
+Migrasi `outfits.0002` menambah namespace/pemetaan, lease, kuota/attempt preview, dan role status. Database lokal dicadangkan sebelum migrate; fingerprint kategori, pakaian, foto, percakapan, dan pesan lama identik sesudahnya. Tidak ada perubahan model Wardrobe atau UI baru.
 
 ```sh
 python manage.py migrate
-python manage.py test apps.outfits apps.wardrobe
+python manage.py test
+python manage.py check
 python manage.py makemigrations --check --dry-run
-node --check apps/outfits/static/outfits/js/chat.js
-pnpm --dir ui/static_src run build
-python manage.py runserver 127.0.0.1:8000
 ```
 
-196 tes lolos: 42 Outfits dan 154 Wardrobe. Termasuk isolasi pengguna, anonymous/other-user GET/POST, CSRF, escaping, idempotensi, konflik sebelum/sesudah provider, rollback provider/database, provider result tidak valid, history lebih dari 50, context provider dibatasi, dan regresi. Tambahan tes mencakup pilihan 1–3 pakaian/nama aktual, metadata tanpa path/URL, pemisahan draft/akun lain, whitelist ID, foto privat, foto hilang/berubah, kompatibilitas riwayat lama, dan konflik perubahan Wardrobe sebelum simpan.
+235 tes lolos (termasuk 27 tes kontrak/integrasi API baru). Endpoint health HMAC, sinkronisasi dua foto sintetis, best, dan random telah diuji dengan API nyata melalui localhost memakai database/foto uji terpisah. Generate berbayar tidak pernah dipanggil. Foto sintetis remote dibersihkan setelah pengujian. Desktop 1440 px dan mobile 390 px diperiksa; overflow navbar/footer tim yang sudah ada tetap di luar perubahan ini.
 
-Integrasi data Wardrobe ini tidak mengubah model atau membutuhkan migrasi baru.
-
-Browser localhost memakai database/foto uji terpisah: input/kartu awal, kirim ikon/Enter, validasi pesan kosong, buka ulang riwayat, Chat Baru tanpa menghapus data, menu/Escape, serta respons gagal sesudah commit lalu retry tanpa duplikasi. Anonim dan akun kedua diuji langsung mendapat 404 untuk URL pemilik; riwayat kedua akun terpisah. Tampilan desktop dan mobile 390/320 px diperiksa. Pengujian integrasi Wardrobe juga memeriksa satu/dua/tiga pakaian, nama balasan, foto privat yang benar-benar termuat, riwayat lama dan lanjutannya, placeholder foto terhapus, validasi saat tidak ada foto aktif, serta akun lain/anonim ditolak saat membuka URL foto. Konten workspace/chat tidak overflow horizontal; masalah global navbar/footer dan warning lama @import Google Fonts tidak diubah.
-
-Bantuan AI: Codex mengimplementasikan backend percakapan, provider simulasi, UI hasil/chat, menu riwayat, tes dan dokumentasi atas permintaan pengguna. Tidak staging/commit, mengubah .gitignore, membuat login baru, atau mengubah fitur app partner. Uji browser tidak menambahkan percakapan ke database asli proyek.
+File utama: api_client.py, sync.py, api_provider.py, preview_service.py, preview_views.py, models.py/migration0002, services/providers/views/urls.py, template dan JS/CSS existing, test_api.py dan tes regresi. Tidak staging/commit/push/merge; .gitignore dan .env tidak diubah.

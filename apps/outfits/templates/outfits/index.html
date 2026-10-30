@@ -16,7 +16,7 @@
             <input type="hidden" name="request_key" value="{{ prompt_form.request_key.value|default_if_none:'' }}">
             {% if return_category %}<input type="hidden" name="category" value="{{ return_category }}">{% endif %}
             <label for="mix-prompt" class="sr-only">Kebutuhan outfit</label>
-            <p id="mix-demo-help" class="sr-only">Rekomendasi menggunakan data simulasi. Login diperlukan untuk menyimpan percakapan.</p>
+            <p id="mix-demo-help" class="sr-only">Layanan mencocokkan foto pakaian, bukan chatbot. Ketik acak untuk random; input lain memakai best. Login diperlukan untuk menyimpan riwayat.</p>
             <div class="mix-input-wrap">
                 <input id="mix-prompt" name="prompt" type="text" required maxlength="500" placeholder="Placeholder"
                     value="{{ prompt_form.prompt.value|default_if_none:'' }}"

@@ -35,4 +35,11 @@ class DemoStylistProvider:
 
 
 def get_stylist_provider():
-    return DemoStylistProvider()
+    from django.conf import settings
+    if settings.OUTFITS_PROVIDER == "demo":
+        return DemoStylistProvider()
+    if settings.OUTFITS_PROVIDER != "api":
+        from .api_client import WardrobeAPIError
+        raise WardrobeAPIError("Provider Outfits tidak dikenal.", code="configuration")
+    from .api_provider import WardrobeAPIProvider
+    return WardrobeAPIProvider()

@@ -20,6 +20,7 @@ from .services import get_landing_content, send_message
 from .wardrobe_context import build_result, get_wardrobe_context, prepare_results_for_display
 
 
+@override_settings(OUTFITS_PROVIDER="demo")
 class OutfitsConversationTests(TestCase):
     def setUp(self):
         directory = TemporaryDirectory()

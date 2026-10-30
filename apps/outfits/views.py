@@ -12,6 +12,7 @@ from django.views.decorators.vary import vary_on_cookie
 from .demo_data import DEMO_RECOMMENDATIONS
 from .forms import ChatMessageForm, MixAndMatchPromptForm
 from .models import Conversation
+from .api_client import WardrobeAPIError
 from .services import ConversationConflict, conversation_history, get_landing_content, send_message, start_conversation
 from .wardrobe_context import WardrobeChanged, WardrobeUnavailable, prepare_results_for_display
 
@@ -40,7 +41,7 @@ def _landing_context(request, form):
     content = get_landing_content(user=request.user)
     for card in content["recommendations"]:
         card["request_key"] = uuid4()
-        card["prompt"] = f"Tolong buatkan outfit dengan {card['title'].lower()}."
+        card.setdefault("prompt", f"Tolong buatkan outfit dengan {card['title'].lower()}.")
     return {**content, **_navigation(request), "prompt_form": form}
 
 
@@ -50,9 +51,10 @@ def _landing_context(request, form):
 def index(request):
     data = request.POST.copy() if request.method == "POST" else None
     if data is not None and data.get("recommendation"):
-        card = next((entry for entry in DEMO_RECOMMENDATIONS if entry["id"] == data["recommendation"]), None)
+        cards = get_landing_content(user=request.user)["recommendations"]
+        card = next((entry for entry in cards if entry["id"] == data["recommendation"]), None)
         if card:
-            data["prompt"] = f"Tolong buatkan outfit dengan {card['title'].lower()}."
+            data["prompt"] = card.get("prompt", f"Tolong buatkan outfit dengan {card['title'].lower()}.")
     form = MixAndMatchPromptForm(data, initial={"request_key": uuid4()})
     status = 200
     if request.method == "POST":
@@ -68,6 +70,10 @@ def index(request):
                     user=request.user, prompt=form.cleaned_data["prompt"], key=form.cleaned_data["request_key"],
                     recommendation=form.cleaned_data["recommendation"],
                 )
+            except WardrobeAPIError as error:
+                logger.warning("Outfits API request failed; code=%s", error.code)
+                form.add_error(None, str(error))
+                status = 409 if error.code in {"busy", "changed", "upload_unknown", "catalog_unknown"} else 503
             except WardrobeUnavailable as error:
                 form.add_error(None, str(error))
                 status = 400
@@ -111,6 +117,10 @@ def conversation(request, conversation_id):
                 )
             except Http404:
                 raise
+            except WardrobeAPIError as error:
+                logger.warning("Outfits API request failed; code=%s", error.code)
+                form.add_error(None, str(error))
+                status = 409 if error.code in {"busy", "changed", "upload_unknown", "catalog_unknown"} else 503
             except WardrobeUnavailable as error:
                 form.add_error(None, str(error))
                 status = 400
