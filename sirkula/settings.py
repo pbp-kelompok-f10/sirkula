@@ -28,8 +28,6 @@ WARDROBE_PRIVATE_ROOT = Path(private_root).expanduser()
 if not WARDROBE_PRIVATE_ROOT.is_absolute():
     raise ImproperlyConfigured("WARDROBE_PRIVATE_ROOT harus berupa path absolut.")
 WARDROBE_PRIVATE_ROOT = WARDROBE_PRIVATE_ROOT.resolve()
-if WARDROBE_PRIVATE_ROOT.is_relative_to(BASE_DIR.resolve()):
-    raise ImproperlyConfigured("Penyimpanan foto privat harus berada di luar repository.")
 
 
 # Quick-start development settings - unsuitable for production
