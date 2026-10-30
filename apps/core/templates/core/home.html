@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sirkula | Gaya Tanpa Batas, Nol Jejak Baru{% endblock title %}
+
+{% block content %}
+    {% include "core/partials/hero.html" %}
+    {% include "core/partials/features.html" %}
+    {% include "core/partials/how_it_works.html" %}
+    {% include "core/partials/reviews.html" %}
+{% endblock content %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'core/js/review-likes.js' %}" defer></script>
+{% endblock extra_js %}

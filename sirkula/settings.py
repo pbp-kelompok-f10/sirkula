@@ -153,6 +153,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 # Media files (upload produk shop)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -161,3 +166,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Discovery Map providers
+NOMINATIM_BASE_URL = os.getenv("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org")
+IP_GEOLOCATION_URL = os.getenv("IP_GEOLOCATION_URL", "https://ipapi.co/{ip}/json/")
+LOCATION_USER_AGENT = os.getenv("LOCATION_USER_AGENT", "Sirkula/1.0 (development)")
+LOCATION_REQUEST_TIMEOUT = float(os.getenv("LOCATION_REQUEST_TIMEOUT", "5"))
+LOCATION_CACHE_SECONDS = int(os.getenv("LOCATION_CACHE_SECONDS", "86400"))
+MARKETPLACE_DEFAULT_CENTER = (-6.186486, 106.834091)
