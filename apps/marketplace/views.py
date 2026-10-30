@@ -258,7 +258,7 @@ def _saved_place_for_user(request, pk):
 @require_http_methods(["GET", "POST"])
 def saved_places(request):
     if not request.user.is_authenticated:
-        return _error("Authentication is required to manage saved places.", status=401)
+        return _map_error("Authentication is required to manage saved places.", status=401)
 
     if request.method == "GET":
         return JsonResponse(
@@ -273,7 +273,7 @@ def saved_places(request):
     try:
         payload = _parse_json_body(request)
     except ValueError as error:
-        return _error(str(error))
+        return _map_error(str(error))
 
     form = SavedPlaceForm(payload)
     if not form.is_valid():
@@ -288,11 +288,11 @@ def saved_places(request):
 @require_http_methods(["GET", "PUT", "DELETE"])
 def saved_place_detail(request, pk):
     if not request.user.is_authenticated:
-        return _error("Authentication is required to manage saved places.", status=401)
+        return _map_error("Authentication is required to manage saved places.", status=401)
 
     place = _saved_place_for_user(request, pk)
     if place is None:
-        return _error("Saved place not found.", status=404)
+        return _map_error("Saved place not found.", status=404)
 
     if request.method == "GET":
         return JsonResponse({"result": _serialize_saved_place(place)})
@@ -305,7 +305,7 @@ def saved_place_detail(request, pk):
     try:
         payload = _parse_json_body(request)
     except ValueError as error:
-        return _error(str(error))
+        return _map_error(str(error))
 
     form = SavedPlaceForm(payload, instance=place)
     if not form.is_valid():

@@ -1,0 +1,49 @@
+<dialog id="item-edit-modal" aria-labelledby="item-edit-title"
+    class="item-modal fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-[862px] overflow-y-auto rounded-xl border-0 bg-[#FFFFEF] p-6 text-[#1C472F] shadow-xl">
+    <div class="relative mb-7 px-9">
+        <h2 id="item-edit-title" class="text-center text-2xl font-bold sm:text-[32px]">Edit Pakaian</h2>
+        <button type="button" id="close-item-edit" aria-label="Tutup edit pakaian"
+            class="absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+            <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+    </div>
+    <form id="item-edit-form" method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div id="item-edit-errors" tabindex="-1" class="mb-4 rounded-lg border border-red-700 p-3 text-sm text-red-700" role="alert" hidden></div>
+        <button type="button" id="reload-item-edit" class="mb-4 min-h-11 rounded-xl border border-[#1C472F] px-4 py-2" hidden>Muat ulang halaman</button>
+        <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="min-w-0">
+                <label for="edit-item-name" class="mb-2 block text-xs font-bold text-gray-700">Nama Pakaian</label>
+                <input id="edit-item-name" name="name" required maxlength="100" type="text" aria-describedby="edit-name-error"
+                    class="min-h-12 w-full rounded-xl border border-gray-500 bg-[#EBEBED] px-3 py-3 text-base text-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+                <p id="edit-name-error" class="mt-2 text-sm text-red-700" role="alert" hidden></p>
+            </div>
+            <div class="min-w-0">
+                <label for="edit-item-category" class="mb-2 block text-xs font-bold text-gray-700">Kategori</label>
+                <select id="edit-item-category" name="category" required aria-describedby="edit-category-help edit-category-error"
+                    class="min-h-12 w-full rounded-xl border border-gray-500 bg-[#EBEBED] px-3 py-3 text-base text-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+                    <option value="">Pilih kategori</option>
+                    {% for category in categories %}<option value="{{ category.pk }}">{{ category.name }}</option>{% endfor %}
+                </select>
+                <p id="edit-category-help" class="mt-2 text-sm text-gray-700" hidden>Kategori sebelumnya sudah tidak tersedia. Pilih kategori sebelum menyimpan.</p>
+                <p id="edit-category-error" class="mt-2 text-sm text-red-700" role="alert" hidden></p>
+            </div>
+        </div>
+        <p class="mb-2 text-xs font-bold text-gray-700">Foto Pakaian</p>
+        <p class="mb-3 text-sm text-gray-700">Foto lama tetap disimpan kecuali kamu tandai untuk dihapus. Semua perubahan diterapkan saat Simpan.</p>
+        <ul id="edit-old-photos" class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label="Foto lama pakaian"></ul>
+        <label for="edit-item-photos" id="edit-upload-zone" class="item-upload-zone relative flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-500 bg-[#EBEBED] p-6 text-center text-gray-600 sm:min-h-64">
+            <input id="edit-item-photos" type="file" multiple accept="image/jpeg,image/png,image/webp" class="sr-only" aria-describedby="edit-photos-help edit-photos-error">
+            <svg aria-hidden="true" class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" /></svg>
+            <span class="text-base">Tambah Foto Baru</span>
+            <span id="edit-photos-help" class="text-sm">Klik atau seret foto ke sini. Total foto lama dan baru 1–5; JPG, PNG, atau WebP, maksimal 5 MB per foto.</span>
+        </label>
+        <p id="edit-photos-error" class="mt-2 text-sm text-red-700" role="alert" hidden></p>
+        <p id="edit-photos-status" class="mt-3 text-sm text-gray-700" role="status" aria-live="polite"></p>
+        <ul id="edit-new-photos" class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label="Preview foto baru" hidden></ul>
+        <div class="mt-6 flex justify-end gap-3">
+            <button id="cancel-item-edit" type="button" class="min-h-12 rounded-xl border border-[#1C472F] px-5 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">Batal</button>
+            <button id="save-item-edit" type="submit" class="min-h-12 rounded-xl bg-[#1C472F] px-5 py-3 text-[#FFFFEF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-50">Simpan</button>
+        </div>
+    </form>
+</dialog>

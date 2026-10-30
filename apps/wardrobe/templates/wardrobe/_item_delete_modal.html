@@ -1,0 +1,21 @@
+<dialog id="item-delete-modal" aria-labelledby="item-delete-title" aria-describedby="item-delete-description"
+    class="item-modal fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-[862px] overflow-y-auto rounded-xl border-0 bg-[#FFFFEF] p-6 text-[#1C472F] shadow-xl">
+    <div class="relative mb-7 px-9">
+        <h2 id="item-delete-title" class="text-center text-2xl font-bold sm:text-[32px]">Hapus Pakaian?</h2>
+        <button type="button" id="close-item-delete" aria-label="Tutup konfirmasi hapus pakaian"
+            class="absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">
+            <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+    </div>
+    <p id="item-delete-description" class="break-words text-base">Pakaian <strong id="delete-item-name"></strong> beserta seluruh fotonya akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.</p>
+    <form id="item-delete-form" method="post">
+        {% csrf_token %}
+        <p id="item-delete-error" tabindex="-1" class="mt-4 rounded-lg border border-red-700 p-3 text-sm text-red-700" role="alert" hidden></p>
+        <button type="button" id="reload-item-delete" class="mt-4 min-h-11 rounded-xl border border-[#1C472F] px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]" hidden>Muat ulang halaman</button>
+        <p id="item-delete-status" class="mt-3 text-sm" role="status" aria-live="polite" hidden></p>
+        <div class="mt-6 flex flex-wrap justify-end gap-3">
+            <button type="button" id="cancel-item-delete" class="min-h-12 rounded-xl border border-[#1C472F] px-5 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]">Batal</button>
+            <button type="submit" id="confirm-item-delete" class="min-h-12 rounded-xl bg-[#1C472F] px-5 py-3 text-[#FFFFEF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F] disabled:cursor-not-allowed disabled:opacity-50">Ya, Hapus Permanen</button>
+        </div>
+    </form>
+</dialog>

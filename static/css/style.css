@@ -1,5 +1,15 @@
+@layer base {
 * { 
     margin: 0; 
     padding: 0; 
     box-sizing: border-box;
+    }
+}
+
+.category-modal::backdrop {
+    background: rgb(0 0 0 / 40%);
+}
+
+html.category-modal-open {
+    overflow: hidden;
 }

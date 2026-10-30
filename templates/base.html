@@ -1,4 +1,4 @@
-﻿{% load static tailwind_tags %}
+{% load static tailwind_tags %}
 <!DOCTYPE html>
 <html lang="id" data-theme="sirkula">
 <head>
@@ -108,14 +108,21 @@
                     </li>
                     <li>
                         <a
-                            href="#"
+                            href="{% url 'wardrobe:index' %}"
+                            class="{% block nav_wardrobe %}{% endblock nav_wardrobe %}"
+                            {% if request.resolver_match.app_name == 'wardrobe' %}aria-current="page"{% endif %}
+                        >Wardrobe</a>
+                    </li>
+                    <li>
+                        <a
+                            href="{% url 'bartering:incoming' %}"
                             class="{% block nav_barter %}{% endblock nav_barter %}"
                             {% if request.resolver_match.url_name == 'barter' %}aria-current="page"{% endif %}
                         >Barter</a>
                     </li>
                     <li>
                         <a
-                            href="#"
+                            href="{% url 'marketplace:shop' %}"
                             class="{% block nav_thrift %}{% endblock nav_thrift %}"
                             {% if request.resolver_match.url_name == 'thrift' %}aria-current="page"{% endif %}
                         >Thrift</a>
@@ -130,9 +137,6 @@
                     </svg>
                 </a>
                 {% if user.is_authenticated %}
-                    <a href="#" class="btn btn-cart" aria-label="Keranjang">
-                        <img class="navbar-icon" src="{% static 'img/icon-cart-figma.svg' %}" alt="" aria-hidden="true">
-                    </a>
                     <a href="{% url 'accounts:me' %}" class="btn btn-profile">
                         <img class="navbar-icon" src="{% static 'img/icon-user-figma.svg' %}" alt="" aria-hidden="true">
                         <span>Hi, {{ user.get_short_name|default:user.username }}</span>

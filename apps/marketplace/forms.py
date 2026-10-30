@@ -9,7 +9,7 @@ class SavedPlaceForm(forms.ModelForm):
         model = SavedPlace
         fields = ("name", "address_label", "notes", "latitude", "longitude")
 
-        
+
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product

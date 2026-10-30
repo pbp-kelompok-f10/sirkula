@@ -1,6 +1,8 @@
 @import "tailwindcss" source(none);
 
 @source "../../templates";
+@source "../../apps";
+@source "../../ui/templates";
 
 @theme {
     --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;

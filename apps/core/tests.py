@@ -26,8 +26,8 @@ class PageMarkup(HTMLParser):
             self.stylesheets.append(attrs.get("href", ""))
 
 
-# Isolate homepage tests from unfinished URL configurations in other apps.
-urlpatterns = [path("", include("apps.core.urls"))]
+# Shared navigation now depends on the fully registered feature routes.
+urlpatterns = [path("", include("sirkula.urls"))]
 
 
 @override_settings(ROOT_URLCONF="apps.core.tests")
