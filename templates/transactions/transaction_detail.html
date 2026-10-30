@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load currency %}
 
 {% block title %}Detail Transaksi | Sirkula{% endblock %}
 
@@ -49,7 +50,7 @@
                 </div>
                 <div class="detail-row">
                     <span>Total</span>
-                    <strong>Rp {{ transaction.total|floatformat:'0' }}</strong>
+                    <strong>Rp {{ transaction.total|rupiah }}</strong>
                 </div>
 
                 {% if is_seller %}

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load currency %}
 
 {% block title %}Pesanan Saya | Sirkula{% endblock %}
 
@@ -43,7 +44,7 @@
                                 {{ transaction.get_status_display }}
                             </span>
                             <span class="transaction-total">
-                                Rp {{ transaction.total|floatformat:'0' }}
+                                Rp {{ transaction.total|rupiah }}
                             </span>
                         </div>
                     </a>

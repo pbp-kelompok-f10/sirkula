@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load currency %}
 
 {% block title %}Produk Saya | Sirkula{% endblock %}
 
@@ -19,7 +20,7 @@
                         <img src="{{ product.image.url }}" alt="{{ product.name }}" class="h-48 w-full rounded-xl object-cover">
                     {% endif %}
                     <h2 class="mt-4 text-lg font-bold">{{ product.name }}</h2>
-                    <p class="mt-1 text-sm text-neutral-70">Rp {{ product.price|floatformat:'0' }}</p>
+                    <p class="mt-1 text-sm text-neutral-70">Rp {{ product.price|rupiah }}</p>
                     <p class="mt-2 text-sm {% if product.is_available %}text-green-700{% else %}text-red-600{% endif %}">
                         {% if product.is_available %}Tersedia{% else %}Tidak tersedia{% endif %}
                     </p>

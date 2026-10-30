@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load currency %}
 
 {% block title %}Keranjang | Sirkula{% endblock title %}
 
@@ -69,7 +70,7 @@
 
                             <div class="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
                                 <p class="text-lg font-bold text-green-80">
-                                    Rp {{ item.price|floatformat:"0" }}
+                                    Rp {{ item.price|rupiah }}
                                 </p>
                                 <form action="{% url 'transactions:cart_remove' item.pk %}" method="post">
                                     {% csrf_token %}
@@ -109,7 +110,7 @@
                         </div>
                         <div class="flex justify-between">
                             <dt>Subtotal</dt>
-                            <dd>Rp {{ total_price|floatformat:"0" }}</dd>
+                            <dd>Rp {{ total_price|rupiah }}</dd>
                         </div>
                     </dl>
 
@@ -118,7 +119,7 @@
                     <div class="flex items-baseline justify-between">
                         <span class="text-base font-semibold text-neutral-100">Total</span>
                         <span class="text-2xl font-bold text-green-80">
-                            Rp {{ total_price|floatformat:"0" }}
+                            Rp {{ total_price|rupiah }}
                         </span>
                     </div>
 

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load currency %}
 
 {% block title %}Pembayaran | Sirkula{% endblock %}
 
@@ -41,7 +42,7 @@
 
       <div class="payment-total">
         Total pembayaran:
-        <strong>Rp {{ checkout_total|floatformat:"0" }}</strong>
+        <strong>Rp {{ checkout_total|rupiah }}</strong>
       </div>
 
       <form method="post">

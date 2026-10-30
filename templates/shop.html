@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load currency %}
 
 {% block title %}Shop | Sirkula{% endblock title %}
 
@@ -79,7 +80,7 @@
                             <h4 class="card-title">{{ item.name }}</h4>
                         </a>
                         <p class="card-seller">oleh {{ item.seller.username }}</p>
-                        <p class="card-price">Rp {{ item.price|floatformat:"0" }}</p>
+                        <p class="card-price">Rp {{ item.price|rupiah }}</p>
                         <div class="card-actions">
                             <a href="{% url 'marketplace:product_detail' item.pk %}" class="btn-primary">Lihat Detail</a>
                             <button class="btn-secondary">i</button>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load currency %}
 
 {% block title %}Checkout Selesai | Sirkula{% endblock %}
 
@@ -19,7 +20,7 @@
 
       <div class="payment-total">
         Total pesanan:
-        <strong>Rp {{ checkout.total|floatformat:"0" }}</strong>
+        <strong>Rp {{ checkout.total|rupiah }}</strong>
       </div>
 
       <a href="{% url 'core:home' %}" class="primary-button success-home">
