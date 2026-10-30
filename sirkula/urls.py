@@ -25,7 +25,7 @@ urlpatterns = [
     path("wardrobe/", include("apps.wardrobe.urls")),
     # path("marketplace/", include("apps.marketplace.urls")),
     # path("barter/", include("apps.bartering.urls")),
-    # path("outfits/", include("apps.outfits.urls")),
+    path("outfits/", include("apps.outfits.urls")),
 ]
 
 if settings.DEBUG:

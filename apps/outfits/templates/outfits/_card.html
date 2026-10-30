@@ -1,0 +1,8 @@
+{% load static %}
+<article class="mix-card" data-demo-id="{{ outfit.id }}">
+    <svg class="mix-card-image" viewBox="{{ outfit.image.viewbox }}" role="img" aria-labelledby="{{ outfit.id }}-image-title">
+        <title id="{{ outfit.id }}-image-title">{{ outfit.title }} — gambar contoh</title>
+        <image href="{% static outfit.image.source %}" width="{{ outfit.image.width }}" height="{{ outfit.image.height }}"/>
+    </svg>
+    <h3>{{ outfit.title }}</h3>
+</article>

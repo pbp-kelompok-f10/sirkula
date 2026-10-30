@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'main.apps.MainConfig',  # Keep legacy migration history.
     'apps.wardrobe.apps.WardrobeConfig',
+    'apps.outfits.apps.OutfitsConfig',
     "tailwind",
     "ui",
 ]

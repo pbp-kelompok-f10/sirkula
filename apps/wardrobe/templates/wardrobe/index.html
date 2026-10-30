@@ -27,12 +27,11 @@
 
     <div class="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-16">
 
-        <!-- Tujuan tombol dihubungkan saat halaman Mix and Match tersedia -->
+        <!-- Mix and Match -->
         <div class="relative mx-auto -mt-7 mb-10 max-w-4xl">
-            <button
-                type="button"
-                disabled
-                class="flex min-h-14 w-full items-center justify-center gap-4 rounded-xl border-2 border-[#1C472F] bg-[#E5E5E5] px-4 py-3 text-lg text-gray-800 sm:text-2xl"
+            <a
+                href="{% url 'outfits:index' %}{% if active_category_id %}?category={{ active_category_id }}{% endif %}"
+                class="flex min-h-14 w-full items-center justify-center gap-4 rounded-xl border-2 border-[#1C472F] bg-[#E5E5E5] px-4 py-3 text-lg text-gray-800 sm:text-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]"
             >
                 <span>Mix and Match Outfit</span>
                 <svg
@@ -50,7 +49,7 @@
                         stroke-linejoin="round"
                     />
                 </svg>
-            </button>
+            </a>
         </div>
 
         <!-- Filter kategori -->
@@ -154,12 +153,11 @@
 
     </div>
 
-    <!-- Dihubungkan ke halaman Mix and Match pada tahap berikutnya -->
+    <!-- Chat memakai pintu masuk Mix and Match; workspace menyusul. -->
     <div class="fixed right-4 bottom-4 sm:right-8 sm:bottom-8">
-        <button
-            type="button"
-            disabled
-            class="flex min-h-12 items-center gap-3 rounded-full bg-[#1C472F] px-5 py-4 text-white shadow-lg"
+        <a
+            href="{% url 'outfits:index' %}{% if active_category_id %}?category={{ active_category_id }}{% endif %}#mix-prompt"
+            class="flex min-h-12 items-center gap-3 rounded-full bg-[#1C472F] px-5 py-4 text-white shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1C472F]"
         >
             <svg
                 class="h-6 w-6 shrink-0"
@@ -175,7 +173,7 @@
                 />
             </svg>
             <span class="font-semibold">Chat AI Stylist</span>
-        </button>
+        </a>
     </div>
 
 </div>
