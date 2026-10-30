@@ -1,8 +1,11 @@
-{% load static %}
-<article class="mix-card" data-demo-id="{{ outfit.id }}">
-    <svg class="mix-card-image" viewBox="{{ outfit.image.viewbox }}" role="img" aria-labelledby="{{ outfit.id }}-image-title">
-        <title id="{{ outfit.id }}-image-title">{{ outfit.title }} — gambar contoh</title>
-        <image href="{% static outfit.image.source %}" width="{{ outfit.image.width }}" height="{{ outfit.image.height }}"/>
-    </svg>
-    <h3>{{ outfit.title }}</h3>
-</article>
+<form method="post" action="{% url 'outfits:index' %}" class="mix-card-form" data-start-chat>
+    {% csrf_token %}
+    <input type="hidden" name="recommendation" value="{{ outfit.id }}">
+    <input type="hidden" name="prompt" value="{{ outfit.prompt }}">
+    <input type="hidden" name="request_key" value="{{ outfit.request_key }}">
+    {% if return_category %}<input type="hidden" name="category" value="{{ return_category }}">{% endif %}
+    <button type="submit" class="mix-card" aria-label="Buka rekomendasi {{ outfit.title }}">
+        {% include 'outfits/_image.html' with image=outfit.image image_class='mix-card-image' image_id=outfit.id image_title=outfit.title %}
+        <span class="mix-card-title">{{ outfit.title }}</span>
+    </button>
+</form>

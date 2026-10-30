@@ -1,0 +1,4 @@
+<a class="mix-card" href="{% url 'outfits:conversation' conversation_id=entry.pk %}{% if return_category %}?category={{ return_category }}{% endif %}" aria-label="Buka percakapan {{ entry.title }}">
+    {% include 'outfits/_image.html' with image=entry.result.preview image_class='mix-card-image' image_id=entry.pk image_title=entry.title %}
+    <h3>{{ entry.title }}</h3>
+</a>

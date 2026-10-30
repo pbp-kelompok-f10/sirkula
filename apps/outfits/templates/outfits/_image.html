@@ -1,0 +1,9 @@
+{% load static %}
+{% if image.kind == 'url' %}
+<img class="{{ image_class }}" src="{{ image.url }}" alt="{{ image_title }}" decoding="async">
+{% else %}
+<svg class="{{ image_class }}" viewBox="{{ image.viewbox }}" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="{{ image_id }}-image-title">
+    <title id="{{ image_id }}-image-title">{{ image_title }}</title>
+    <image href="{% static image.source %}" width="{{ image.width }}" height="{{ image.height }}"/>
+</svg>
+{% endif %}

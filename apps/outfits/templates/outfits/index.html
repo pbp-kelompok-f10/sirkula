@@ -4,25 +4,19 @@
 {% block nav_wardrobe %}active{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'outfits/css/landing.css' %}">
+<link rel="stylesheet" href="{% static 'outfits/css/chat.css' %}">
 {% endblock %}
 {% block content %}
 <div class="mix-landing" data-provider="{{ mode }}">
-    <section class="mix-hero" aria-labelledby="mix-title">
-        <div class="mix-hero-inner">
-            <a href="{{ wardrobe_url }}" class="mix-back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Ke Lemari Virtual
-            </a>
-            <h1 id="mix-title">Mix and Match</h1>
-        </div>
-    </section>
+    {% include 'outfits/_hero.html' %}
     <section class="mix-composer" aria-labelledby="mix-greeting">
         <p id="mix-greeting">Halo! Bagaimana kamu ingin mix and match pakaianmu?</p>
-        <form method="post" action="{% url 'outfits:index' %}{% if return_category %}?category={{ return_category }}{% endif %}" class="mix-prompt-form">
+        <form method="post" action="{% url 'outfits:index' %}{% if return_category %}?category={{ return_category }}{% endif %}" class="mix-prompt-form" data-start-chat>
             {% csrf_token %}
+            <input type="hidden" name="request_key" value="{{ prompt_form.request_key.value|default_if_none:'' }}">
             {% if return_category %}<input type="hidden" name="category" value="{{ return_category }}">{% endif %}
             <label for="mix-prompt" class="sr-only">Kebutuhan outfit</label>
-            <p id="mix-demo-help" class="sr-only">Data simulasi. Pengiriman memperbarui contoh rekomendasi; halaman hasil dan chat belum tersedia.</p>
+            <p id="mix-demo-help" class="sr-only">Rekomendasi menggunakan data simulasi. Login diperlukan untuk menyimpan percakapan.</p>
             <div class="mix-input-wrap">
                 <input id="mix-prompt" name="prompt" type="text" required maxlength="500" placeholder="Placeholder"
                     value="{{ prompt_form.prompt.value|default_if_none:'' }}"
@@ -35,7 +29,8 @@
             {% if prompt_form.prompt.errors %}
                 <div id="mix-prompt-errors" class="mix-error" role="alert">{% for error in prompt_form.prompt.errors %}<p>{{ error }}</p>{% endfor %}</div>
             {% endif %}
-            {% if submitted_prompt %}<p class="sr-only" role="status">Contoh rekomendasi diperbarui. Ini simulasi, bukan hasil AI.</p>{% endif %}
+            {% if prompt_form.non_field_errors %}<div class="mix-error" role="alert">{{ prompt_form.non_field_errors }}</div>{% endif %}
+            {% if prompt_form.request_key.errors or prompt_form.recommendation.errors %}<p class="mix-error" role="alert">Permintaan tidak valid. Buka ulang halaman lalu coba lagi.</p>{% endif %}
         </form>
     </section>
     <div class="mix-collections">
@@ -48,9 +43,11 @@
         <section class="mix-history" aria-labelledby="mix-history-title">
             <h2 id="mix-history-title">Riwayat</h2>
             <div class="mix-grid">
-                {% for outfit in history %}{% include 'outfits/_card.html' %}{% endfor %}
+                {% for entry in history %}{% include 'outfits/_history_card.html' %}{% empty %}<p>Belum ada riwayat.</p>{% endfor %}
             </div>
         </section>
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}<script src="{% static 'outfits/js/chat.js' %}" defer></script>{% endblock %}

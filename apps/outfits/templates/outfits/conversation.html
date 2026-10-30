@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static i18n tz %}
+{% block title %}Mix and Match | Sirkula{% endblock %}
+{% block nav_wardrobe %}active{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'outfits/css/landing.css' %}">
+<link rel="stylesheet" href="{% static 'outfits/css/chat.css' %}">
+{% endblock %}
+{% block content %}
+<div class="mix-landing">
+    {% include 'outfits/_hero.html' %}
+    <section class="mix-workspace" aria-label="Hasil outfit dan percakapan" data-provider="{{ result.mode }}">
+        <div class="result-preview">
+            {% include 'outfits/_image.html' with image=result.preview image_class='result-image' image_id='outfit-preview' image_title='Preview outfit' %}
+        </div>
+        <div class="result-pieces" aria-label="Pakaian penyusun outfit">
+            {% for piece in result.pieces %}
+                <div class="result-piece">
+                    {% include 'outfits/_image.html' with image=piece.image image_class='result-image' image_id=forloop.counter image_title=piece.name %}
+                </div>
+            {% endfor %}
+        </div>
+        <section class="chat-panel" aria-labelledby="stylist-title">
+            <header class="chat-header">
+                <h2 id="stylist-title">SirkulaAI</h2>
+                <button type="button" id="chat-history-toggle" aria-label="Riwayat percakapan" aria-expanded="false" aria-controls="chat-history-panel">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                </button>
+            </header>
+            <p class="sr-only" id="chat-demo-help">Rekomendasi dan gambar menggunakan penyedia simulasi, belum API AI.</p>
+            <div class="chat-messages" id="chat-messages" role="log" aria-label="Pesan percakapan" aria-describedby="chat-demo-help" tabindex="0">
+                {% for message in chat_messages %}
+                    <div class="chat-bubble chat-bubble-{{ message.role }}"><span class="sr-only">{% if message.role == 'user' %}Kamu{% else %}SirkulaAI{% endif %}: </span>{{ message.content }}</div>
+                {% endfor %}
+            </div>
+            <form method="post" action="{% url 'outfits:conversation' conversation_id=conversation.pk %}" class="chat-form" id="chat-form">
+                {% csrf_token %}
+                <input type="hidden" name="request_key" value="{{ chat_form.request_key.value|default_if_none:'' }}">
+                <input type="hidden" name="version" value="{{ chat_form.version.value|default_if_none:'' }}">
+                {% if return_category %}<input type="hidden" name="category" value="{{ return_category }}">{% endif %}
+                <p id="chat-status" class="chat-status" role="status" hidden></p>
+                <div id="chat-errors" class="mix-error" role="alert" tabindex="-1" {% if not chat_form.errors %}hidden{% endif %}>
+                    {% for error in chat_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                    {% for field in chat_form %}{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}{% endfor %}
+                </div>
+                <label for="chat-prompt" class="sr-only">Pesan untuk SirkulaAI</label>
+                <div class="mix-input-wrap">
+                    <input id="chat-prompt" name="prompt" type="text" required maxlength="500" placeholder="Placeholder"
+                        value="{{ chat_form.prompt.value|default_if_none:'' }}" aria-describedby="chat-errors chat-demo-help"
+                        {% if chat_form.prompt.errors %}aria-invalid="true"{% endif %}>
+                    <button type="submit" aria-label="Kirim pesan">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m21 3-7 18-4-8-8-4 19-6ZM10 13 21 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                </div>
+            </form>
+            <aside class="chat-history-panel" id="chat-history-panel" aria-label="Riwayat percakapan" hidden>
+                <div class="chat-history-list">
+                    {% language 'id' %}{% timezone 'Asia/Jakarta' %}
+                    {% for entry in history %}
+                        {% ifchanged entry.updated_at|date:'Y-m-d' %}<p class="chat-history-date">{{ entry.updated_at|date:'d F Y' }}</p>{% endifchanged %}
+                        <a href="{% url 'outfits:conversation' conversation_id=entry.pk %}{% if return_category %}?category={{ return_category }}{% endif %}" {% if entry.pk == conversation.pk %}aria-current="page"{% endif %}>{{ entry.title }}</a>
+                    {% endfor %}
+                    {% endtimezone %}{% endlanguage %}
+                </div>
+                <a href="{{ new_chat_url }}" class="chat-new">Chat Baru</a>
+            </aside>
+        </section>
+    </section>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'outfits/js/chat.js' %}" defer></script>{% endblock %}
