@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Edit ulasan{% else %}Tulis ulasan{% endif %} | Sirkula{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-2xl px-5 py-12 sm:py-20" aria-labelledby="review-form-title">
+    <a href="{% url 'core:home' %}#reviews" class="text-primary underline underline-offset-4">Kembali ke ulasan</a>
+    <h1 id="review-form-title" class="mt-6 text-3xl font-semibold">{% if editing %}Edit ulasanmu{% else %}Bagikan pengalamanmu{% endif %}</h1>
+    <p class="mt-3 text-neutral-80">Ulasanmu bisa dibaca semua pengunjung. Ceritakan pengalaman menggunakan website Sirkula dengan sopan.</p>
+    {% for message in messages %}<p role="status" class="mt-4 rounded-card-small bg-lime-20 p-4 text-primary">{{ message }}</p>{% endfor %}
+    <form method="post" class="mt-8 space-y-5">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div>
+            <label for="{{ form.content.id_for_label }}" class="mb-2 block font-semibold">{{ form.content.label }}</label>
+            {{ form.content }}
+            <p id="review-help" class="mt-2 text-sm text-neutral-80">10–1.000 karakter. {% if user.is_superuser %}Sebagai superuser, kamu dapat menambahkan ulasan tanpa batas jumlah.{% else %}Satu akun dapat menulis satu ulasan dan memperbaruinya kapan saja.{% endif %}</p>
+            <div id="review-errors" class="mt-2 text-sm text-error" role="alert">{{ form.content.errors }}</div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <button type="submit" class="btn btn-primary">{% if editing %}Simpan perubahan{% else %}Terbitkan ulasan{% endif %}</button>
+            <a href="{% url 'core:home' %}#reviews" class="btn btn-outline btn-primary">Batal</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

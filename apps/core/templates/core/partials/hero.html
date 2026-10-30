@@ -1,0 +1,80 @@
+{% load static %}
+
+<section aria-labelledby="hero-title" class="bg-base-100">
+    <div class="mx-auto max-w-[1440px] px-5 pt-6 sm:px-8 lg:px-16">
+        <div class="relative isolate flex flex-col overflow-hidden rounded-3xl bg-base-200 shadow-sm">
+            <img
+                src="{% static 'core/img/hero-final.jpg' %}"
+                alt=""
+                fetchpriority="high"
+                class="order-last h-80 sm:h-96 w-full object-cover object-[center_65%]
+                lg:absolute lg:inset-0 lg:-z-10 lg:h-full
+                lg:object-[center_40%]"
+            >
+
+            <div class="px-5 py-8 lg:min-h-[640px] sm:px-10 lg:pb-72 lg:aspect-[7/5] lg:pt-16">
+                <div class="mx-auto max-w-4xl text-center">
+                    <h1
+                        id="hero-title"
+                        class="text-3xl font-normal leading-tight text-base-content
+                               sm:text-5xl lg:text-6xl"
+                    >
+                        Gaya Tanpa Batas,
+                        <span
+                            class="mt-2 block text-primary underline
+                                   decoration-2 underline-offset-8"
+                        >
+                            Nol Jejak Baru.
+                        </span>
+                    </h1>
+
+                    <p
+                        class="mx-auto mt-6 max-w-[820px] text-base
+                               leading-7 text-base-content sm:text-xl sm:leading-8 lg:text-2xl lg:leading-9"
+                    >
+                        Bergabunglah dengan revolusi fashion berkelanjutan.
+                        Di Sirkula, kamu bisa saling barter barang impianmu,
+                        berbelanja <em>item preloved</em> berkualitas tinggi,
+                        dan memanfaatkan AI stylist pribadi untuk
+                        mengoptimalkan isi lemarimu.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 grid gap-5 sm:grid-cols-2">
+            <a
+                href="/wardrobe/"
+                class="inline-flex min-h-12 items-center justify-center
+                       rounded-lg border border-primary px-6 py-3
+                       text-center text-sm font-medium text-primary
+                       focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            >
+                Jelajahi Lemari Virtual
+            </a>
+
+            <a
+                href="/barter/"
+                class="inline-flex min-h-12 items-center justify-center gap-3
+                       rounded-lg bg-primary px-6 py-3
+                       text-center text-sm font-medium text-white
+                       focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            >
+                Mulai Barter/Thrift
+
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="size-5 shrink-0"
+                >
+                    <path d="M5 12h14M13 6l6 6-6 6"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>

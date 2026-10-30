@@ -500,7 +500,7 @@
     padding: 0 3.75rem;
   }
 
-  .footer-sirkula .footer-title {    
+  .footer-sirkula .footer-title {
     margin-bottom: 0.25rem;
     opacity: 1;
     color: #000000;
@@ -1113,6 +1113,35 @@
 
 /* Buat override DaisyUI */
 @layer utilities {
+  /* Keep shared navbar geometry above DaisyUI's utility layer. */
+  .navbar-sirkula {
+    display: grid;
+    min-height: 6.5rem;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    padding: 1.5rem 4rem;
+  }
+
+  .navbar-sirkula .navbar-start,
+  .navbar-sirkula .navbar-center,
+  .navbar-sirkula .navbar-end {
+    width: auto;
+    min-width: 0;
+  }
+
+  @media (max-width: 64rem) {
+    .navbar-sirkula {
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding-inline: 1.5rem;
+    }
+    .navbar-sirkula .navbar-center { display: none; }
+  }
+
+  @media (max-width: 40rem) {
+    .navbar-sirkula { min-height: 4.5rem; padding: 0.75rem 1rem; }
+    .navbar-sirkula .navbar-brand { padding-left: 0; }
+    .navbar-sirkula .navbar-end { padding-right: 0; }
+  }
+
   .navbar-sirkula .menu-horizontal {
     --menu-active-bg: var(--color-lime-10);
     --menu-active-fg: var(--color-success-100);

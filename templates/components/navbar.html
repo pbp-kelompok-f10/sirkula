@@ -1,0 +1,44 @@
+{% url "core:home" as home_url %}
+<header class="bg-brand text-white">
+    <nav aria-label="Navigasi utama" class="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-5 px-5 py-5 sm:px-8 lg:px-16 lg:py-6">
+        <a href="{{ home_url }}" aria-label="Sirkula — beranda" class="inline-flex items-center gap-2 rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            {% include "components/brand_mark.html" with mark_class="w-12 text-navigation" only %}
+            <span class="text-lg font-semibold">Sirkula</span>
+        </a>
+        <ul class="order-3 flex w-full flex-wrap items-center justify-center gap-2 text-sm sm:gap-6 lg:order-none lg:w-auto">
+            <li>
+                <a href="{{ home_url }}"
+                   {% if request.resolver_match.view_name == "core:home" %}aria-current="page"{% endif %}
+                   class="inline-flex min-h-11 items-center rounded-lg px-4 hover:bg-white/10 aria-[current=page]:bg-navigation aria-[current=page]:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    Home
+                </a>
+            </li>
+            <li>
+                <a href="/wardrobe/"
+                   {% if request.resolver_match.namespace == "wardrobe" %}aria-current="page"{% endif %}
+                   class="inline-flex min-h-11 items-center rounded-lg px-4 hover:bg-white/10 aria-[current=page]:bg-navigation aria-[current=page]:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    Wardrobe
+                </a>
+            </li>
+            <li>
+                <a href="/barter/"
+                   {% if request.resolver_match.namespace == "bartering" %}aria-current="page"{% endif %}
+                   class="inline-flex min-h-11 items-center rounded-lg px-4 hover:bg-white/10 aria-[current=page]:bg-navigation aria-[current=page]:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    Barter
+                </a>
+            </li>
+            <li>
+                <a href="/marketplace/"
+                   {% if request.resolver_match.namespace == "marketplace" %}aria-current="page"{% endif %}
+                   class="inline-flex min-h-11 items-center rounded-lg px-4 hover:bg-white/10 aria-[current=page]:bg-navigation aria-[current=page]:text-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    Thrift
+                </a>
+            </li>
+        </ul>
+        <div class="flex items-center gap-3 text-sm">
+            {# Provisional account paths: align with accounts URL names when available. #}
+            <a href="/accounts/register/" class="inline-flex min-h-11 items-center rounded-lg bg-navigation px-4 text-brand hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Register</a>
+            <a href="/accounts/login/" class="inline-flex min-h-11 items-center rounded-lg border border-navigation px-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Login</a>
+        </div>
+    </nav>
+</header>
