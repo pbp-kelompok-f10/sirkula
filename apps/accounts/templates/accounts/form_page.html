@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | Sirkula{% endblock title %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock extra_head %}
+
+{% block content %}
+<main class="min-h-screen bg-[#fbf9f6] px-4 py-10 font-sans text-[#181010] sm:px-6 lg:px-16 lg:py-14">
+  <div class="mx-auto max-w-2xl">
+    <section class="flex flex-col gap-8 rounded-3xl bg-white p-5 shadow-lg sm:p-8 lg:p-10">
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-semibold uppercase tracking-wide text-[#11562a]">
+          Pengaturan akun
+        </p>
+        <h1 class="text-3xl font-bold text-[#181010]">
+          {{ title }}
+        </h1>
+        <p class="text-sm leading-relaxed text-gray-600">
+          {{ subtitle }}
+        </p>
+      </div>
+
+      <form method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} class="flex flex-col gap-6">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+            {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          <div class="flex flex-col gap-2">
+            <label for="{{ field.id_for_label }}" class="text-sm font-semibold text-[#181010]">
+              {{ field.label }}
+            </label>
+
+            {{ field }}
+
+            {% if field.help_text %}
+              <p class="text-xs text-gray-500">{{ field.help_text }}</p>
+            {% endif %}
+
+            {% for error in field.errors %}
+              <p class="text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+
+        <div class="flex flex-wrap gap-3 pt-2">
+          <button type="submit"
+                  class="rounded-xl border-2 border-[#1c472f] bg-[#1c472f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#11562a]">
+            {{ submit_label|default:'Simpan' }}
+          </button>
+
+          {% if cancel_url %}
+            <a href="{{ cancel_url }}"
+               class="rounded-xl border-2 border-[#1c1b27] px-5 py-3 text-sm font-semibold text-[#1c1b27] transition hover:bg-gray-100">
+              Batal
+            </a>
+          {% endif %}
+        </div>
+      </form>
+    </section>
+  </div>
+</main>
+{% endblock content %}

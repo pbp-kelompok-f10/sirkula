@@ -29,6 +29,9 @@ SECRET_KEY = 'django-insecure-j4!273_2n7rt4_^m3ea=(&y2&-y^3p**pjb9v0u#13-%1!#s0)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
+MIDTRANS_SERVER_KEY = os.getenv('MIDTRANS_SERVER_KEY', '')
+MIDTRANS_IS_PRODUCTION = os.getenv('MIDTRANS_IS_PRODUCTION', 'False').lower() == 'true'
+MIDTRANS_QRIS_ACQUIRER = os.getenv('MIDTRANS_QRIS_ACQUIRER', 'gopay')
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "zayyan-ramadzaki-sirkula.pws.cs.ui.ac.id"]
 
@@ -42,14 +45,26 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    "apps.core.apps.CoreConfig",
     "tailwind",
     "ui",
+
+    # Feature apps
+    "apps.core",
+    "apps.accounts",
+    "apps.wardrobe",
     "apps.marketplace",
+    "apps.bartering",
+    "apps.outfits",
+    "apps.transactions",
 ]
 
 # Tailwind definition
 TAILWIND_APP_NAME = 'ui'
+
+# STATICFILES
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # PNPM
 NPM_BIN_PATH = os.getenv('NPM_BIN_PATH', "npm")
@@ -141,15 +156,18 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (upload produk shop)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Location providers (Discovery Map)
+# Discovery Map providers
 NOMINATIM_BASE_URL = os.getenv("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org")
 IP_GEOLOCATION_URL = os.getenv("IP_GEOLOCATION_URL", "https://ipapi.co/{ip}/json/")
 LOCATION_USER_AGENT = os.getenv("LOCATION_USER_AGENT", "Sirkula/1.0 (development)")

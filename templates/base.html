@@ -1,14 +1,76 @@
-{% load static tailwind_tags %}
+﻿{% load static tailwind_tags %}
 <!DOCTYPE html>
 <html lang="id" data-theme="sirkula">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sirkula, platform thrift dan trade fashion berbasis lokasi dengan personalized AI Stylist.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <title>{% block title %}Sirkula{% endblock title %}</title>
 
     {% tailwind_css %}
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .site-messages {
+            position: fixed;
+            inset: auto 1rem 1rem auto;
+            z-index: 1000;
+            display: grid;
+            width: min(26rem, calc(100vw - 2rem));
+            gap: .75rem;
+            pointer-events: none;
+        }
+
+        .site-message {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .75rem;
+            border: 1px solid rgb(28 71 47 / 14%);
+            border-radius: 1rem;
+            background: #fbffce;
+            color: #1c472f;
+            padding: .9rem 1rem;
+            box-shadow: 0 12px 32px rgb(24 16 16 / 16%);
+            pointer-events: auto;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        .site-message.is-leaving {
+            opacity: 0;
+            transform: translateY(.5rem);
+        }
+
+        .site-message-dismiss {
+            flex: none;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            font: inherit;
+            font-size: 1.25rem;
+            line-height: 1;
+            padding: .15rem .3rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .site-message { transition: none; }
+        }
+    </style>
     {% block extra_head %}{% endblock extra_head %}
 </head>
 <body class="flex min-h-screen flex-col bg-base-100 text-base-content antialiased">
@@ -23,11 +85,8 @@
         <nav class="navbar navbar-sirkula{% if user.is_authenticated %} navbar-authenticated{% endif %}" aria-label="Navigasi utama">
             <div class="navbar-start">
                 <a class="navbar-brand" href="{% url 'core:home' %}" aria-label="Sirkula - Beranda">
-                    <img
-                        class="navbar-logo"
-                        src="{% static 'img/sirkula-logo.png' %}"
-                        alt=""
-                    >
+                    <img class="navbar-logo" src="{% static 'img/sirkula-mark-figma.svg' %}" alt="">
+                    <span>Sirkula</span>
                 </a>
             </div>
 
@@ -42,7 +101,7 @@
                     </li>
                     <li>
                         <a
-                            href="#"
+                            href="/marketplace/"
                             class="{% block nav_shop %}{% endblock nav_shop %}"
                             {% if request.resolver_match.url_name == 'shop' %}aria-current="page"{% endif %}
                         >Shop</a>
@@ -50,43 +109,71 @@
                     <li>
                         <a
                             href="#"
-                            class="{% block nav_wardrobe %}{% endblock nav_wardrobe %}"
-                            {% if request.resolver_match.url_name == 'wardrobe' %}aria-current="page"{% endif %}
-                        >Wardrobe</a>
+                            class="{% block nav_barter %}{% endblock nav_barter %}"
+                            {% if request.resolver_match.url_name == 'barter' %}aria-current="page"{% endif %}
+                        >Barter</a>
                     </li>
                     <li>
                         <a
-                            href="{% url 'marketplace:discovery_map' %}"
-                            class="{% block nav_map %}{% endblock nav_map %}"
-                            {% if request.resolver_match.url_name == 'discovery_map' %}aria-current="page"{% endif %}
-                        >Map</a>
+                            href="#"
+                            class="{% block nav_thrift %}{% endblock nav_thrift %}"
+                            {% if request.resolver_match.url_name == 'thrift' %}aria-current="page"{% endif %}
+                        >Thrift</a>
                     </li>
                 </ul>
             </div>
 
             <div class="navbar-end" aria-label="Akun">
+                <a href="/transactions/cart/" class="btn btn-cart" aria-label="Keranjang">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.05 2.05L3.149 2.022C3.38643 2.01601 3.61824 2.09473 3.80293 2.24406C3.98762 2.39339 4.11314 2.60358 4.157 2.837L6.847 17.184C6.88993 17.4133 7.01169 17.6204 7.19121 17.7694C7.37072 17.9185 7.59669 18 7.83 18H18M18 18C16.8954 18 16 18.8954 16 20C16 21.1046 16.8954 22 18 22C19.1046 22 20 21.1046 20 20C20 18.8954 19.1046 18 18 18ZM4.563 5H20.998C21.1468 4.9997 21.2938 5.03261 21.4283 5.09633C21.5627 5.16005 21.6813 5.25298 21.7753 5.36834C21.8693 5.4837 21.9363 5.61858 21.9716 5.76315C22.0068 5.90772 22.0094 6.05833 21.979 6.204L20.953 12.43C20.8537 12.8815 20.6011 13.2846 20.2381 13.5708C19.8751 13.8571 19.4242 14.0087 18.962 14H6.25M10 20C10 21.1046 9.10457 22 8 22C6.89543 22 6 21.1046 6 20C6 18.8954 6.89543 18 8 18C9.10457 18 10 18.8954 10 20Z"/>
+                    </svg>
+                </a>
                 {% if user.is_authenticated %}
                     <a href="#" class="btn btn-cart" aria-label="Keranjang">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M2.05 2.05L3.149 2.022C3.38643 2.01601 3.61824 2.09473 3.80293 2.24406C3.98762 2.39339 4.11314 2.60358 4.157 2.837L6.847 17.184C6.88993 17.4133 7.01169 17.6204 7.19121 17.7694C7.37072 17.9185 7.59669 18 7.83 18H18M18 18C16.8954 18 16 18.8954 16 20C16 21.1046 16.8954 22 18 22C19.1046 22 20 21.1046 20 20C20 18.8954 19.1046 18 18 18ZM4.563 5H20.998C21.1468 4.9997 21.2938 5.03261 21.4283 5.09633C21.5627 5.16005 21.6813 5.25298 21.7753 5.36834C21.8693 5.4837 21.9363 5.61858 21.9716 5.76315C22.0068 5.90772 22.0094 6.05833 21.979 6.204L20.953 12.43C20.8537 12.8815 20.6011 13.2846 20.2381 13.5708C19.8751 13.8571 19.4242 14.0087 18.962 14H6.25M10 20C10 21.1046 9.10457 22 8 22C6.89543 22 6 21.1046 6 20C6 18.8954 6.89543 18 8 18C9.10457 18 10 18.8954 10 20Z"/>
-                        </svg>
+                        <img class="navbar-icon" src="{% static 'img/icon-cart-figma.svg' %}" alt="" aria-hidden="true">
                     </a>
-                    <a href="#" class="btn btn-profile">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 13C14.7614 13 17 10.7614 17 8C17 5.23858 14.7614 3 12 3C9.23858 3 7 5.23858 7 8C7 10.7614 9.23858 13 12 13ZM12 13C14.1217 13 16.1566 13.8429 17.6569 15.3431C19.1571 16.8434 20 18.8783 20 21M12 13C9.87827 13 7.84344 13.8429 6.34315 15.3431C4.84285 16.8434 4 18.8783 4 21"/>
-                        </svg>
+                    <a href="{% url 'accounts:me' %}" class="btn btn-profile">
+                        <img class="navbar-icon" src="{% static 'img/icon-user-figma.svg' %}" alt="" aria-hidden="true">
                         <span>Hi, {{ user.get_short_name|default:user.username }}</span>
                     </a>
-                    <a href="#" class="btn btn-logout">Logout</a>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="inline-block">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-logout">Logout</button>
+                    </form>
                 {% else %}
-                    <a href="#" class="btn btn-login font-bold">Login</a>
-                    <a href="#" class="btn btn-outline btn-secondary">Register</a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-login font-bold">Login</a>
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline btn-secondary">Register</a>
                 {% endif %}
             </div>
         </nav>
-    </header>
+     </header>
 
-    <main id="main-content" class="flex-1">
+     <main id="main-content" class="flex-1">
+        {% if messages %}
+            <div class="site-messages" aria-label="Notifikasi">
+                {% for message in messages %}
+                    <div
+                        class="alert site-message{% if message.tags %} alert-{{ message.tags }}{% endif %}"
+                        data-toast
+                        role="{% if 'error' in message.tags or 'warning' in message.tags %}alert{% else %}status{% endif %}"
+                        aria-live="{% if 'error' in message.tags or 'warning' in message.tags %}assertive{% else %}polite{% endif %}"
+                    >
+                        <span>{{ message }}</span>
+
+                        <button
+                            class="site-message-dismiss"
+                            type="button"
+                            data-dismiss-message
+                            aria-label="Tutup notifikasi"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         {% block content %}{% endblock content %}
     </main>
 
@@ -96,36 +183,51 @@
         </p>
     </footer> -->
 
-    <footer class="space-y-4">
+    <footer class="footer-site" aria-label="Footer Sirkula">
         <div class="footer-sirkula">
             <div class="footer-hero">
-                <div>
+                <div class="footer-hero-copy">
                     <h2>Bantu Kami <br> Jadi Lebih Baik!</h2>
                     <p>Pendapatmu sangat berharga! Bagikan pengalamanmu agar Sirkula bisa jadi platform yang lebih nyaman untuk semua.</p>
                 </div>
-                <img src="{% static 'img/sirkula-icon.png' %}" alt="Sirkula Icon" />
-            </div>
-            <div class="footer-links">
-                <nav class="footer-support flex flex-col">
-                    <span class="footer-title">Support</span>
-                    <a href="#">Help Center</a>
-                    <a href="#">Terms & Conditions</a>
-                    <a href="#">Privacy & Policy</a>
-                    <a href="#">User Guide</a>
-                </nav>
-                <div class="footer-contact flex flex-col">
-                    <span class="footer-title">Contact Us</span>
-                    <a href="https://instagram.com/sirkula.csui">@sirkula.csui</a>
-                    <a href="mailto:support@sirkula.com">sirkula@gmail.com</a>
-                    <a href="https://linkedin.com/in/sirkula">Sirkula Team</a>
+                <div class="footer-mark" aria-hidden="true">
+                    <img src="{% static 'img/sirkula-mark-figma.svg' %}" alt="" />
                 </div>
             </div>
+
+            <div class="footer-links">
+                <nav class="footer-support" aria-label="Support Sirkula">
+                    <span class="footer-title">Support</span>
+                    <a href="#">Help Center</a>
+                    <a href="#">Terms &amp; Conditions</a>
+                    <a href="#">Privacy &amp; Policy</a>
+                    <a href="#">User Guide</a>
+                </nav>
+
+                <div class="footer-contact" aria-label="Contact Us Sirkula">
+                    <span class="footer-title">Contact Us</span>
+                    <a href="https://instagram.com/sirkula.csui" target="_blank" rel="noreferrer">
+                        <span class="footer-link-icon" aria-hidden="true">IG</span>
+                        <span>@sirkula.csui</span>
+                    </a>
+                    <a href="mailto:support@sirkula.com">
+                        <span class="footer-link-icon" aria-hidden="true">@</span>
+                        <span>sirkula@gmail.com</span>
+                    </a>
+                    <a href="https://linkedin.com/in/sirkula" target="_blank" rel="noreferrer">
+                        <span class="footer-link-icon" aria-hidden="true">in</span>
+                        <span>Sirkula Team</span>
+                    </a>
+                </div>
+            </div>
+
             <div class="footer-copyright">
-                <p>&copy; 2026 Sirkula. All rights reserved.</p>
+                <p>&copy; {% now "Y" %} Sirkula. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
+    <script src="{% static 'js/accounts.js' %}" defer></script>
     {% block extra_js %}{% endblock extra_js %}
 </body>
 </html>

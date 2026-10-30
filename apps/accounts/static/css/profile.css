@@ -1,0 +1,167 @@
+/* ===== Halaman Profil (Figma: Lo-Fi---Hi-Fi, node 155:6320) =====
+   Token warna diambil dari style Figma. Jika tim sudah punya :root di style.css,
+   pindahkan variabel ini ke sana. */
+:root {
+    --bg-page: #fbf9f6;
+    --green-100: #1c472f;
+    --green-text: #11562a;
+    --success-100: #0c4521;
+    --lime-10: #feffef;
+    --lime-30: #fbffce;
+    --navy-100: #181010;
+    --navy-90: #1c1b27;
+    --neutral-10: #eaebed;
+    --radius-btn: 12px;
+}
+
+.profile-page {
+    font-family: 'Poppins', sans-serif;
+    color: var(--navy-100);
+    background: var(--bg-page);
+    padding: 56px 64px 64px;
+}
+.profile-page__inner {
+    max-width: 1312px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+.profile-page p, .profile-page h1, .profile-page h2, .profile-page h3 { margin: 0; }
+
+/* ---------- Card ---------- */
+.p-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 12px 16px rgba(0, 0, 0, .08);
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+/* ---------- Button & pill ---------- */
+.p-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 20px;
+    border-radius: var(--radius-btn);
+    font: 400 16px/normal 'Poppins', sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    border: 2px solid transparent;
+    white-space: nowrap;
+}
+.p-btn--primary { background: var(--green-100); color: var(--neutral-10); border-color: var(--green-100); }
+.p-btn--secondary { background: transparent; color: var(--navy-90); border-color: var(--navy-90); }
+.p-btn:focus-visible { outline: 3px solid var(--green-text); outline-offset: 2px; }
+
+.p-pill {
+    display: inline-flex;
+    padding: 10px 16px;
+    border-radius: 100px;
+    background: var(--lime-30);
+    color: var(--green-text);
+    font: 600 14px/normal 'Poppins', sans-serif;
+    white-space: nowrap;
+}
+.p-pill--sm { background: #fff; padding: 6px 12px; font-size: 12px; }
+
+/* ---------- Header ---------- */
+.p-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.p-header__text { display: flex; flex-direction: column; gap: 8px; }
+.p-eyebrow { font: 600 14px/normal 'Poppins', sans-serif; color: var(--green-text); text-transform: uppercase; }
+.p-title { font: 700 32px/normal 'Poppins', sans-serif; color: var(--navy-100); }
+.p-header__actions { display: flex; align-items: center; gap: 12px; }
+
+/* ---------- Identity ---------- */
+.p-identity { display: flex; align-items: center; gap: 48px; }
+.p-avatar {
+    flex: none;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    border: 4px solid var(--green-text);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .1);
+    object-fit: cover;
+    background: var(--lime-30);
+}
+.p-avatar--empty {
+    display: flex; align-items: center; justify-content: center;
+    font: 700 88px/1 'Poppins', sans-serif;
+    color: var(--green-text);
+}
+.p-identity__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.p-identity__top { display: flex; flex-direction: column; gap: 8px; }
+.p-fullname { font: italic 700 40px/normal 'Poppins', sans-serif; color: var(--green-text); overflow-wrap: anywhere; }
+.p-location { display: flex; align-items: center; gap: 8px; font: 500 18px/normal 'Poppins', sans-serif; }
+.p-location img { width: 24px; height: 24px; }
+.p-bio { font: italic 400 18px/1.6 'Poppins', sans-serif; }
+
+/* ---------- Metrics ---------- */
+.p-metrics { display: flex; gap: 24px; }
+.p-metric {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 24px;
+    background: var(--lime-30);
+    border: 1px solid rgba(17, 86, 42, .1);
+    border-radius: 20px;
+}
+.p-metric__icon {
+    width: 48px; height: 48px; border-radius: 24px; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+}
+.p-metric__icon img { width: 24px; height: 24px; }
+.p-metric__text { display: flex; flex-direction: column; gap: 4px; }
+.p-metric__value { font: 700 28px/normal 'Poppins', sans-serif; color: var(--green-text); }
+.p-metric__label { font: 500 14px/normal 'Poppins', sans-serif; opacity: .7; }
+
+/* ---------- Dashboard ---------- */
+.p-dash-title { font: 700 32px/normal 'Poppins', sans-serif; }
+.p-dash-sub { font: 400 16px/normal 'Poppins', sans-serif; opacity: .6; margin-top: 8px; }
+.p-section { display: flex; flex-direction: column; gap: 20px; }
+.p-section__title { font: 600 20px/normal 'Poppins', sans-serif; }
+
+.p-wardrobe { min-height: 257px; }  /* grid barang (modul Wardrobe) */
+
+.p-barter {
+    display: flex; flex-direction: column; gap: 16px;
+    padding: 24px;
+    background: var(--lime-30);
+    border: 1px solid rgba(17, 86, 42, .1);
+    border-radius: 16px;
+}
+.p-barter__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.p-barter__who { display: flex; align-items: center; gap: 12px; }
+.p-barter__avatar {
+    width: 40px; height: 40px; border-radius: 20px; background: var(--navy-100); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font: 600 14px/normal 'Poppins', sans-serif;
+}
+.p-barter__user { font: 600 16px/normal 'Poppins', sans-serif; }
+.p-barter__city { font: 400 12px/normal 'Poppins', sans-serif; color: var(--green-text); margin-top: 2px; }
+.p-barter__items { font: 400 14px/normal 'Poppins', sans-serif; opacity: .7; }
+.p-barter__actions { display: flex; gap: 12px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1024px) {
+    .profile-page { padding: 32px 24px 48px; }
+    .p-card { padding: 28px; }
+    .p-identity { gap: 32px; }
+    .p-avatar { width: 180px; height: 180px; }
+    .p-fullname { font-size: 32px; }
+}
+@media (max-width: 720px) {
+    .profile-page { padding: 24px 16px 40px; }
+    .p-card { padding: 20px; border-radius: 20px; gap: 24px; }
+    .p-header, .p-barter__row { flex-direction: column; align-items: flex-start; }
+    .p-title, .p-dash-title { font-size: 26px; }
+    .p-identity { flex-direction: column; text-align: center; gap: 20px; }
+    .p-identity__body { align-items: center; }
+    .p-location { justify-content: center; }
+    .p-avatar { width: 160px; height: 160px; }
+    .p-fullname { font-size: 26px; }
+    .p-metrics { flex-direction: column; gap: 16px; }
+}
