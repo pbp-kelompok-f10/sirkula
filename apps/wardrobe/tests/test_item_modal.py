@@ -13,7 +13,7 @@ from .test_private_photos import png_upload
 class ItemModalTests(TestCase):
     def setUp(self):
         self.owner = get_user_model().objects.create_user(username="modal-owner")
-        self.category = Category.objects.create(owner=self.owner, name="Kaos")
+        self.category = Category.objects.get(owner=self.owner, name="Kaos")
         self.other = get_user_model().objects.create_user(username="modal-other")
         self.foreign = Category.objects.create(owner=self.other, name="Kategori Privat Lain")
         self.client.force_login(self.owner)
@@ -48,7 +48,7 @@ class ItemModalTests(TestCase):
         self.assertContains(response, 'disabled title="Silakan login untuk menambahkan pakaian"')
 
     def test_no_categories_explains_how_to_proceed(self):
-        self.category.delete()
+        Category.objects.filter(owner=self.owner).delete()
         response = self.client.get(reverse("wardrobe:index"))
         self.assertContains(response, 'data-no-categories="true"')
         self.assertContains(response, "Tambahkan kategori terlebih dahulu")

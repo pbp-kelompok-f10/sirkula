@@ -28,7 +28,7 @@ class PrivatePhotoTests(TestCase):
         self.addCleanup(settings.disable)
         self.owner = get_user_model().objects.create_user(username="photo-owner")
         self.other = get_user_model().objects.create_user(username="photo-other")
-        self.category = Category.objects.create(owner=self.owner, name="Kaos")
+        self.category = Category.objects.get(owner=self.owner, name="Kaos")
         self.item = WardrobeItem.objects.create(
             owner=self.owner, category=self.category, name="Kaos Hijau"
         )

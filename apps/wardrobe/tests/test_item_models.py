@@ -18,7 +18,7 @@ from apps.wardrobe.validators import MAX_PHOTO_SIZE, validate_photo_size
 class ItemModelTests(TestCase):
     def setUp(self):
         self.owner = get_user_model().objects.create_user(username="item-owner")
-        self.category = Category.objects.create(owner=self.owner, name="Kaos")
+        self.category = Category.objects.get(owner=self.owner, name="Kaos")
         self.item = WardrobeItem.objects.create(
             owner=self.owner, name="Kaos Hitam", category=self.category
         )

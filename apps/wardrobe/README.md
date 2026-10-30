@@ -103,3 +103,24 @@ Setelah rollback tambah/edit, nama unggahan baru yang sudah berhasil disimpan di
 Worker memeriksa WardrobeItemImage untuk seluruh pengguna sebelum menghapus file. Jika nama file masih direferensikan, file dan antreannya dipertahankan, warning dicatat, dan command melaporkan pekerjaan tertunda. Antrean tersebut bisa diproses setelah file tidak lagi direferensikan. File yang tidak ada tetap aman diproses ulang.
 
 Tes permanen tambahan ada pada tests/test_persistent_cleanup.py: edit cleanup gagal lalu retry, callback tidak berjalan, rollback edit/tambah dengan cleanup gagal, kegagalan unggahan kedua, perlindungan foto aktif lintas pengguna, retry setelah referensi dilepas, deduplikasi antrean, kegagalan penghapusan record antrean, dan kegagalan insert antrean. Pemeriksaan membandingkan isi file foto aktif sebelum/sesudah retry. Tidak ada perubahan model/migrasi atau tampilan pada tahap ini.
+
+
+## Kategori default pengguna
+
+Saat pengguna baru dibuat melalui `create_user`, `create_superuser`, atau penyimpanan model biasa, signal `post_save` membuat kategori milik pengguna: Kaos, Celana, Kemeja, Outer, dan Sepatu. Signal terdaftar dari `WardrobeConfig.ready()` dan hanya berjalan pada `created=True`, bukan saat login, update pengguna, atau membuka Wardrobe. Import fixture mentah (`raw=True`) dilewati.
+
+`defaults.ensure_default_categories()` dipakai signal dan command. Pencarian memakai `name__iexact` serta pemilik, sehingga `kaos` yang sudah ada digunakan kembali tanpa mengganti nama, ID, atau relasinya. Unique constraint database tetap melindungi nama per pemilik. Helper menjalankan satu transaksi per pengguna dan mengunci pengguna selama pengisian kategori; kegagalan tidak meninggalkan sebagian kategori baru milik pengguna tersebut.
+
+Untuk melengkapi kategori pengguna yang sudah ada, jalankan secara eksplisit:
+
+```sh
+python manage.py seed_wardrobe_categories
+# Jika memakai alias database lain:
+python manage.py seed_wardrobe_categories --database default
+```
+
+Command memproses semua pengguna, hanya menambahkan nama default yang belum ada, dan menampilkan jumlah pengguna/kategori. Pemanggilan ulang tanpa perubahan tidak menambah duplikat. Kategori khusus, ID kategori lama, pakaian, dan foto tetap dipertahankan. Command yang dijalankan secara sengaja akan membuat kembali nama default yang pernah dihapus atau diganti; kunjungan Wardrobe/login tidak melakukannya. Pengguna yang dibuat dengan `bulk_create` (yang tidak mengirim signal Django) juga dapat dilengkapi melalui command ini.
+
+Tidak membutuhkan migrasi schema dan tidak ada backfill otomatis saat startup/migrate. Command belum dijalankan pada database asli oleh Codex.
+
+Tes fitur ada di `tests/test_default_categories.py`: pengguna baru/superuser, isolasi pemilik, tidak dibuat ulang setelah hapus/ganti nama/login/kunjungan Wardrobe, fixture raw, registrasi signal tunggal, kapitalisasi, constraint database, rollback dan retry, command kosong, pengisian pengguna lama, idempotensi, serta perlindungan relasi pakaian/foto.

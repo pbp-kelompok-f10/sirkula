@@ -23,8 +23,8 @@ class ItemEditTests(TestCase):
         self.addCleanup(settings.disable)
         self.owner = get_user_model().objects.create_user(username="edit-owner")
         self.other = get_user_model().objects.create_user(username="edit-other")
-        self.category = Category.objects.create(owner=self.owner, name="Kaos")
-        self.second_category = Category.objects.create(owner=self.owner, name="Outer")
+        self.category = Category.objects.get(owner=self.owner, name="Kaos")
+        self.second_category = Category.objects.get(owner=self.owner, name="Outer")
         self.foreign_category = Category.objects.create(owner=self.other, name="Kategori Rahasia")
         self.item = WardrobeItem.objects.create(owner=self.owner, name="Kaos Awal", category=self.category)
         self.photos = [

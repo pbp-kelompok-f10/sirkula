@@ -28,7 +28,7 @@ class CategoryOperationTests(TestCase):
         self.owner = get_user_model().objects.create_user(username="category-operations-owner")
         self.other = get_user_model().objects.create_user(username="category-operations-other")
         self.category = Category.objects.create(owner=self.owner, name="Atasan")
-        self.duplicate = Category.objects.create(owner=self.owner, name="Outer")
+        self.duplicate = Category.objects.get(owner=self.owner, name="Outer")
         self.foreign = Category.objects.create(owner=self.other, name="Pribadi")
         self.item = WardrobeItem.objects.create(
             owner=self.owner, category=self.category, name="Kaos"
@@ -57,6 +57,7 @@ class CategoryOperationTests(TestCase):
         self.assertFalse(WardrobePhotoCleanup.objects.exists())
 
     def test_edit_preserves_id_owner_relationship_and_active_filter(self):
+        Category.objects.filter(owner=self.owner, name="Kemeja").delete()
         response = self.client.post(self.edit_url, {
             "name": "  Kemeja  ",
             "owner": self.other.pk,

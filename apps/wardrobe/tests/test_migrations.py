@@ -14,8 +14,11 @@ class CategoryMoveMigrationTests(TransactionTestCase):
         self.old_target = self.other_targets + [("main", "0001_initial")]
         executor.migrate(self.old_target + [("wardrobe", None)])
         self.old_apps = executor.loader.project_state(self.old_target).apps
-        self.owner = get_user_model().objects.create_user(username="migration-owner")
-        self.other = get_user_model().objects.create_user(username="migration-other")
+        HistoricalUser = self.old_apps.get_model("auth", "User")
+        self.owner = HistoricalUser.objects.create(username="migration-owner")
+        self.other = HistoricalUser.objects.create(username="migration-other")
+        self.owner = get_user_model().objects.get(pk=self.owner.pk)
+        self.other = get_user_model().objects.get(pk=self.other.pk)
         Category = self.old_apps.get_model("main", "Category")
         Category.objects.create(pk=201, name="Kaos", owner_id=self.owner.pk)
         Category.objects.create(pk=305, name="Kaos", owner_id=self.other.pk)

@@ -13,6 +13,8 @@ class CategoryTests(TestCase):
     def setUpTestData(cls):
         cls.owner = get_user_model().objects.create_user(username="owner")
         cls.other = get_user_model().objects.create_user(username="other")
+        # Keep the manual-category scenarios independent of initial defaults.
+        Category.objects.filter(owner__in=[cls.owner, cls.other]).delete()
         Category.objects.create(owner=cls.other, name="Kategori Rahasia")
 
     def setUp(self):
