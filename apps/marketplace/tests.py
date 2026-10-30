@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -92,6 +93,134 @@ class SavedPlaceModelTests(TestCase):
         self.user.delete()
 
         self.assertFalse(SavedPlace.objects.exists())
+
+
+class SavedPlaceApiTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        user_model = get_user_model()
+        cls.user = user_model.objects.create_user(username="pin-owner", password="test-password")
+        cls.other_user = user_model.objects.create_user(
+            username="other-pin-owner",
+            password="test-password",
+        )
+        cls.place = SavedPlace.objects.create(
+            user=cls.user,
+            name="Pasar Santa",
+            address_label="Kebayoran Baru, Jakarta Selatan",
+            notes="Cari pakaian vintage.",
+            latitude=Decimal("-6.239889"),
+            longitude=Decimal("106.811928"),
+        )
+        cls.other_place = SavedPlace.objects.create(
+            user=cls.other_user,
+            name="Pin pengguna lain",
+            address_label="Jakarta",
+            latitude=Decimal("-6.200000"),
+            longitude=Decimal("106.816666"),
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_authentication_is_required(self):
+        self.client.logout()
+
+        response = self.client.get(reverse("marketplace:api_saved_places"))
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_list_returns_only_current_users_saved_places(self):
+        response = self.client.get(reverse("marketplace:api_saved_places"))
+
+        self.assertEqual(response.status_code, 200)
+        result_ids = [item["id"] for item in response.json()["results"]]
+        self.assertEqual(result_ids, [self.place.pk])
+        self.assertNotIn(self.other_place.pk, result_ids)
+
+    def test_create_assigns_current_user(self):
+        response = self.client.post(
+            reverse("marketplace:api_saved_places"),
+            data=json.dumps(
+                {
+                    "name": "Blok M Square",
+                    "address_label": "Melawai, Jakarta Selatan",
+                    "notes": "Cek lantai thrift.",
+                    "latitude": -6.2444,
+                    "longitude": 106.8007,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        place = SavedPlace.objects.get(pk=response.json()["result"]["id"])
+        self.assertEqual(place.user, self.user)
+        self.assertEqual(place.name, "Blok M Square")
+
+    def test_create_returns_field_errors_for_invalid_coordinates(self):
+        response = self.client.post(
+            reverse("marketplace:api_saved_places"),
+            data=json.dumps(
+                {
+                    "name": "Pin tidak valid",
+                    "address_label": "Tidak diketahui",
+                    "notes": "",
+                    "latitude": 91,
+                    "longitude": 181,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("latitude", response.json()["error"]["fields"])
+        self.assertIn("longitude", response.json()["error"]["fields"])
+
+    def test_detail_hides_another_users_saved_place(self):
+        own_response = self.client.get(
+            reverse("marketplace:api_saved_place_detail", args=[self.place.pk])
+        )
+        other_response = self.client.get(
+            reverse("marketplace:api_saved_place_detail", args=[self.other_place.pk])
+        )
+
+        self.assertEqual(own_response.status_code, 200)
+        self.assertEqual(own_response.json()["result"]["name"], self.place.name)
+        self.assertEqual(other_response.status_code, 404)
+
+    def test_update_changes_owned_saved_place_without_changing_owner(self):
+        response = self.client.put(
+            reverse("marketplace:api_saved_place_detail", args=[self.place.pk]),
+            data=json.dumps(
+                {
+                    "name": "Pasar Santa Favorit",
+                    "address_label": "Kebayoran Baru, Jakarta Selatan",
+                    "notes": "Datang pada akhir pekan.",
+                    "latitude": -6.239889,
+                    "longitude": 106.811928,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.place.refresh_from_db()
+        self.assertEqual(self.place.name, "Pasar Santa Favorit")
+        self.assertEqual(self.place.user, self.user)
+
+    def test_delete_removes_owned_place_but_hides_another_users_place(self):
+        other_response = self.client.delete(
+            reverse("marketplace:api_saved_place_detail", args=[self.other_place.pk])
+        )
+        own_response = self.client.delete(
+            reverse("marketplace:api_saved_place_detail", args=[self.place.pk])
+        )
+
+        self.assertEqual(other_response.status_code, 404)
+        self.assertEqual(own_response.status_code, 200)
+        self.assertFalse(SavedPlace.objects.filter(pk=self.place.pk).exists())
+        self.assertTrue(SavedPlace.objects.filter(pk=self.other_place.pk).exists())
 
 
 # Marketplace test (nanti diubah abis pr)
