@@ -56,6 +56,65 @@ Sirkula mendukung sustainable living dengan mendorong pengguna mengoptimalkan ba
 ## Public API
 Public API yang akan digunakan (sejauh rencana kami) adalah [OpenStreetMap](https://www.openstreetmap.org) untuk keperluan lokalisasi, di mana nantinya dalam radius yang ditentukan (misalnya daerah) aplikasi akan menunjukkan penjual yang berada di sekitar pengguna. Dokumentasi OpenStreetMap tersedia [disini](https://taginfo.openstreetmap.org/taginfo/apidoc). 
 
+### Discovery Map: setup dan kebijakan provider
+
+Discovery Map tersedia di `/marketplace/map/`. Implementasi ini tidak menggunakan PostGIS, GeoDjango, atau ekstensi database spasial. Koordinat disimpan sebagai decimal biasa dan jarak dihitung di backend menggunakan rumus Haversine, sehingga dapat berjalan di SQLite maupun PostgreSQL biasa.
+
+#### Menjalankan secara lokal (Windows)
+
+```bat
+env\Scripts\activate
+python manage.py migrate
+python manage.py runserver
+```
+
+Untuk membangun stylesheet setelah mengubah komponen UI:
+
+```bat
+cd ui\static_src
+pnpm install
+pnpm run build
+```
+
+Salin `.env.example` menjadi `.env`, kemudian sesuaikan konfigurasi berikut:
+
+| Environment variable | Kegunaan |
+| --- | --- |
+| `NOMINATIM_BASE_URL` | Base URL provider forward/reverse geocoding yang kompatibel dengan Nominatim. |
+| `IP_GEOLOCATION_URL` | URL provider geolokasi IP, placeholder `{ip}` akan diganti oleh backend saat prod. |
+| `LOCATION_USER_AGENT` | Identitas aplikasi dan kontak pengelola untuk request geocoding. |
+| `LOCATION_REQUEST_TIMEOUT` | Batas waktu request provider dalam detik. |
+| `LOCATION_CACHE_SECONDS` | Durasi cache hasil geocoding dan IP lookup. |
+
+#### Map dan geocoding provider
+
+- Map dirender dengan MapLibre GL dan style vector **OpenFreeMap Liberty**.
+- Aplikasi **tidak** mengakses `tile.openstreetmap.org`, sehingga tidak membebani volunteer-run raster tile server milik OpenStreetMap.
+- Data peta OpenFreeMap tetap bersumber dari OpenStreetMap dan atribusi provider ditampilkan oleh kontrol MapLibre.
+- Forward dan reverse geocoding diproksikan melalui backend ke Nominatim-compatible endpoint. Request diberi user-agent, timeout, debounce di frontend, dan cache di backend.
+- Public Nominatim cocok untuk development dan trafik rendah. Untuk production dengan trafik tinggi, gunakan instance mandiri atau provider Nominatim komersial melalui `NOMINATIM_BASE_URL`.
+- OpenStreetMap/Nominatim tidak menyediakan geolokasi IP. Karena itu, fallback IP menggunakan provider terpisah melalui `IP_GEOLOCATION_URL`. Jika IP lokal/private digunakan, aplikasi kembali ke pusat default Jakarta Pusat tanpa request eksternal.
+
+#### Endpoint Discovery Map
+
+| Method | Endpoint | Fungsi |
+| --- | --- | --- |
+| `GET` | `/marketplace/api/locations/` | Daftar/search lokasi predefined JABODETABEK. Parameter opsional: `q`. |
+| `GET` | `/marketplace/api/nearby/` | Produk dan toko terdekat. Gunakan pasangan `lat`/`lon`, slug `location`, atau tanpa lokasi untuk fallback IP. Parameter lain: `radius` dan `q`. |
+| `GET` | `/marketplace/api/geocode/` | Forward geocoding berdasarkan parameter `q` minimal tiga karakter. |
+| `GET` | `/marketplace/api/reverse-geocode/` | Reverse geocoding berdasarkan pasangan `lat` dan `lon`. |
+
+#### Validasi Discovery Map
+
+```bat
+env\Scripts\python.exe manage.py makemigrations --check --dry-run
+env\Scripts\python.exe manage.py check
+env\Scripts\python.exe manage.py test apps.marketplace.tests
+node --check apps\marketplace\static\marketplace\js\discovery-map.js
+cd ui\static_src
+pnpm run build
+```
+
 ## Target Pengguna
 Target utama dari platform ini adalah mahasiswa dan generasi Z yang tertarik pada bidang fashion, namun ingin memanfaatkan pakaian yang sudah mereka miliki sekaligus mencari pilihan fashion yang terjangkau. Platform ini ditujukan bagi pengguna yang ingin mengeksplorasi gaya berpakaian dan mendapatkan inspirasi outfit untuk berbagai aktivitas, seperti kuliah, berkumpul bersama teman, maupun menghadiri acara tertentu, tanpa harus selalu membeli pakaian baru.
 

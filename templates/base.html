@@ -56,9 +56,9 @@
                     </li>
                     <li>
                         <a
-                            href="#"
+                            href="{% url 'marketplace:discovery_map' %}"
                             class="{% block nav_map %}{% endblock nav_map %}"
-                            {% if request.resolver_match.url_name == 'map' %}aria-current="page"{% endif %}
+                            {% if request.resolver_match.url_name == 'discovery_map' %}aria-current="page"{% endif %}
                         >Map</a>
                     </li>
                 </ul>
