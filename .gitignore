@@ -88,6 +88,7 @@ local_settings.py
 .codex/
 .env
 db.sqlite3
+
 # Local development and generated assets
 .venv/
 node_modules/
@@ -97,3 +98,4 @@ db.sqlite3.backup
 Syarat.pdf
 Barter.zip
 Thrift.zip
+
