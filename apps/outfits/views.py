@@ -13,6 +13,7 @@ from .demo_data import DEMO_RECOMMENDATIONS
 from .forms import ChatMessageForm, MixAndMatchPromptForm
 from .models import Conversation
 from .services import ConversationConflict, conversation_history, get_landing_content, send_message, start_conversation
+from .wardrobe_context import WardrobeChanged, WardrobeUnavailable, prepare_results_for_display
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,10 @@ def index(request):
                     user=request.user, prompt=form.cleaned_data["prompt"], key=form.cleaned_data["request_key"],
                     recommendation=form.cleaned_data["recommendation"],
                 )
-            except ConversationConflict as error:
+            except WardrobeUnavailable as error:
+                form.add_error(None, str(error))
+                status = 400
+            except (ConversationConflict, WardrobeChanged) as error:
                 form.add_error(None, str(error))
                 status = 409
             except Exception:
@@ -83,7 +87,7 @@ def _conversation_context(request, conversation, form):
     return {
         **_navigation(request), "conversation": conversation,
         "chat_messages": conversation.messages.all(), "history": conversation_history(request.user),
-        "chat_form": form, "result": conversation.result,
+        "chat_form": form, "result": prepare_results_for_display([conversation.result], request.user)[0],
     }
 
 
@@ -107,7 +111,10 @@ def conversation(request, conversation_id):
                 )
             except Http404:
                 raise
-            except ConversationConflict as error:
+            except WardrobeUnavailable as error:
+                form.add_error(None, str(error))
+                status = 400
+            except (ConversationConflict, WardrobeChanged) as error:
                 form.add_error(None, str(error))
                 status = 409
             except Exception:

@@ -1,5 +1,4 @@
-"""Provider boundary: an AI adapter must return the same normalized reply."""
-from copy import deepcopy
+"""Pure provider boundary; Wardrobe queries and photo access stay in services."""
 from dataclasses import dataclass
 
 
@@ -10,32 +9,29 @@ class StylistReply:
     result: dict
 
 
-_REFERENCE = "outfits/img/workspace-reference.png"
-
-
-def _image(viewbox):
-    return {"kind": "reference", "source": _REFERENCE, "viewbox": viewbox, "width": 1440, "height": 1066}
+def _names(items):
+    names = [item["name"] for item in items]
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return " dan ".join(names)
+    return ", ".join(names[:-1]) + ", dan " + names[-1]
 
 
 class DemoStylistProvider:
-    def reply(self, *, prompt, history, recommendation=""):
-        # No network, ORM access, or inference: only public reference fixtures.
-        text = "Coba padukan kaos putih, kemeja biru, dan celana krem untuk tampilan santai."
-        if history:
-            text = "Untuk pilihan berikutnya, gunakan kemeja biru sebagai outer dengan kaos putih dan celana krem."
-        return StylistReply(
-            text=text,
-            title=prompt[:100],
-            result=deepcopy({
-                "mode": "demo",
-                "preview": _image("67 379 417 642"),
-                "pieces": [
-                    {"name": "Kaos putih", "image": _image("506 379 205 204")},
-                    {"name": "Kemeja biru", "image": _image("506 598 205 203")},
-                    {"name": "Celana krem", "image": _image("506 817 205 203")},
-                ],
-            }),
-        )
+    def reply(self, *, prompt, history, wardrobe, recommendation=""):
+        eligible = [item for item in wardrobe if item["photos"]]
+        if not eligible:
+            raise ValueError("No clothing available for the demo provider")
+        offset = (len(history) // 2) % len(eligible)
+        selected = (eligible[offset:] + eligible[:offset])[:3]
+        names = _names(selected)
+        if len(selected) == 1:
+            text = f"Gunakan {names} sebagai dasar outfitmu. Ini pilihan simulasi dari pakaian aktif di lemarimu."
+        else:
+            prefix = "Untuk pilihan berikutnya, coba padukan" if history else "Coba padukan"
+            text = f"{prefix} {names} dari lemarimu. Ini kombinasi simulasi."
+        return StylistReply(text=text, title=prompt[:100], result={"mode": "demo", "item_ids": [item["id"] for item in selected]})
 
 
 def get_stylist_provider():

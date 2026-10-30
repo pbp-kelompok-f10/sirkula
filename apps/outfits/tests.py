@@ -1,28 +1,48 @@
 from copy import deepcopy
 from dataclasses import replace
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 from django.contrib.staticfiles import finders
 from django.db import IntegrityError, transaction
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from apps.wardrobe.models import Category, WardrobeItem
+from apps.wardrobe.models import Category, WardrobeItem, WardrobeItemImage
+from apps.wardrobe.tests.test_private_photos import png_upload
 from .demo_data import DEMO_RECOMMENDATIONS
 from .models import Conversation, Message
 from .providers import DemoStylistProvider
 from .services import get_landing_content, send_message
+from .wardrobe_context import build_result, get_wardrobe_context, prepare_results_for_display
 
 
 class OutfitsConversationTests(TestCase):
     def setUp(self):
+        directory = TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        settings = override_settings(WARDROBE_PRIVATE_ROOT=Path(directory.name))
+        settings.enable()
+        self.addCleanup(settings.disable)
         self.owner = get_user_model().objects.create_user(username="chat-owner")
         self.other = get_user_model().objects.create_user(username="chat-other")
         self.category = Category.objects.create(owner=self.owner, name="Atasan")
+        self.items = [self.make_item(self.owner, name) for name in ("Kaos zaitun", "Jaket denim", "Celana hitam")]
+        self.other_item = self.make_item(self.other, "Rahasia akun lain")
         self.index = reverse("outfits:index")
         self.client.force_login(self.owner)
+
+    def make_item(self, owner, name, status=WardrobeItem.Status.ACTIVE, photo=True):
+        item = WardrobeItem.objects.create(owner=owner, name=name, status=status)
+        if photo:
+            WardrobeItemImage.objects.create(item=item, image=png_upload(), position=1)
+        return item
+
+    def reply(self):
+        return DemoStylistProvider().reply(prompt="test", history=(), wardrobe=get_wardrobe_context(self.owner))
 
     def start(self, prompt="Outfit kuliah", key=None, **extra):
         key = key or uuid4()
@@ -93,7 +113,7 @@ class OutfitsConversationTests(TestCase):
         response = self.client.get(self.url(conversation))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["chat_messages"]), 4)
-        for text in ("SirkulaAI", "Preview outfit", "Kaos putih", "Kemeja biru", "Celana krem", "Chat Baru"):
+        for text in ("SirkulaAI", "Preview outfit", "Kaos zaitun", "Jaket denim", "Celana hitam", "Chat Baru"):
             self.assertContains(response, text)
         self.assertContains(response, 'id="chat-history-toggle"')
         self.assertContains(response, 'id="chat-prompt"')
@@ -255,7 +275,7 @@ class OutfitsConversationTests(TestCase):
     def test_version_is_checked_again_after_provider_returns(self):
         _, conversation = self.start()
         provider = DemoStylistProvider()
-        reply = provider.reply(prompt="lain", history=())
+        reply = self.reply()
         called = False
         def concurrent_reply(**kwargs):
             nonlocal called
@@ -273,7 +293,7 @@ class OutfitsConversationTests(TestCase):
 
     def test_malformed_provider_result_is_rejected_before_any_write(self):
         provider = DemoStylistProvider()
-        reply = provider.reply(prompt="test", history=())
+        reply = self.reply()
         malformed = deepcopy(reply.result)
         malformed["preview"] = {"kind": "url", "url": "https://external.example/private"}
         for value in (replace(reply, text=""), replace(reply, result=malformed)):
@@ -299,23 +319,29 @@ class OutfitsConversationTests(TestCase):
             self.assertNotContains(response, '<script>alert("test")</script>')
             self.assertContains(response, "&lt;script&gt;")
 
-    def test_demo_does_not_read_or_expose_real_wardrobe_items(self):
-        for user in (self.owner, self.other):
-            WardrobeItem.objects.create(owner=user, name=f"Rahasia aktif {user.username}")
-            WardrobeItem.objects.create(owner=user, name=f"Rahasia draft {user.username}", status="draft")
+    def test_context_excludes_drafts_and_other_users_and_has_no_storage_paths(self):
+        self.make_item(self.owner, "Draft rahasia", status=WardrobeItem.Status.DRAFT)
+        empty = self.make_item(self.owner, "Tanpa foto", photo=False)
+        context = get_wardrobe_context(self.owner)
+        self.assertEqual({row["id"] for row in context}, {item.pk for item in self.items} | {empty.pk})
+        self.assertEqual(context[-1]["photos"], ())
+        self.assertIsNone(context[0]["category"])
+        for row in context:
+            self.assertEqual(set(row), {"id", "name", "category", "updated_at", "photos"})
+            for photo in row["photos"]:
+                self.assertEqual(set(photo), {"id", "position"})
         _, conversation = self.start()
-        for url in (self.index, self.url(conversation)):
-            response = self.client.get(url)
-            self.assertNotContains(response, "Rahasia aktif")
-            self.assertNotContains(response, "Rahasia draft")
-        self.assertEqual(WardrobeItem.objects.count(), 4)
+        self.assertNotIn("Draft rahasia", conversation.messages.last().content)
+        self.assertNotIn("Rahasia akun lain", conversation.messages.last().content)
+        self.assertNotIn("Tanpa foto", conversation.messages.last().content)
 
     def test_demo_provider_is_database_free_and_returns_fresh_data(self):
         provider = DemoStylistProvider()
+        wardrobe = get_wardrobe_context(self.owner)
         with self.assertNumQueries(0):
-            reply = provider.reply(prompt="Kasual", history=())
-        reply.result["pieces"][0]["name"] = "changed"
-        self.assertNotEqual(provider.reply(prompt="Kasual", history=()).result["pieces"][0]["name"], "changed")
+            reply = provider.reply(prompt="Kasual", history=(), wardrobe=wardrobe)
+        reply.result["item_ids"].clear()
+        self.assertEqual(len(provider.reply(prompt="Kasual", history=(), wardrobe=wardrobe).result["item_ids"]), 3)
         payload = get_landing_content()
         payload["recommendations"][0]["title"] = "changed"
         self.assertNotEqual(get_landing_content()["recommendations"][0]["title"], "changed")
@@ -346,7 +372,7 @@ class OutfitsConversationTests(TestCase):
             self.assertIsNotNone(finders.find(path))
 
     def test_older_conversations_remain_available_beyond_fifty_entries(self):
-        result = DemoStylistProvider().reply(prompt="demo", history=()).result
+        result = build_result(self.reply().result, get_wardrobe_context(self.owner))
         Conversation.objects.bulk_create([
             Conversation(owner=self.owner, title=f"Riwayat {index}", creation_key=uuid4(), result=deepcopy(result))
             for index in range(51)
@@ -356,3 +382,220 @@ class OutfitsConversationTests(TestCase):
         self.assertContains(response, "Riwayat 0")
         self.assertIn("no-store", response["Cache-Control"])
         self.assertIn("Cookie", response["Vary"])
+
+    def test_simulation_uses_actual_selected_names_with_one_two_or_three_items(self):
+        for count in (3, 2, 1):
+            with self.subTest(count=count):
+                WardrobeItemImage.objects.filter(item__in=self.items[count:]).delete()
+                response, conversation = self.start()
+                self.assertEqual(response.status_code, 302)
+                pieces = conversation.result["pieces"]
+                self.assertEqual([piece["item_id"] for piece in pieces], [item.pk for item in self.items[:count]])
+                text = conversation.messages.last().content
+                for item in self.items[:count]:
+                    self.assertIn(item.name, text)
+                for item in self.items[count:]:
+                    self.assertNotIn(item.name, text)
+                self.assertNotIn("Kemeja biru", text)
+                self.assertEqual(self.client.get(self.url(conversation)).status_code, 200)
+
+    def test_no_eligible_photos_reports_validation_without_calling_provider_or_writing(self):
+        WardrobeItem.objects.filter(owner=self.owner).delete()
+        self.make_item(self.owner, "Draft saja", status=WardrobeItem.Status.DRAFT)
+        self.make_item(self.owner, "Tanpa gambar", photo=False)
+        missing = self.make_item(self.owner, "File hilang")
+        photo = missing.images.get()
+        photo.image.storage.delete(photo.image.name)
+        with patch("apps.outfits.services.get_stylist_provider") as provider:
+            response, conversation = self.start()
+        provider.assert_not_called()
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "Tambahkan pakaian aktif dengan foto", status_code=400)
+        self.assertIsNone(conversation)
+        self.assertFalse(Message.objects.exists())
+
+    def test_empty_wardrobe_does_not_change_existing_conversation(self):
+        _, conversation = self.start()
+        before = deepcopy(conversation.result)
+        WardrobeItem.objects.filter(owner=self.owner).delete()
+        response = self.post_message(conversation)
+        self.assertEqual(response.status_code, 400)
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.result, before)
+        self.assertEqual(conversation.version, 1)
+        self.assertEqual(conversation.messages.count(), 2)
+        self.assertContains(self.client.get(self.url(conversation)), "Foto tidak tersedia")
+
+    def test_provider_ids_are_whitelisted_and_cannot_inject_photo_urls(self):
+        draft = self.make_item(self.owner, "Draft", status=WardrobeItem.Status.DRAFT)
+        provider = DemoStylistProvider()
+        reply = self.reply()
+        bad_ids = ([self.other_item.pk], [draft.pk], [999999], [True], [], [self.items[0].pk] * 2, list(range(6)))
+        results = [{"mode": "demo", "item_ids": ids} for ids in bad_ids]
+        results.append({"mode": "demo", "item_ids": [self.items[0].pk], "photo_id": self.other_item.images.get().pk})
+        for result in results:
+            with self.subTest(result=result):
+                with patch("apps.outfits.services.get_stylist_provider", return_value=provider), patch.object(provider, "reply", return_value=replace(reply, result=result)):
+                    with self.assertLogs("apps.outfits.views", level="ERROR"):
+                        response, _ = self.start()
+                self.assertEqual(response.status_code, 500)
+        self.assertFalse(Conversation.objects.exists())
+        self.assertFalse(Message.objects.exists())
+
+    def test_provider_cannot_mutate_the_original_whitelist(self):
+        provider = DemoStylistProvider()
+        def fake(**kwargs):
+            kwargs["wardrobe"][0]["id"] = self.other_item.pk
+            return replace(self.reply(), result={"mode": "demo", "item_ids": [self.other_item.pk]})
+        with patch("apps.outfits.services.get_stylist_provider", return_value=provider), patch.object(provider, "reply", side_effect=fake):
+            with self.assertLogs("apps.outfits.views", level="ERROR"):
+                response, _ = self.start()
+        self.assertEqual(response.status_code, 500)
+        self.assertFalse(Conversation.objects.exists())
+
+    def test_photo_references_are_private_resolved_on_read_and_never_persist_urls(self):
+        _, conversation = self.start()
+        stored = deepcopy(conversation.result)
+        self.assertEqual(stored["preview"]["kind"], "wardrobe")
+        self.assertEqual(stored["preview"], stored["pieces"][0]["image"])
+        self.assertNotIn("url", str(stored))
+        self.assertNotIn("private", str(stored))
+        response = self.client.get(self.url(conversation))
+        url = response.context["result"]["preview"]["url"]
+        photo_response = self.client.get(url)
+        self.assertEqual(photo_response.status_code, 200)
+        self.assertIn("private", photo_response["Cache-Control"])
+        self.assertIn("no-store", photo_response["Cache-Control"])
+        photo_response.close()
+        self.client.get(self.index)
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.result, stored)
+        for user in (self.other, None):
+            if user:
+                self.client.force_login(user)
+            else:
+                self.client.logout()
+            self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_primary_photo_selection_skips_missing_file_and_respects_position(self):
+        first = self.items[0].images.get()
+        first.image.storage.delete(first.image.name)
+        second = WardrobeItemImage.objects.create(item=self.items[0], image=png_upload(), position=2)
+        _, conversation = self.start()
+        self.assertEqual(conversation.result["pieces"][0]["image"]["photo_id"], second.pk)
+
+    def test_deleted_photo_shows_placeholder_in_workspace_and_landing_without_rewriting_history(self):
+        _, conversation = self.start()
+        stored = deepcopy(conversation.result)
+        text = list(conversation.messages.values_list("content", flat=True))
+        photo_id = stored["preview"]["photo_id"]
+        WardrobeItemImage.objects.get(pk=photo_id).delete()
+        WardrobeItemImage.objects.create(item=self.items[0], image=png_upload(), position=1)
+        for url in (self.index, self.url(conversation)):
+            response = self.client.get(url)
+            self.assertContains(response, "Foto tidak tersedia")
+            self.assertNotContains(response, reverse("wardrobe:item_photo", kwargs={"photo_id": photo_id}))
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.result, stored)
+        self.assertEqual(list(conversation.messages.values_list("content", flat=True)), text)
+
+    def test_unavailable_inactive_foreign_missing_or_mismatched_photos_are_never_exposed(self):
+        _, conversation = self.start()
+        result = deepcopy(conversation.result)
+        photo = self.items[0].images.get()
+        for change in ("draft", "foreign", "missing", "mismatch"):
+            with self.subTest(change=change):
+                candidate = deepcopy(result)
+                self.items[0].status = WardrobeItem.Status.ACTIVE
+                self.items[0].owner = self.owner
+                self.items[0].save()
+                if change == "draft":
+                    self.items[0].status = WardrobeItem.Status.DRAFT
+                    self.items[0].save()
+                elif change == "foreign":
+                    self.items[0].owner = self.other
+                    self.items[0].save()
+                elif change == "missing":
+                    photo.image.storage.delete(photo.image.name)
+                else:
+                    candidate["preview"]["item_id"] = self.items[1].pk
+                displayed = prepare_results_for_display([candidate], self.owner)[0]
+                self.assertEqual(displayed["preview"], {"kind": "unavailable"})
+
+    def test_old_static_history_is_readable_unchanged_and_followup_uses_latest_wardrobe(self):
+        _, conversation = self.start()
+        image = {"source": "outfits/img/workspace-reference.png", "viewbox": "66 378 419 644", "width": 1440, "height": 1066}
+        legacy = {"mode": "demo", "preview": image, "pieces": [{"name": "Nama contoh lama", "image": image}]}
+        conversation.result = deepcopy(legacy)
+        conversation.save(update_fields=["result"])
+        old_messages = list(conversation.messages.values_list("content", flat=True))
+        for url in (self.index, self.url(conversation)):
+            self.assertContains(self.client.get(url), "workspace-reference.png")
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.result, legacy)
+        self.items[0].name = "Nama pakaian terbaru"
+        self.items[0].save()
+        self.assertEqual(self.post_message(conversation).status_code, 200)
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.result["source"], "wardrobe")
+        self.assertIn("Nama pakaian terbaru", conversation.messages.last().content)
+        self.assertEqual(list(conversation.messages.values_list("content", flat=True))[:2], old_messages)
+
+    def test_item_changes_during_provider_call_cancel_start_without_partial_messages(self):
+        for change in ("edit", "draft", "delete_photo"):
+            with self.subTest(change=change):
+                provider = DemoStylistProvider()
+                original_reply = provider.reply
+                def changed_reply(**kwargs):
+                    reply = original_reply(**kwargs)
+                    item = WardrobeItem.objects.get(pk=reply.result["item_ids"][0])
+                    if change == "edit":
+                        item.name += " diubah"
+                        item.save()
+                    elif change == "draft":
+                        item.status = WardrobeItem.Status.DRAFT
+                        item.save()
+                    else:
+                        item.images.all().delete()
+                    return reply
+                with patch("apps.outfits.services.get_stylist_provider", return_value=provider), patch.object(provider, "reply", side_effect=changed_reply):
+                    response, _ = self.start()
+                self.assertEqual(response.status_code, 409)
+                self.assertFalse(Conversation.objects.exists())
+                self.assertFalse(Message.objects.exists())
+
+    def test_selection_changed_during_followup_keeps_previous_result_and_messages(self):
+        _, conversation = self.start()
+        before = deepcopy(conversation.result)
+        provider = DemoStylistProvider()
+        original_reply = provider.reply
+        def changed_reply(**kwargs):
+            reply = original_reply(**kwargs)
+            WardrobeItem.objects.filter(pk=reply.result["item_ids"][0]).update(owner=self.other)
+            return reply
+        with patch("apps.outfits.services.get_stylist_provider", return_value=provider), patch.object(provider, "reply", side_effect=changed_reply):
+            response = self.post_message(conversation)
+        self.assertEqual(response.status_code, 409)
+        conversation.refresh_from_db()
+        self.assertEqual(conversation.result, before)
+        self.assertEqual(conversation.version, 1)
+        self.assertEqual(conversation.messages.count(), 2)
+
+    def test_duplicate_retry_still_returns_saved_conversation_after_clothing_is_deleted(self):
+        key = uuid4()
+        _, conversation = self.start(key=key)
+        WardrobeItem.objects.filter(owner=self.owner).delete()
+        with patch("apps.outfits.services.get_stylist_provider") as provider:
+            response, replayed = self.start(key=key)
+        provider.assert_not_called()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(replayed.pk, conversation.pk)
+        self.assertEqual(conversation.messages.count(), 2)
+
+    def test_foreign_private_url_in_saved_result_is_not_rendered(self):
+        foreign_url = reverse("wardrobe:item_photo", kwargs={"photo_id": self.other_item.images.get().pk})
+        image = {"kind": "url", "url": foreign_url}
+        result = {"mode": "demo", "preview": image, "pieces": [{"name": "Lama", "image": image}]}
+        prepared = prepare_results_for_display([result], self.owner)[0]
+        self.assertEqual(prepared["preview"], {"kind": "unavailable"})
+        self.assertEqual(result["preview"]["url"], foreign_url)

@@ -46,3 +46,6 @@ a.mix-card { display: block; text-decoration: none; }
     .chat-bubble { max-width: 90%; }
     .mix-card-title { margin-top: 12px; }
 }
+
+.mix-landing span.result-image,
+.mix-landing span.mix-card-image { display: grid; place-items: center; padding: 12px; text-align: center; font-size: 14px; color: #68717e; background: #ebebed; }
