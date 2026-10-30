@@ -1,9 +1,15 @@
 from django import forms
 from django.forms import inlineformset_factory
-
 from .models import Product, ProductImage
+from .models import SavedPlace
 
 
+class SavedPlaceForm(forms.ModelForm):
+    class Meta:
+        model = SavedPlace
+        fields = ("name", "address_label", "notes", "latitude", "longitude")
+
+        
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product

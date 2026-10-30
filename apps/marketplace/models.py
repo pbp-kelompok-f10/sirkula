@@ -50,6 +50,26 @@ class PredefinedLocation(CoordinateModel):
         return self.name
 
 
+class SavedPlace(CoordinateModel):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="saved_places",
+    )
+    name = models.CharField(max_length=120)
+    address_label = models.CharField(max_length=255)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-updated_at", "-created_at")
+
+    def __str__(self):
+        return self.name
+
+
+# Potential conflict later, will resolve after Maman's PR :p
 class Store(CoordinateModel):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

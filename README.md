@@ -103,6 +103,13 @@ Salin `.env.example` menjadi `.env`, kemudian sesuaikan konfigurasi berikut:
 | `GET` | `/marketplace/api/nearby/` | Produk dan toko terdekat. Gunakan pasangan `lat`/`lon`, slug `location`, atau tanpa lokasi untuk fallback IP. Parameter lain: `radius` dan `q`. |
 | `GET` | `/marketplace/api/geocode/` | Forward geocoding berdasarkan parameter `q` minimal tiga karakter. |
 | `GET` | `/marketplace/api/reverse-geocode/` | Reverse geocoding berdasarkan pasangan `lat` dan `lon`. |
+| `GET` | `/marketplace/api/saved-places/` | Daftar tempat tersimpan milik pengguna aktif. Memerlukan autentikasi. |
+| `POST` | `/marketplace/api/saved-places/` | Membuat tempat tersimpan dari JSON `name`, `address_label`, `notes`, `latitude`, dan `longitude`. |
+| `GET` | `/marketplace/api/saved-places/<id>/` | Detail tempat tersimpan milik pengguna aktif. |
+| `PUT` | `/marketplace/api/saved-places/<id>/` | Memperbarui seluruh field tempat tersimpan milik pengguna aktif. |
+| `DELETE` | `/marketplace/api/saved-places/<id>/` | Menghapus tempat tersimpan milik pengguna aktif. |
+
+Endpoint mutasi mengikuti perlindungan CSRF Django. Resource milik pengguna lain dikembalikan sebagai `404` agar data pribadi tidak terekspos.
 
 #### Validasi Discovery Map
 

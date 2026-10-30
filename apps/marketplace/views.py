@@ -1,3 +1,12 @@
+import json
+
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.http import require_GET, require_http_methods
+
+from .forms import SavedPlaceForm
+from .models import Listing, PredefinedLocation, SavedPlace, Store
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -205,6 +214,105 @@ def _map_error(message, *, status=400, field=None):
     if field:
         payload["error"]["field"] = field
     return JsonResponse(payload, status=status)
+
+
+def _parse_json_body(request):
+    try:
+        payload = json.loads(request.body or b"{}")
+    except (TypeError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("Request body must contain valid JSON.") from error
+    if not isinstance(payload, dict):
+        raise ValueError("Request body must be a JSON object.")
+    return payload
+
+
+def _form_error(form):
+    return JsonResponse(
+        {
+            "error": {
+                "message": "Please correct the invalid saved place fields.",
+                "fields": form.errors.get_json_data(),
+            }
+        },
+        status=400,
+    )
+
+
+def _serialize_saved_place(place):
+    return {
+        "id": place.pk,
+        "name": place.name,
+        "address_label": place.address_label,
+        "notes": place.notes,
+        "latitude": float(place.latitude),
+        "longitude": float(place.longitude),
+        "created_at": place.created_at.isoformat(),
+        "updated_at": place.updated_at.isoformat(),
+    }
+
+
+def _saved_place_for_user(request, pk):
+    return SavedPlace.objects.filter(pk=pk, user=request.user).first()
+
+
+@require_http_methods(["GET", "POST"])
+def saved_places(request):
+    if not request.user.is_authenticated:
+        return _error("Authentication is required to manage saved places.", status=401)
+
+    if request.method == "GET":
+        return JsonResponse(
+            {
+                "results": [
+                    _serialize_saved_place(place)
+                    for place in SavedPlace.objects.filter(user=request.user)
+                ]
+            }
+        )
+
+    try:
+        payload = _parse_json_body(request)
+    except ValueError as error:
+        return _error(str(error))
+
+    form = SavedPlaceForm(payload)
+    if not form.is_valid():
+        return _form_error(form)
+
+    place = form.save(commit=False)
+    place.user = request.user
+    place.save()
+    return JsonResponse({"result": _serialize_saved_place(place)}, status=201)
+
+
+@require_http_methods(["GET", "PUT", "DELETE"])
+def saved_place_detail(request, pk):
+    if not request.user.is_authenticated:
+        return _error("Authentication is required to manage saved places.", status=401)
+
+    place = _saved_place_for_user(request, pk)
+    if place is None:
+        return _error("Saved place not found.", status=404)
+
+    if request.method == "GET":
+        return JsonResponse({"result": _serialize_saved_place(place)})
+
+    if request.method == "DELETE":
+        deleted_id = place.pk
+        place.delete()
+        return JsonResponse({"deleted_id": deleted_id})
+
+    try:
+        payload = _parse_json_body(request)
+    except ValueError as error:
+        return _error(str(error))
+
+    form = SavedPlaceForm(payload, instance=place)
+    if not form.is_valid():
+        return _form_error(form)
+
+    place = form.save()
+    return JsonResponse({"result": _serialize_saved_place(place)})
 
 
 def _parse_coordinate(value, *, field, minimum, maximum):
