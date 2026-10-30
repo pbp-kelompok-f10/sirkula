@@ -252,3 +252,15 @@ Target utama dari platform ini adalah mahasiswa dan generasi Z yang tertarik pad
 
 ## 📎 Tautan
 Sejauh ini kami masih melakukan eksplorasi design system seperti warna, tone, dan project branding. [Tautan Figma dapat diakses disini.](https://www.figma.com/design/TyoL1i8RIAmSWF3XUgPpNu/PBP-ZBMRI?node-id=0-1&p=f&t=d6ULHADOhbWBseQy-0)
+
+## AI Disclosure 
+Kami menggunakan AI sebagai alat yang membantu dan menjadi partner dalam melakukan pengerjaan proyek sirkula (PBP) ini. Dalam penggunannya kami melakukan diskusi, brainstorming, bantuan kode untuk sintaks dan copy paste dalam hal yang kompleks, serta harness hanya untuk bagian kompleks dan memakan banyak waktu.
+
+Dalam penggunannya kami melakukan strategi dengan memberikan konteks dan prompting sedetail, selengkap, dan setepat mungkin untuk menghasilkan hasil yang tepat sesuai yang diinginkan. Setiap hasil/output kami periksa/review terlebih dahulu dan memahami baru melakukan implementasinya. Setiap implementasi pun di cek dan verfikasi oleh setiap individu.
+
+Link chat:
+- Marwa : Claude Sonnet 5.5 - https://claude.ai/share/c81abc6e-ff14-4b57-a8e6-917105a7d5ed 
+- Boston : Sol 6.1 - https://chatgpt.com/s/cx_6ae4c86f25c48191952bb042a7339e39
+- Zayyan : Deepseek V4.1 Flash (Tidak dapat di share link chat harness nya)
+- Rayyan : Astra 6 - https://chatgpt.com/s/cx_6ae4c829d7dc8191b276f60590970575
+- Ilman : 5.6 Luna -  https://chatgpt.com/s/cx_6ae4c9690ebc819194558629906b01bc
