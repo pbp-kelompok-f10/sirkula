@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Profil | Sirkula{% endblock title %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock extra_head %}
+
+{% block nav_home %}is-active{% endblock nav_home %}
+
+{% block content %}
+<main class="profile-edit-page">
+  <div class="profile-edit-shell">
+    <section class="profile-edit-card">
+      <div class="profile-edit-header">
+        <p class="profile-edit-eyebrow">Pengaturan akun</p>
+        <h1 class="profile-edit-title">Edit Profil</h1>
+        <p class="profile-edit-subtitle">Perbarui informasi yang tampil di profilmu.</p>
+      </div>
+
+      <form method="post" enctype="multipart/form-data" class="profile-edit-form">
+        {% csrf_token %}
+
+        <div class="profile-upload-group">
+          <label class="profile-upload-trigger" for="{{ form.avatar.id_for_label }}">
+            <span class="profile-upload-frame">
+              <span class="profile-upload-fallback" data-avatar-fallback {% if form.instance.avatar %}hidden{% endif %} aria-hidden="true">{{ form.instance.initial }}</span>
+              <img data-avatar-preview {% if form.instance.avatar %}src="{{ form.instance.avatar.url }}" alt="Foto profil saat ini"{% else %}alt="Pratinjau foto profil" hidden{% endif %}>
+              <span class="profile-upload-overlay" aria-hidden="true">
+                <span>Ubah foto</span>
+              </span>
+            </span>
+          </label>
+
+          <div class="profile-upload-control">
+            {{ form.avatar }}
+            <p class="label-error" data-avatar-error hidden></p>
+          </div>
+
+          {% for error in form.avatar.errors %}
+            <p class="label-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        {% for field in form %}
+          {% if field.name != 'avatar' %}
+          <div class="profile-field-group">
+            <label for="{{ field.id_for_label }}" class="profile-field-label">
+              {{ field.label }}
+            </label>
+
+            {{ field }}
+
+            {% if field.help_text %}
+              <p class="profile-field-help">{{ field.help_text }}</p>
+            {% endif %}
+
+            {% for error in field.errors %}
+              <p class="label-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+
+        <div class="profile-edit-actions">
+          <button type="submit" class="profile-button profile-button-primary">
+            Simpan
+          </button>
+
+          <a href="{% url 'accounts:me' %}" class="profile-button profile-button-outline">
+            Batal
+          </a>
+        </div>
+      </form>
+    </section>
+  </div>
+</main>
+{% endblock content %}
+

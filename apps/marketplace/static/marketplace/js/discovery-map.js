@@ -18,6 +18,20 @@
     productGrid: document.getElementById("product-grid"),
     productCount: document.getElementById("product-count"),
     storesHeading: document.querySelector(".nearby-panel-heading p"),
+    openSavedPlaceDialog: document.getElementById("open-saved-place-dialog"),
+    savedPlaceList: document.getElementById("saved-place-list"),
+    savedPlaceCount: document.getElementById("saved-place-count"),
+    savedPlaceDialog: document.getElementById("saved-place-dialog"),
+    savedPlaceForm: document.getElementById("saved-place-form"),
+    savedPlaceDialogTitle: document.getElementById("saved-place-dialog-title"),
+    savedPlaceId: document.getElementById("saved-place-id"),
+    savedPlaceName: document.getElementById("saved-place-name"),
+    savedPlaceAddress: document.getElementById("saved-place-address"),
+    savedPlaceNotes: document.getElementById("saved-place-notes"),
+    savedPlaceLatitude: document.getElementById("saved-place-latitude"),
+    savedPlaceLongitude: document.getElementById("saved-place-longitude"),
+    savedPlaceFormError: document.getElementById("saved-place-form-error"),
+    savedPlaceSubmit: document.getElementById("saved-place-submit"),
   };
 
   const state = {
@@ -29,6 +43,9 @@
     requestController: null,
     searchController: null,
     markers: [],
+    savedPlaces: [],
+    savedPlaceMarkers: [],
+    isAuthenticated: app.dataset.isAuthenticated === "true",
   };
 
   const map = new window.maplibregl.Map({
@@ -171,6 +188,190 @@
     node.className = `discovery-empty-state${extraClass ? ` ${extraClass}` : ""}`;
     node.textContent = message;
     return node;
+  }
+
+  function savedPlaceDetailUrl(id) {
+    return app.dataset.savedPlaceUrlTemplate.replace("/0/", `/${id}/`);
+  }
+
+  function csrfToken() {
+    return elements.savedPlaceForm?.querySelector("[name=csrfmiddlewaretoken]")?.value || "";
+  }
+
+  function clearSavedPlaceMarkers() {
+    state.savedPlaceMarkers.forEach((marker) => marker.remove());
+    state.savedPlaceMarkers = [];
+  }
+
+  function createSavedPlaceMarker(place) {
+    const markerElement = document.createElement("button");
+    markerElement.type = "button";
+    markerElement.className = "map-saved-place-marker";
+    markerElement.setAttribute("aria-label", `Tempat tersimpan: ${place.name}`);
+    const popup = new window.maplibregl.Popup({ offset: 20 }).setText(
+      `${place.name} — ${place.address_label}`
+    );
+    const marker = new window.maplibregl.Marker({ element: markerElement })
+      .setLngLat([place.longitude, place.latitude])
+      .setPopup(popup)
+      .addTo(map);
+    state.savedPlaceMarkers.push(marker);
+  }
+
+  function createSavedPlaceAction(action, label, text, extraClass) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `saved-place-action${extraClass ? ` ${extraClass}` : ""}`;
+    button.dataset.action = action;
+    button.setAttribute("aria-label", label);
+    button.textContent = text;
+    return button;
+  }
+
+  function renderSavedPlaces(places) {
+    state.savedPlaces = places;
+    elements.savedPlaceList.replaceChildren();
+    clearSavedPlaceMarkers();
+
+    places.forEach((place) => {
+      const article = document.createElement("article");
+      article.className = "saved-place-card";
+      article.dataset.savedPlaceId = String(place.id);
+
+      const main = document.createElement("button");
+      main.type = "button";
+      main.className = "saved-place-main";
+      main.dataset.action = "focus";
+      const name = document.createElement("strong");
+      name.textContent = place.name;
+      const address = document.createElement("small");
+      address.textContent = place.address_label;
+      main.append(name, address);
+
+      const actions = document.createElement("div");
+      actions.className = "saved-place-actions";
+      actions.append(
+        createSavedPlaceAction("edit", `Edit ${place.name}`, "✎"),
+        createSavedPlaceAction("delete", `Hapus ${place.name}`, "×", "is-delete")
+      );
+
+      article.append(main, actions);
+      elements.savedPlaceList.append(article);
+      createSavedPlaceMarker(place);
+    });
+
+    if (!places.length) {
+      elements.savedPlaceList.append(
+        emptyState("Belum ada tempat tersimpan. Pilih titik pada peta lalu simpan.")
+      );
+    }
+    elements.savedPlaceCount.textContent = `${places.length} tempat`;
+  }
+
+  async function loadSavedPlaces() {
+    if (!state.isAuthenticated) return;
+    try {
+      const response = await fetch(app.dataset.savedPlacesUrl, {
+        headers: { Accept: "application/json" },
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || "Tempat tersimpan tidak dapat dimuat.");
+      renderSavedPlaces(payload.results);
+    } catch (error) {
+      elements.savedPlaceList.replaceChildren(emptyState(error.message));
+      setStatus(error.message, true);
+    }
+  }
+
+  function openSavedPlaceForm(place) {
+    if (!state.isAuthenticated || !elements.savedPlaceDialog) {
+      setStatus("Login diperlukan untuk menyimpan tempat.", true);
+      return;
+    }
+
+    const isEditing = Boolean(place);
+    elements.savedPlaceForm.reset();
+    elements.savedPlaceId.value = isEditing ? String(place.id) : "";
+    elements.savedPlaceName.value = place?.name || "";
+    elements.savedPlaceAddress.value = place?.address_label || state.label;
+    elements.savedPlaceNotes.value = place?.notes || "";
+    elements.savedPlaceLatitude.value = String(place?.latitude ?? state.latitude);
+    elements.savedPlaceLongitude.value = String(place?.longitude ?? state.longitude);
+    elements.savedPlaceDialogTitle.textContent = isEditing ? "Edit tempat tersimpan" : "Simpan tempat";
+    elements.savedPlaceSubmit.textContent = isEditing ? "Simpan perubahan" : "Simpan tempat";
+    elements.savedPlaceFormError.hidden = true;
+    elements.savedPlaceDialog.showModal();
+    elements.savedPlaceName.focus();
+  }
+
+  function closeSavedPlaceForm() {
+    elements.savedPlaceDialog?.close();
+  }
+
+  function savedPlacePayload() {
+    return {
+      name: elements.savedPlaceName.value,
+      address_label: elements.savedPlaceAddress.value,
+      notes: elements.savedPlaceNotes.value,
+      latitude: elements.savedPlaceLatitude.value,
+      longitude: elements.savedPlaceLongitude.value,
+    };
+  }
+
+  function formErrorMessage(payload) {
+    const fields = payload.error?.fields;
+    if (fields) {
+      const firstField = Object.values(fields)[0];
+      if (Array.isArray(firstField) && firstField[0]?.message) return firstField[0].message;
+    }
+    return payload.error?.message || "Tempat tidak dapat disimpan.";
+  }
+
+  async function submitSavedPlace(event) {
+    event.preventDefault();
+    const id = elements.savedPlaceId.value;
+    const isEditing = Boolean(id);
+    const url = isEditing ? savedPlaceDetailUrl(id) : app.dataset.savedPlacesUrl;
+    elements.savedPlaceSubmit.disabled = true;
+    elements.savedPlaceFormError.hidden = true;
+
+    try {
+      const response = await fetch(url, {
+        method: isEditing ? "PUT" : "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken(),
+        },
+        body: JSON.stringify(savedPlacePayload()),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(formErrorMessage(payload));
+      closeSavedPlaceForm();
+      await loadSavedPlaces();
+      setStatus(isEditing ? "Tempat tersimpan berhasil diperbarui." : "Titik berhasil disimpan.");
+    } catch (error) {
+      elements.savedPlaceFormError.textContent = error.message;
+      elements.savedPlaceFormError.hidden = false;
+    } finally {
+      elements.savedPlaceSubmit.disabled = false;
+    }
+  }
+
+  async function deleteSavedPlace(place) {
+    if (!window.confirm(`Hapus “${place.name}” dari tempat tersimpan?`)) return;
+    try {
+      const response = await fetch(savedPlaceDetailUrl(place.id), {
+        method: "DELETE",
+        headers: { Accept: "application/json", "X-CSRFToken": csrfToken() },
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || "Tempat tidak dapat dihapus.");
+      await loadSavedPlaces();
+      setStatus("Tempat tersimpan berhasil dihapus.");
+    } catch (error) {
+      setStatus(error.message, true);
+    }
   }
 
   function renderStores(stores) {
@@ -472,8 +673,27 @@
 
   elements.search.addEventListener("input", debounce((event) => searchLocations(event.target.value), 350));
   elements.locate.addEventListener("click", requestUserLocation);
+  elements.openSavedPlaceDialog.addEventListener("click", () => openSavedPlaceForm());
+  elements.savedPlaceForm?.addEventListener("submit", submitSavedPlace);
+  elements.savedPlaceDialog?.querySelectorAll("[data-close-saved-place-dialog]").forEach((button) => {
+    button.addEventListener("click", closeSavedPlaceForm);
+  });
+  elements.savedPlaceList.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-action]");
+    const card = event.target.closest("[data-saved-place-id]");
+    if (!action || !card) return;
+    const place = state.savedPlaces.find((item) => item.id === Number(card.dataset.savedPlaceId));
+    if (!place) return;
+    if (action.dataset.action === "edit") openSavedPlaceForm(place);
+    if (action.dataset.action === "delete") deleteSavedPlace(place);
+    if (action.dataset.action === "focus") {
+      updateCenter(place.latitude, place.longitude, place.name, { zoom: 14 });
+      loadNearby();
+    }
+  });
   map.on("click", (event) => selectMapPoint(event.lngLat.lat, event.lngLat.lng));
 
+  loadSavedPlaces();
   // Minta permissions buat akses lokasi, kalau gak dikasih bakal pake lokasi dari IP
   requestUserLocation();
 })();
