@@ -87,6 +87,16 @@ class MarketplaceApiTests(TestCase):
         payload = response.json()
         self.assertTrue(any(item["slug"] == self.location.slug for item in payload["results"]))
 
+    def test_discovery_map_renders_initial_location_and_results(self):
+        response = self.client.get(reverse("marketplace:discovery_map"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "marketplace/discovery_map.html")
+        self.assertContains(response, "Cari barang di")
+        self.assertContains(response, self.location.name)
+        self.assertContains(response, self.near_store.name)
+        self.assertContains(response, self.listing.title)
+
     def test_nearby_accepts_exact_coordinates_and_sorts_by_distance(self):
         response = self.client.get(
             reverse("marketplace:api_nearby"),

@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
 from .models import Listing, PredefinedLocation, Store
@@ -12,6 +13,57 @@ from .services import (
     haversine_distance_km,
     reverse_geocode,
 )
+
+
+DEFAULT_PAGE_RADIUS_KM = 3
+
+
+@require_GET
+def discovery_map(request):
+    locations = list(PredefinedLocation.objects.filter(is_active=True))
+    selected_location = locations[0] if locations else None
+    center_latitude = float(selected_location.latitude) if selected_location else -6.186486
+    center_longitude = float(selected_location.longitude) if selected_location else 106.834091
+
+    stores = []
+    for store in Store.objects.filter(is_active=True):
+        distance = haversine_distance_km(
+            center_latitude, center_longitude, store.latitude, store.longitude
+        )
+        if distance <= DEFAULT_PAGE_RADIUS_KM:
+            store.distance_km = round(distance, 1)
+            stores.append(store)
+    stores.sort(key=lambda store: store.distance_km)
+
+    listings = []
+    available_listings = Listing.objects.filter(
+        is_available=True,
+        store__is_active=True,
+    ).select_related("store")
+    for listing in available_listings:
+        distance = haversine_distance_km(
+            center_latitude, center_longitude, listing.latitude, listing.longitude
+        )
+        if distance <= DEFAULT_PAGE_RADIUS_KM:
+            listing.distance_km = round(distance, 1)
+            listings.append(listing)
+    listings.sort(key=lambda listing: listing.distance_km)
+
+    return render(
+        request,
+        "marketplace/discovery_map.html",
+        {
+            "locations": locations,
+            "selected_location": selected_location,
+            "nearby_stores": stores[:3],
+            "nearby_listings": listings[:8],
+            "radius_km": DEFAULT_PAGE_RADIUS_KM,
+            "map_center": {
+                "latitude": center_latitude,
+                "longitude": center_longitude,
+            },
+        },
+    )
 
 
 def _error(message, *, status=400, field=None):
