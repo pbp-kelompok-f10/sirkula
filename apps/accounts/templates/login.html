@@ -1,0 +1,78 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login | Sirkula{% endblock title %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock extra_head %}
+
+{% block nav_home %}is-active{% endblock nav_home %}
+
+{% block content %}
+<main class="login-page">
+    <aside class="login-art" aria-hidden="true">
+        <div class="login-art-shade"></div>
+        <img class="login-art-logo" src="{% static 'img/auth-login-logo.svg' %}" alt="">
+    </aside>
+
+    <section class="login-panel" aria-labelledby="login-title">
+        <div class="login-heading">
+            <h1 id="login-title">Hello Again</h1>
+            <p>Silakan login kembali.</p>
+        </div>
+
+        <form method="post" action="{% url 'accounts:login' %}" class="login-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-error login-errors" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="login-field">
+                <label for="{{ form.username.id_for_label }}">Email</label>
+                {{ form.username }}
+                {% for error in form.username.errors %}
+                    <span class="label-error" role="alert">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="login-field">
+                <label for="{{ form.password.id_for_label }}">Password</label>
+                <div class="login-password">
+                    {{ form.password }}
+                    <button
+                        class="login-password-toggle"
+                        type="button"
+                        data-eye-open="{% static 'img/icon-eye-open.svg' %}"
+                        data-eye-closed="{% static 'img/icon-eye-closed.svg' %}"
+                        aria-label="Tampilkan password"
+                        aria-pressed="false"
+                    >
+                        <img class="password-toggle-icon" src="{% static 'img/icon-eye-closed.svg' %}" alt="" aria-hidden="true">
+                    </button>
+                </div>
+                {% for error in form.password.errors %}
+                    <span class="label-error" role="alert">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <label class="login-remember" for="id_remember_me">
+                {{ form.remember_me }}
+                <span>Ingat saya</span>
+            </label>
+
+            <button type="submit" class="login-submit">Login</button>
+
+            <p class="login-register">
+                Don’t have an account?
+                <a href="{% url 'accounts:register' %}">Register.</a>
+            </p>
+        </form>
+    </section>
+</main>
+{% endblock content %}

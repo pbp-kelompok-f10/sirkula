@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register | Sirkula{% endblock title %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock extra_head %}
+
+{% block content %}
+<main class="register-page">
+    <aside class="register-art" aria-hidden="true">
+        <div class="register-art-shade"></div>
+        <svg class="register-art-logo" viewBox="0 0 560 420" role="presentation" aria-hidden="true">
+            <path d="M127 164C109 142 103 120 119 100C150 60 231 71 267 125C282 146 287 168 281 189C273 215 257 233 221 244C184 255 160 279 155 314C148 364 192 391 234 390C286 388 328 369 352 337" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M432 255C451 277 457 300 440 320C410 360 331 350 294 294C279 272 273 250 280 229C287 203 304 186 340 175C377 164 401 140 406 105C413 55 369 28 327 29C274 30 233 49 208 81" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M178 166L219 184L197 220" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M381 253L340 236L362 199" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </aside>
+
+    <section class="register-panel" aria-labelledby="register-title">
+        <div class="register-heading">
+            <h1 id="register-title">Selamat Datang</h1>
+            <p>Silakan daftarkan akunmu</p>
+        </div>
+
+        <form method="post" action="{% url 'accounts:register' %}" class="register-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-error register-errors" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="register-fields">
+                <div class="form-control sirkula-field">
+                    <label class="label" for="id_username">
+                        <span class="label-text">Name</span>
+                    </label>
+                    <input
+                        class="input input-bordered sirkula-register-input"
+                        id="id_username"
+                        name="username"
+                        type="text"
+                        placeholder="Prabowo Subianto"
+                        autocomplete="username"
+                        value="{{ form.username.value|default_if_none:'' }}"
+                        required
+                    >
+                    {% for error in form.username.errors %}
+                        <span class="label-error" role="alert">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-control sirkula-field">
+                    <label class="label" for="id_email">
+                        <span class="label-text">Email</span>
+                    </label>
+                    <input
+                        class="input input-bordered sirkula-register-input"
+                        id="id_email"
+                        name="email"
+                        type="email"
+                        placeholder="prabowo@sppg.ac.id"
+                        autocomplete="email"
+                        value="{{ form.email.value|default_if_none:'' }}"
+                        required
+                    >
+                    {% for error in form.email.errors %}
+                        <span class="label-error" role="alert">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-control sirkula-field">
+                    <label class="label" for="id_password1">
+                        <span class="label-text">Password</span>
+                    </label>
+                    <div class="sirkula-register-password">
+                        <input
+                            class="input sirkula-register-input"
+                            id="id_password1"
+                            name="password1"
+                            type="password"
+                            placeholder="Enter your password..."
+                            autocomplete="new-password"
+                            required
+                        >
+                        <button
+                            class="btn btn-ghost btn-square register-password-toggle"
+                            type="button"
+                            data-toggle="id_password1"
+                            aria-label="Tampilkan password"
+                            aria-pressed="false"
+                        >
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" aria-hidden="true">
+                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    {% for error in form.password1.errors %}
+                        <span class="label-error" role="alert">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="form-control sirkula-field">
+                    <label class="label" for="id_password2">
+                        <span class="label-text">Password Confirmation</span>
+                    </label>
+                    <div class="sirkula-register-password">
+                        <input
+                            class="input sirkula-register-input"
+                            id="id_password2"
+                            name="password2"
+                            type="password"
+                            placeholder="Confirm your password..."
+                            autocomplete="new-password"
+                            required
+                        >
+                        <button
+                            class="btn btn-ghost btn-square register-password-toggle"
+                            type="button"
+                            data-toggle="id_password2"
+                            aria-label="Tampilkan konfirmasi password"
+                            aria-pressed="false"
+                        >
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" aria-hidden="true">
+                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    {% for error in form.password2.errors %}
+                        <span class="label-error" role="alert">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="register-actions">
+                <button type="submit" class="btn btn-primary register-submit">
+                    Next
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5 12h14"/>
+                        <path d="m12 5 7 7-7 7"/>
+                    </svg>
+                </button>
+
+                <p class="register-login-prompt">
+                    Already have an account?
+                    <a href="{% url 'accounts:login' %}">Login.</a>
+                </p>
+            </div>
+        </form>
+    </section>
+</main>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll("[data-toggle]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const input = document.getElementById(button.dataset.toggle);
+            if (!input) return;
+
+            const isPassword = input.type === "password";
+            input.type = isPassword ? "text" : "password";
+            button.setAttribute("aria-pressed", String(isPassword));
+            button.setAttribute(
+                "aria-label",
+                isPassword ? "Sembunyikan password" : "Tampilkan password"
+            );
+        });
+    });
+</script>
+{% endblock extra_js %}

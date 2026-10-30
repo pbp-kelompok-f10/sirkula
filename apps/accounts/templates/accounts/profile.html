@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profil | Sirkula{% endblock title %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock extra_head %}
+
+{% block nav_home %}is-active{% endblock nav_home %}
+
+{% block content %}
+<div class="profile-page">
+
+  <!-- Profil utama -->
+  <section class="profile-card">
+    <header class="profile-section-header">
+      <div class="profile-heading-group">
+        <p class="profile-eyebrow">Profil Pengguna</p>
+        <h1 class="profile-title">Prabowo Subianto</h1>
+      </div>
+
+      <div class="profile-header-actions">
+        <span class="profile-badge">Akun Saya</span>
+        <a href="{% url 'accounts:profile_edit' %}" class="profile-button profile-button-primary">
+          Edit Profil
+        </a>
+      </div>
+    </header>
+
+    <div class="profile-overview">
+      <div class="profile-avatar">
+        <img src="{% static 'img/avatar.png' %}" alt="Foto profil Prabowo Subianto">
+      </div>
+
+      <div class="profile-intro">
+        <div class="profile-intro-heading">
+          <h2 class="profile-display-name">Prabowo Subianto Djojohadikusumo</h2>
+          <p class="profile-location">
+            <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Depok, Jawa Barat
+          </p>
+        </div>
+
+        <p class="profile-bio">
+          Prabowo Subianto Djojohadikusumo adalah seorang politikus, pengusaha, dan
+          pensiunan perwira militer Indonesia yang menjabat sebagai Presiden Indonesia
+          kedelapan sejak tahun 2024.
+        </p>
+      </div>
+    </div>
+
+    <div class="profile-stats">
+      <article class="profile-stat-card">
+        <div class="profile-stat-icon" aria-hidden="true">
+          <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="profile-stat-copy">
+          <p class="profile-stat-value">100%</p>
+          <p class="profile-stat-label">Reputasi Transaksi</p>
+        </div>
+      </article>
+
+      <article class="profile-stat-card">
+        <div class="profile-stat-icon" aria-hidden="true">
+          <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
+            <path d="M12 22V12"/>
+            <path d="m3.3 7 8.7 5 8.7-5"/>
+            <path d="m7.5 4.27 9 5.15"/>
+          </svg>
+        </div>
+        <div class="profile-stat-copy">
+          <p class="profile-stat-value">100%</p>
+          <p class="profile-stat-label">Kualitas Barang</p>
+        </div>
+      </article>
+
+      <article class="profile-stat-card">
+        <div class="profile-stat-icon" aria-hidden="true">
+          <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m17 2 4 4-4 4"/>
+            <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+            <path d="m7 22-4-4 4-4"/>
+            <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+          </svg>
+        </div>
+        <div class="profile-stat-copy">
+          <p class="profile-stat-value">20</p>
+          <p class="profile-stat-label">Transaksi Sukses</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section class="profile-card profile-dashboard">
+    <header class="profile-section-header">
+      <div class="profile-heading-group">
+        <h2 class="profile-title">Dashboard Saya</h2>
+        <p class="profile-subtitle">
+          Kelola lemari virtual, thrift, dan barter lokal Anda.
+        </p>
+      </div>
+
+      <a href="/wardrobe/tambah/" class="profile-button profile-button-primary">
+        Tambah Barang
+      </a>
+    </header>
+
+    <div class="profile-dashboard-section">
+      <h3 class="profile-subheading">Lemari Virtual · Contoh tampilan barang</h3>
+      <!-- Area grid barang; masih kosong sesuai desain -->
+      <div id="lemari-grid" class="profile-wardrobe-grid"></div>
+    </div>
+
+    <div class="profile-dashboard-section">
+      <h3 class="profile-subheading">Barter Aktif · Contoh tampilan permintaan</h3>
+
+      <article class="profile-barter-card">
+        <div class="profile-barter-header">
+          <div class="profile-barter-user">
+            <div class="profile-barter-avatar" aria-hidden="true">A</div>
+            <div class="profile-barter-user-copy">
+              <p class="profile-barter-username">@TeddyIndra</p>
+              <p class="profile-barter-location">Jakarta Selatan</p>
+            </div>
+          </div>
+
+          <span class="profile-barter-status">Menunggu Konfirmasi</span>
+        </div>
+
+        <p class="profile-barter-description">
+          Blazer Linen Beige vs. Kemeja Putih Oversized
+        </p>
+
+        <div class="profile-barter-actions">
+          <button type="button" class="profile-button profile-button-primary">Terima</button>
+          <button type="button" class="profile-button profile-button-outline">Tolak</button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+</div>
+{% endblock content %}

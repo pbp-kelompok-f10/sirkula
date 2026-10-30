@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} | Sirkula{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/barter-checkout.css' %}">
+<link rel="stylesheet" href="{% static 'css/barter-offers.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="barter-page">
+    <section class="barter-container">
+        <h1 class="offer-list-title">{{ page_title }}</h1>
+        <p><a href="{% url 'bartering:transactions' %}">Lihat transaksi barter</a></p>
+
+        {% for offer in offers %}
+            <article class="offer-card">
+                <div>
+                    <h2>{{ offer.offered_product.name }} → {{ offer.requested_product.name }}</h2>
+                    {% if incoming %}
+                        <p>Dari: {{ offer.proposer.username }}</p>
+                    {% else %}
+                        <p>Kepada: {{ offer.recipient.username }}</p>
+                    {% endif %}
+                    {% if offer.message %}<p>{{ offer.message }}</p>{% endif %}
+                </div>
+                <span class="offer-status offer-{{ offer.status|lower }}">
+                    {{ offer.get_status_display }}
+                </span>
+                <div class="offer-actions">
+                    {% if incoming and offer.status == 'PENDING' %}
+                        <form method="post" action="{% url 'bartering:update_offer' offer.pk 'ACCEPTED' %}">
+                            {% csrf_token %}
+                            <button class="offer-button accept" type="submit">Terima</button>
+                        </form>
+                        <form method="post" action="{% url 'bartering:update_offer' offer.pk 'REJECTED' %}">
+                            {% csrf_token %}
+                            <button class="offer-button reject" type="submit">Tolak</button>
+                        </form>
+                    {% elif not incoming and offer.status == 'PENDING' %}
+                        <form method="post" action="{% url 'bartering:update_offer' offer.pk 'CANCELLED' %}">
+                            {% csrf_token %}
+                            <button class="offer-button reject" type="submit">Batalkan</button>
+                        </form>
+                    {% endif %}
+
+                    {% if offer.status == 'ACCEPTED' or offer.status == 'SHIPPING' %}
+                        <form
+                            method="post"
+                            action="{% url 'bartering:update_shipping' offer.pk %}"
+                            class="shipping-form"
+                        >
+                            {% csrf_token %}
+                            <input
+                                type="text"
+                                name="tracking_number"
+                                placeholder="Nomor resi"
+                                {% if incoming and offer.recipient_tracking_number %}value="{{ offer.recipient_tracking_number }}"{% elif not incoming and offer.proposer_tracking_number %}value="{{ offer.proposer_tracking_number }}"{% endif %}
+                                required
+                            >
+                            <button class="offer-button accept" type="submit">
+                                Simpan Resi
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    {% if offer.status == 'SHIPPING' %}
+                        <form
+                            method="post"
+                            action="{% url 'bartering:confirm_received' offer.pk %}"
+                        >
+                            {% csrf_token %}
+                            <button class="offer-button accept" type="submit">
+                                Konfirmasi Diterima
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </article>
+        {% empty %}
+            <div class="empty-offers">Belum ada tawaran barter.</div>
+        {% endfor %}
+    </section>
+</main>
+{% endblock %}

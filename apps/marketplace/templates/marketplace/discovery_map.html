@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Discovery Map | Sirkula{% endblock title %}
+{% block nav_map %}is-active{% endblock nav_map %}
+
+{% block extra_head %}
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+>
+{% endblock extra_head %}
+
+{% block content %}
+<div
+    id="discovery-app"
+    class="discovery-page"
+    data-nearby-url="{% url 'marketplace:api_nearby' %}"
+    data-locations-url="{% url 'marketplace:api_locations' %}"
+    data-geocode-url="{% url 'marketplace:api_geocode' %}"
+    data-reverse-geocode-url="{% url 'marketplace:api_reverse_geocode' %}"
+    data-saved-places-url="{% url 'marketplace:api_saved_places' %}"
+    data-saved-place-url-template="{% url 'marketplace:api_saved_place_detail' 0 %}"
+    data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+    data-initial-latitude="{{ map_center.latitude }}"
+    data-initial-longitude="{{ map_center.longitude }}"
+    data-initial-radius="{{ radius_km }}"
+>
+    <section class="discovery-hero" aria-labelledby="discovery-title">
+        <div class="discovery-ambient" aria-hidden="true"></div>
+        <div class="discovery-container">
+            <h1 id="discovery-title" class="discovery-title">Cari barang di <span>Sekitarmu</span></h1>
+
+            <div class="map-shell">
+                <div id="discovery-map" class="discovery-map" role="region" aria-label="Peta produk dan toko di sekitar">
+                    <div class="map-placeholder" aria-hidden="true">
+                        <span class="map-road map-road-one"></span>
+                        <span class="map-road map-road-two"></span>
+                        <span class="map-road map-road-three"></span>
+                        <span class="map-radius-preview"></span>
+                        <span class="map-pin-preview map-pin-one"></span>
+                        <span class="map-pin-preview map-pin-two"></span>
+                        <span class="map-pin-preview map-pin-three"></span>
+                    </div>
+                    <p class="map-loading-message" id="map-loading-message">Peta interaktif sedang disiapkan</p>
+                </div>
+                <button id="locate-me" class="map-locate-button" type="button" aria-label="Gunakan lokasi saya">
+                    <!-- Current location, nanti pake icon libs ya (django ada kh?) -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+                        <circle cx="12" cy="12" r="8"></circle>
+                    </svg>
+                </button>
+                <button
+                    id="open-saved-place-dialog"
+                    class="map-save-place-button"
+                    type="button"
+                    {% if not user.is_authenticated %}disabled title="Login diperlukan untuk menyimpan tempat"{% endif %}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 21s7-6.1 7-12A7 7 0 1 0 5 9c0 5.9 7 12 7 12Z"></path>
+                        <circle cx="12" cy="9" r="2.5"></circle>
+                    </svg>
+                    Simpan titik ini
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="discovery-results" aria-labelledby="location-heading">
+        <div class="discovery-container discovery-stack">
+            <header class="discovery-section-heading">
+                <h2 id="location-heading">Pilih lokasi &amp; temukan yang terdekat</h2>
+                <p>Sesuaikan radius pencarian dan lihat hasil thrift/barter terdekat di sekitarmu.</p>
+            </header>
+
+            <div class="discovery-toolbar">
+                <div class="discovery-search-wrapper">
+                    <label class="discovery-search" for="location-search">
+                        <!-- Icon yang peta itu -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <path d="m20 20-3.5-3.5"></path>
+                        </svg>
+                        <span class="sr-only">Cari lokasi</span>
+                        <input
+                            id="location-search"
+                            type="search"
+                            placeholder="Cari lokasi spesifik..."
+                            autocomplete="off"
+                        >
+                    </label>
+                </div>
+
+                <details class="radius-control">
+                    <summary class="radius-trigger">
+                        <span>Radius</span>
+                        <output id="radius-output" for="radius-slider">{{ radius_km }} km</output>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="m6 9 6 6 6-6"></path>
+                        </svg>
+                    </summary>
+                    <div class="radius-dropdown">
+                        <div class="radius-control-label">
+                            <label for="radius-slider">Atur radius pencarian</label>
+                            <span>1–50 km</span>
+                        </div>
+                        <input id="radius-slider" type="range" min="1" max="50" step="1" value="{{ radius_km }}">
+                    </div>
+                </details>
+            </div>
+
+            <p id="discovery-status" class="discovery-status" role="status" aria-live="polite">
+                Menampilkan hasil di sekitar {{ selected_location.name|default:"Jakarta Pusat" }}.
+            </p>
+
+            <section class="saved-places-panel" aria-labelledby="saved-places-heading">
+                <div class="saved-places-heading">
+                    <div>
+                        <h3 id="saved-places-heading">Tempat tersimpan</h3>
+                        <p>Pin pribadi agar tempat favoritmu mudah ditemukan kembali.</p>
+                    </div>
+                    <span id="saved-place-count" class="result-count">0 tempat</span>
+                </div>
+                <div id="saved-place-list" class="saved-place-list">
+                    {% if user.is_authenticated %}
+                    <div class="discovery-empty-state">Memuat tempat tersimpan…</div>
+                    {% else %}
+                    <div class="discovery-empty-state">Login diperlukan untuk menyimpan dan mengelola pin pribadi.</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <div class="location-layout">
+                <div id="location-list" class="location-list" aria-label="Pilihan wilayah JABODETABEK">
+                    {% for location in locations %}
+                    <button
+                        class="location-card{% if location == selected_location %} is-selected{% endif %}"
+                        type="button"
+                        data-location-slug="{{ location.slug }}"
+                        data-latitude="{{ location.latitude }}"
+                        data-longitude="{{ location.longitude }}"
+                        aria-pressed="{% if location == selected_location %}true{% else %}false{% endif %}"
+                    >
+                        <span class="location-card-copy">
+                            <strong>{{ location.name }}</strong>
+                            <small>{{ location.address_label }}</small>
+                        </span>
+                        {% if location == selected_location %}
+                        <span class="location-selected-label">Dipilih</span>
+                        {% else %}
+                        <span class="location-type-label">{{ location.get_region_type_display }}</span>
+                        {% endif %}
+                    </button>
+                    {% empty %}
+                    <div class="discovery-empty-state">Belum ada lokasi predefined yang aktif.</div>
+                    {% endfor %}
+                </div>
+
+                <aside class="nearby-stores" aria-labelledby="stores-heading">
+                    <div class="nearby-panel-heading">
+                        <div>
+                            <h3 id="stores-heading">Toko terdekat</h3>
+                            <p>Berdasarkan radius {{ radius_km }} km dari {{ selected_location.name|default:"Jakarta Pusat" }}</p>
+                        </div>
+                        <span id="store-count" class="result-count">{{ nearby_stores|length }} hasil</span>
+                    </div>
+
+                    <div id="store-list" class="store-list">
+                        {% for store in nearby_stores %}
+                        <article class="store-result{% if forloop.first %} is-featured{% endif %}">
+                            <span class="store-rank">{{ forloop.counter }}</span>
+                            <div class="store-result-copy">
+                                <h4>{{ store.name }}</h4>
+                                <p>{{ store.distance_km }} km &bull; {{ store.address }}</p>
+                            </div>
+                            <span class="store-open-label">Buka</span>
+                        </article>
+                        {% empty %}
+                        <div class="discovery-empty-state">Belum ada toko di dalam radius ini.</div>
+                        {% endfor %}
+                    </div>
+                </aside>
+            </div>
+
+            <section class="nearby-products" aria-labelledby="products-heading">
+                <div class="products-heading-row">
+                    <h2 id="products-heading">Hasil Pencarian Berdasarkan Lokasi Terdekat</h2>
+                    <span id="product-count">{{ nearby_listings|length }} produk</span>
+                </div>
+
+                <div id="product-grid" class="product-grid">
+                    {% for listing in nearby_listings %}
+                    <article class="card-product discovery-product-card">
+                        <div class="card-figure">
+                            {% if listing.image_url %}
+                            <img src="{{ listing.image_url }}" alt="{{ listing.title }}" loading="lazy">
+                            {% else %}
+                            <div class="product-image-placeholder" aria-hidden="true"></div>
+                            {% endif %}
+                            <span class="card-label">{{ listing.get_listing_type_display }}</span>
+                        </div>
+                        <div class="card-body">
+                            <span class="card-description">{{ listing.distance_km }} km &bull; {{ listing.store.name }}</span>
+                            <h3 class="card-title">{{ listing.title }}</h3>
+                            <span class="card-price">
+                                {% if listing.price %}Rp {{ listing.price|floatformat:"0" }}{% else %}Tukar barang{% endif %}
+                            </span>
+                            <div class="card-actions">
+                                <button class="btn btn-primary" type="button">Lihat Detail</button>
+                                <button class="btn btn-outline btn-primary btn-square" type="button" aria-label="Simpan {{ listing.title }}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path d="M12 21s-7-4.35-9.33-8.14C.64 9.57 2.04 5.5 5.7 4.4 7.8 3.77 10.08 4.5 12 6.5c1.92-2 4.2-2.73 6.3-2.1 3.66 1.1 5.06 5.17 3.03 8.46C19 16.65 12 21 12 21Z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                    {% empty %}
+                    <div class="discovery-empty-state product-empty-state">Belum ada produk di dalam radius ini.</div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </section>
+
+    {% if user.is_authenticated %}
+    <dialog id="saved-place-dialog" class="saved-place-dialog" aria-labelledby="saved-place-dialog-title">
+        <form id="saved-place-form" class="saved-place-form">
+            {% csrf_token %}
+            <input id="saved-place-id" type="hidden">
+            <input id="saved-place-latitude" name="latitude" type="hidden">
+            <input id="saved-place-longitude" name="longitude" type="hidden">
+
+            <div class="saved-place-dialog-heading">
+                <div>
+                    <h2 id="saved-place-dialog-title">Simpan tempat</h2>
+                    <p>Tambahkan nama dan catatan untuk titik yang dipilih.</p>
+                </div>
+                <button class="saved-place-close" type="button" data-close-saved-place-dialog aria-label="Tutup">&times;</button>
+            </div>
+
+            <label class="saved-place-field" for="saved-place-name">
+                <span>Nama tempat</span>
+                <input id="saved-place-name" name="name" type="text" maxlength="120" required>
+            </label>
+            <label class="saved-place-field" for="saved-place-address">
+                <span>Label alamat</span>
+                <input id="saved-place-address" name="address_label" type="text" maxlength="255" required>
+            </label>
+            <label class="saved-place-field" for="saved-place-notes">
+                <span>Catatan <small>(opsional)</small></span>
+                <textarea id="saved-place-notes" name="notes" rows="3"></textarea>
+            </label>
+
+            <p id="saved-place-form-error" class="saved-place-form-error" role="alert" hidden></p>
+            <div class="saved-place-form-actions">
+                <button class="btn btn-outline btn-primary" type="button" data-close-saved-place-dialog>Batal</button>
+                <button id="saved-place-submit" class="btn btn-primary" type="submit">Simpan tempat</button>
+            </div>
+        </form>
+    </dialog>
+    {% endif %}
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'marketplace/js/discovery-map.js' %}" defer></script>
+{% endblock extra_js %}

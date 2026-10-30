@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+  Barter Selesai | Sirkula
+{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/barter-checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+  <main class="barter-page">
+    <div class="barter-container">
+      <div class="barter-steps">
+        <b class="done">1</b>
+        <i></i>
+        <b class="done">2</b>
+        <i></i>
+        <b class="done">3</b>
+        <i></i>
+        <b class="active">4</b>
+      </div>
+
+      <section class="success-barter">
+        <div class="success-check">✓</div>
+        <h1>Pemesanan Berhasil!</h1>
+        <p>Proses barter kamu berhasil dibuat.</p>
+        <a href="{% url 'core:home' %}" class="barter-button">Kembali ke Menu Utama</a>
+      </section>
+    </div>
+  </main>
+{% endblock %}

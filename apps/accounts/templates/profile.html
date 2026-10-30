@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profil | Sirkula{% endblock title %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock extra_head %}
+
+{% block nav_barter %}is-active{% endblock nav_barter %}
+
+{% block content %}
+<div class="profile-page">
+  <section class="profile-card">
+    <header class="profile-section-header">
+      <div class="profile-heading-group">
+        <p class="profile-eyebrow">Profil Pengguna</p>
+        <h1 class="profile-title">{{ profile.title_name|default:user.username }}</h1>
+      </div>
+
+      {% if is_owner %}
+      <div class="profile-header-actions">
+        <span class="profile-badge">Akun Saya</span>
+        <a href="{% url 'accounts:profile_edit' %}" class="profile-button profile-button-primary">
+          Edit Profil
+        </a>
+      </div>
+      {% endif %}
+    </header>
+
+    <div class="profile-overview">
+      <div class="profile-avatar" role="img" aria-label="Foto profil {{ profile.name }}">
+        {% if profile.avatar %}
+          <img src="{{ profile.avatar.url }}" alt="">
+        {% else %}
+          <span class="profile-avatar-placeholder" aria-hidden="true">{{ profile.initial }}</span>
+        {% endif %}
+      </div>
+
+      <div class="profile-intro">
+        <div class="profile-intro-heading">
+          <h2 class="profile-display-name">{{ profile.name }}</h2>
+          {% if profile.location %}
+          <p class="profile-location">
+            <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            {{ profile.location }}
+          </p>
+          {% endif %}
+        </div>
+
+        {% if profile.bio %}
+        <p class="profile-bio">{{ profile.bio }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="profile-stats">
+      <article class="profile-stat-card">
+        <div class="profile-stat-icon" aria-hidden="true">
+          <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="profile-stat-copy">
+          <p class="profile-stat-value">{{ profile.reputation_score }}%</p>
+          <p class="profile-stat-label">Reputasi Transaksi</p>
+        </div>
+      </article>
+
+      <article class="profile-stat-card">
+        <div class="profile-stat-icon" aria-hidden="true">
+          <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
+            <path d="M12 22V12"/>
+            <path d="m3.3 7 8.7 5 8.7-5"/>
+            <path d="m7.5 4.27 9 5.15"/>
+          </svg>
+        </div>
+        <div class="profile-stat-copy">
+          <p class="profile-stat-value">{{ profile.item_quality_score }}%</p>
+          <p class="profile-stat-label">Kualitas Barang</p>
+        </div>
+      </article>
+
+      <article class="profile-stat-card">
+        <div class="profile-stat-icon" aria-hidden="true">
+          <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m17 2 4 4-4 4"/>
+            <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+            <path d="m7 22-4-4 4-4"/>
+            <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+          </svg>
+        </div>
+        <div class="profile-stat-copy">
+          <p class="profile-stat-value">{{ profile.successful_transactions }}</p>
+          <p class="profile-stat-label">Transaksi Sukses</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  {% if is_owner %}
+  <section class="profile-card profile-dashboard">
+    <header class="profile-section-header">
+      <div class="profile-heading-group">
+        <h2 class="profile-title">Dashboard Saya</h2>
+        <p class="profile-subtitle">
+          Kelola lemari virtual, thrift, dan barter lokal Anda.
+        </p>
+      </div>
+
+      <button class="profile-button profile-button-primary" type="button" disabled title="Fitur lemari virtual segera hadir">
+        Tambah Barang
+      </button>
+    </header>
+
+    <div class="profile-dashboard-section">
+      <h3 class="profile-subheading">Lemari Virtual · Contoh tampilan barang</h3>
+      <div class="profile-wardrobe-grid" aria-label="Contoh isi lemari virtual">
+        <article class="wardrobe-placeholder">
+          <div class="wardrobe-placeholder-art wardrobe-placeholder-art--sage" aria-hidden="true"><span>✳</span></div>
+          <div><p>Kaos basic</p><span>Contoh item</span></div>
+        </article>
+        <article class="wardrobe-placeholder">
+          <div class="wardrobe-placeholder-art wardrobe-placeholder-art--sand" aria-hidden="true"><span>◇</span></div>
+          <div><p>Outer linen</p><span>Contoh item</span></div>
+        </article>
+        <article class="wardrobe-placeholder">
+          <div class="wardrobe-placeholder-art wardrobe-placeholder-art--blue" aria-hidden="true"><span>⌁</span></div>
+          <div><p>Celana santai</p><span>Contoh item</span></div>
+        </article>
+        <article class="wardrobe-placeholder">
+          <div class="wardrobe-placeholder-art wardrobe-placeholder-art--rose" aria-hidden="true"><span>✧</span></div>
+          <div><p>Aksesori</p><span>Contoh item</span></div>
+        </article>
+        <article class="wardrobe-placeholder">
+          <div class="wardrobe-placeholder-art wardrobe-placeholder-art--cream" aria-hidden="true"><span>⌂</span></div>
+          <div><p>Sepatu</p><span>Contoh item</span></div>
+        </article>
+      </div>
+    </div>
+
+    <div class="profile-dashboard-section">
+      <h3 class="profile-subheading">Barter Aktif · Contoh tampilan permintaan</h3>
+
+      <article class="profile-barter-card">
+        <div class="profile-barter-header">
+          <div class="profile-barter-user">
+            <div class="profile-barter-avatar" aria-hidden="true">A</div>
+            <div class="profile-barter-user-copy">
+              <p class="profile-barter-username">@TeddyIndra</p>
+              <p class="profile-barter-location">Jakarta Selatan</p>
+            </div>
+          </div>
+
+          <span class="profile-barter-status">Menunggu Konfirmasi</span>
+        </div>
+
+        <p class="profile-barter-description">
+          Blazer Linen Beige vs. Kemeja Putih Oversized
+        </p>
+
+        <div class="profile-barter-actions">
+          <button type="button" class="profile-button profile-button-primary">Terima</button>
+          <button type="button" class="profile-button profile-button-outline">Tolak</button>
+        </div>
+      </article>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock content %}

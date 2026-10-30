@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency %}
+
+{% block title %}Pembayaran | Sirkula{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="checkout-page">
+  <section class="checkout-container">
+
+    <!-- Step Indicator -->
+    <nav class="checkout-steps" aria-label="Langkah pembayaran">
+      <div class="step active">
+        <span>1</span>
+        <strong>Pembayaran</strong>
+      </div>
+      <div class="step-line" aria-hidden="true"></div>
+      <div class="step">
+        <span>2</span>
+        <strong>Selesai</strong>
+      </div>
+    </nav>
+
+    <!-- Dummy Payment Card -->
+    <div class="dummy-payment-card">
+      <h1>Pembayaran</h1>
+      <p class="payment-subtitle">Scan QRIS berikut menggunakan aplikasi pembayaran Anda.</p>
+
+      <div class="dummy-qr" aria-label="Kode QRIS Pembayaran">
+        <img src="{{ order.payment_qr_url }}" alt="QRIS pembayaran" class="h-full w-full object-contain">
+      </div>
+
+      <p class="expiry-text">Status pembayaran: {{ order.payment_status }}</p>
+
+      <div class="payment-total">
+        Total pembayaran:
+        <strong>Rp {{ checkout_total|rupiah }}</strong>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="success-button">
+          Cek Status Pembayaran
+        </button>
+      </form>
+
+      <a href="{% url 'transactions:cart' %}" class="back-link">
+        Kembali ke keranjang
+      </a>
+    </div>
+
+  </section>
+</main>
+{% endblock %}

@@ -42,6 +42,9 @@ SECRET_KEY = 'django-insecure-j4!273_2n7rt4_^m3ea=(&y2&-y^3p**pjb9v0u#13-%1!#s0)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
+MIDTRANS_SERVER_KEY = os.getenv('MIDTRANS_SERVER_KEY', '')
+MIDTRANS_IS_PRODUCTION = os.getenv('MIDTRANS_IS_PRODUCTION', 'False').lower() == 'true'
+MIDTRANS_QRIS_ACQUIRER = os.getenv('MIDTRANS_QRIS_ACQUIRER', 'gopay')
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "zayyan-ramadzaki-sirkula.pws.cs.ui.ac.id"]
 
@@ -60,6 +63,13 @@ INSTALLED_APPS = [
     'apps.outfits.apps.OutfitsConfig',
     "tailwind",
     "ui",
+
+    # Feature apps
+    "apps.core",
+    "apps.accounts",
+    "apps.marketplace",
+    "apps.bartering",
+    "apps.transactions",
 ]
 
 # Tailwind definition
@@ -157,6 +167,15 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (upload produk shop)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -171,3 +190,16 @@ OUTFITS_API_TIMEOUT_SECONDS = 25
 # Preview generation authorized by the user: up to 20 attempts per user.
 OUTFITS_PREVIEW_ENABLED = os.getenv("OUTFITS_PREVIEW_ENABLED", "true").lower() == "true"
 OUTFITS_PREVIEW_MAX_REQUESTS = min(20, max(0, int(os.getenv("OUTFITS_PREVIEW_MAX_REQUESTS", "20"))))
+
+# Discovery Map providers
+NOMINATIM_BASE_URL = os.getenv("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org")
+IP_GEOLOCATION_URL = os.getenv("IP_GEOLOCATION_URL", "https://ipapi.co/{ip}/json/")
+LOCATION_USER_AGENT = os.getenv("LOCATION_USER_AGENT", "Sirkula/1.0 (development)")
+LOCATION_REQUEST_TIMEOUT = float(os.getenv("LOCATION_REQUEST_TIMEOUT", "5"))
+LOCATION_CACHE_SECONDS = int(os.getenv("LOCATION_CACHE_SECONDS", "86400"))
+MARKETPLACE_DEFAULT_CENTER = (-6.186486, 106.834091)
+
+# Partner authentication routes use the same Django sessions/user model.
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "accounts:me"
+LOGOUT_REDIRECT_URL = "core:home"
