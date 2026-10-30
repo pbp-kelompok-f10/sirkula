@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{# Compatibility layout for pages using the earlier page_content block. #}
+
+{% block content %}
+    {% block page_content %}{% endblock page_content %}
+{% endblock content %}

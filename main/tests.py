@@ -1,3 +1,1 @@
-from django.test import TestCase
-
-# Create your tests here.
+# Homepage tests now live in apps.core.tests.

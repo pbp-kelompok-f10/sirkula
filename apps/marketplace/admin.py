@@ -1,3 +1,45 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Listing, PredefinedLocation, Product, ProductImage, Store
+
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 3
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "listing_type",
+        "price",
+        "seller",
+        "is_available",
+        "created_at",
+    )
+    list_filter = ("listing_type", "is_available", "created_at")
+    search_fields = ("name", "seller__username")
+    inlines = (ProductImageInline,)
+    ordering = ("-created_at",)
+
+
+@admin.register(PredefinedLocation)
+class PredefinedLocationAdmin(admin.ModelAdmin):
+    list_display = ("name", "region_type", "is_active", "sort_order")
+    list_filter = ("region_type", "is_active")
+    search_fields = ("name", "address_label", "slug")
+
+
+@admin.register(Store)
+class StoreAdmin(admin.ModelAdmin):
+    list_display = ("name", "owner", "address", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("name", "address", "slug")
+
+
+@admin.register(Listing)
+class ListingAdmin(admin.ModelAdmin):
+    list_display = ("title", "listing_type", "store", "seller", "price", "is_available")
+    list_filter = ("listing_type", "is_available")
+    search_fields = ("title", "slug", "store__name")

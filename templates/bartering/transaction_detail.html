@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Detail Transaksi Barter | Sirkula{% endblock %}
+
+{% block content %}
+<main class="barter-page">
+    <section class="barter-container">
+        <h1>Detail Transaksi Barter #{{ transaction.pk }}</h1>
+        <p class="offer-status offer-{{ transaction.offer.status|lower }}">
+            {{ transaction.offer.get_status_display }}
+        </p>
+        <p>Pengaju: {{ transaction.proposer.username }}</p>
+        <p>Penerima: {{ transaction.recipient.username }}</p>
+        <p>Barang yang ditawarkan: {{ transaction.offer.offered_product.name }}</p>
+        <p>Barang yang diminta: {{ transaction.offer.requested_product.name }}</p>
+        <p>Resi pengaju: {{ transaction.offer.proposer_tracking_number|default:"Belum diisi" }}</p>
+        <p>Resi penerima: {{ transaction.offer.recipient_tracking_number|default:"Belum diisi" }}</p>
+        <p>Konfirmasi pengaju: {% if transaction.offer.proposer_received %}Sudah{% else %}Belum{% endif %}</p>
+        <p>Konfirmasi penerima: {% if transaction.offer.recipient_received %}Sudah{% else %}Belum{% endif %}</p>
+        <a href="{% url 'bartering:transactions' %}">Kembali</a>
+    </section>
+</main>
+{% endblock %}

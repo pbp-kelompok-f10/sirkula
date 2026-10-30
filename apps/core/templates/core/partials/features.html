@@ -1,0 +1,27 @@
+<section
+    id="fitur"
+    aria-labelledby="features-title"
+    class="bg-base-100"
+>
+    <div class="mx-auto max-w-[1440px] px-5 pt-20 pb-12 sm:px-8 lg:px-16 lg:pt-24 lg:pb-16">
+        <p lang="en" class="text-sm text-primary">
+            In case you miss this
+        </p>
+
+        <h2
+            id="features-title"
+            lang="en"
+            class="mt-2 text-2xl font-semibold leading-tight text-base-content sm:text-3xl"
+        >
+            What’s Different From Us?
+        </h2>
+
+        <div class="mt-8 grid gap-5 lg:grid-cols-3">
+            {% include "core/components/feature_card.html" with card_id="wardrobe" title="AI Wardrobe & Capsule Stylist" description="Pindai isi lemarimu dalam hitungan detik. AI menganalisis palet warna, siluet, dan cuaca lokal Jakarta untuk membuat padanan segar tanpa belanja barang baru." only %}
+
+            {% include "core/components/feature_card.html" with card_id="thrift" title="Hyperlocal Thrift & Trade" description="Pasar kurasi pakaian vintage dan preloved dalam radius 3 km. Tanpa emisi antar pulau, hemat ongkos kirim, dan setiap helai diperiksa langsung kualitas fisiknya." only %}
+
+            {% include "core/components/feature_card.html" with card_id="barter" title="Cashless Barter Dimana Saja" description="Tukar pakaian secara adil berbasis kesetaraan valuasi dan gaya. Tinggalkan dan ambil barang yang kamu inginkan dimanapun dan kapanpun di sekitar tempat tinggalmu." only %}
+        </div>
+    </div>
+</section>

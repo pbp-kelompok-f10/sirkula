@@ -101,10 +101,10 @@
                     </li>
                     <li>
                         <a
-                            href="#"
-                            class="{% block nav_wardrobe %}{% endblock nav_wardrobe %}"
-                            {% if request.resolver_match.url_name == 'wardrobe' %}aria-current="page"{% endif %}
-                        >Wardrobe</a>
+                            href="/marketplace/"
+                            class="{% block nav_shop %}{% endblock nav_shop %}"
+                            {% if request.resolver_match.url_name == 'shop' %}aria-current="page"{% endif %}
+                        >Shop</a>
                     </li>
                     <li>
                         <a
@@ -124,6 +124,11 @@
             </div>
 
             <div class="navbar-end" aria-label="Akun">
+                <a href="/transactions/cart/" class="btn btn-cart" aria-label="Keranjang">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.05 2.05L3.149 2.022C3.38643 2.01601 3.61824 2.09473 3.80293 2.24406C3.98762 2.39339 4.11314 2.60358 4.157 2.837L6.847 17.184C6.88993 17.4133 7.01169 17.6204 7.19121 17.7694C7.37072 17.9185 7.59669 18 7.83 18H18M18 18C16.8954 18 16 18.8954 16 20C16 21.1046 16.8954 22 18 22C19.1046 22 20 21.1046 20 20C20 18.8954 19.1046 18 18 18ZM4.563 5H20.998C21.1468 4.9997 21.2938 5.03261 21.4283 5.09633C21.5627 5.16005 21.6813 5.25298 21.7753 5.36834C21.8693 5.4837 21.9363 5.61858 21.9716 5.76315C22.0068 5.90772 22.0094 6.05833 21.979 6.204L20.953 12.43C20.8537 12.8815 20.6011 13.2846 20.2381 13.5708C19.8751 13.8571 19.4242 14.0087 18.962 14H6.25M10 20C10 21.1046 9.10457 22 8 22C6.89543 22 6 21.1046 6 20C6 18.8954 6.89543 18 8 18C9.10457 18 10 18.8954 10 20Z"/>
+                    </svg>
+                </a>
                 {% if user.is_authenticated %}
                     <a href="#" class="btn btn-cart" aria-label="Keranjang">
                         <img class="navbar-icon" src="{% static 'img/icon-cart-figma.svg' %}" alt="" aria-hidden="true">
@@ -142,21 +147,33 @@
                 {% endif %}
             </div>
         </nav>
-    </header>
+     </header>
 
-    <main id="main-content" class="flex-1">
+     <main id="main-content" class="flex-1">
         {% if messages %}
-        <div class="site-messages" aria-label="Notifikasi">
-            {% for message in messages %}
-            <div class="alert site-message{% if message.tags %} alert-{{ message.tags }}{% endif %}"
-                 data-toast role="{% if 'error' in message.tags or 'warning' in message.tags %}alert{% else %}status{% endif %}"
-                 aria-live="{% if 'error' in message.tags or 'warning' in message.tags %}assertive{% else %}polite{% endif %}">
-                <span>{{ message }}</span>
-                <button class="site-message-dismiss" type="button" data-dismiss-message aria-label="Tutup notifikasi">&times;</button>
+            <div class="site-messages" aria-label="Notifikasi">
+                {% for message in messages %}
+                    <div
+                        class="alert site-message{% if message.tags %} alert-{{ message.tags }}{% endif %}"
+                        data-toast
+                        role="{% if 'error' in message.tags or 'warning' in message.tags %}alert{% else %}status{% endif %}"
+                        aria-live="{% if 'error' in message.tags or 'warning' in message.tags %}assertive{% else %}polite{% endif %}"
+                    >
+                        <span>{{ message }}</span>
+
+                        <button
+                            class="site-message-dismiss"
+                            type="button"
+                            data-dismiss-message
+                            aria-label="Tutup notifikasi"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
         {% endif %}
+
         {% block content %}{% endblock content %}
     </main>
 
