@@ -37,7 +37,6 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 lib/
@@ -92,7 +91,6 @@ db.sqlite3
 # Local development and generated assets
 .venv/
 node_modules/
-static/css/tailwind.css
 
 db.sqlite3.backup
 Syarat.pdf
