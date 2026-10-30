@@ -1,7 +1,15 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Discovery Map | Sirkula{% endblock title %}
 {% block nav_map %}is-active{% endblock nav_map %}
+
+{% block extra_head %}
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+>
+{% endblock extra_head %}
 
 {% block content %}
 <div
@@ -53,14 +61,22 @@
             </header>
 
             <div class="discovery-toolbar">
-                <label class="discovery-search" for="location-search">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7"></circle>
-                        <path d="m20 20-3.5-3.5"></path>
-                    </svg>
-                    <span class="sr-only">Cari lokasi atau produk</span>
-                    <input id="location-search" type="search" placeholder="Cari lokasi spesifik..." autocomplete="off">
-                </label>
+                <div class="discovery-search-wrapper">
+                    <label class="discovery-search" for="location-search">
+                        <!-- Icon yang peta itu -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <path d="m20 20-3.5-3.5"></path>
+                        </svg>
+                        <span class="sr-only">Cari lokasi</span>
+                        <input
+                            id="location-search"
+                            type="search"
+                            placeholder="Cari lokasi spesifik..."
+                            autocomplete="off"
+                        >
+                    </label>
+                </div>
 
                 <details class="radius-control">
                     <summary class="radius-trigger">
@@ -178,3 +194,8 @@
     </section>
 </div>
 {% endblock content %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'marketplace/js/discovery-map.js' %}" defer></script>
+{% endblock extra_js %}

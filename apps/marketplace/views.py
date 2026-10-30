@@ -15,6 +15,7 @@ from .services import (
 )
 
 
+# UBAH INI BUAT GANTI DEFAULT RADIUS
 DEFAULT_PAGE_RADIUS_KM = 3
 
 

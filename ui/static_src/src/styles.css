@@ -576,6 +576,16 @@
     overflow: hidden;
     background-color: #e8eee8;
   }
+  .discovery-map .maplibregl-map,
+  .discovery-map .maplibregl-ctrl,
+  .discovery-map .maplibregl-popup { font-family: var(--font-poppins); }
+  .discovery-map .maplibregl-popup-content { border-radius: 0.75rem; padding: 0.75rem 1rem; line-height: 1.5; }
+  .map-center-marker,
+  .map-result-marker { display: block; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 2px 8px rgb(0 0 0 / 28%); }
+  .map-center-marker { width: 1.125rem; height: 1.125rem; background: var(--color-green-100); }
+  .map-result-marker { width: 1rem; height: 1rem; cursor: pointer; }
+  .map-result-marker.is-store { width: 1.25rem; height: 1.25rem; background: var(--color-green-100); }
+  .map-result-marker.is-listing { background: var(--color-warning-70); }
   .map-placeholder {
     position: absolute;
     inset: 0;
@@ -718,8 +728,8 @@
   }
   .discovery-toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(15rem, 24rem);
-    gap: 2rem;
+    grid-template-columns: minmax(0, 1fr) minmax(2rem, 12rem);
+    gap: 20rem;
     align-items: center;
   }
   .discovery-search {
@@ -732,6 +742,7 @@
     background: #fff;
     padding: 0.5rem 1.125rem;
   }
+  .discovery-search-wrapper { position: relative; min-width: 0; }
   .discovery-search:focus-within {
     border-color: var(--color-green-90);
     outline: 3px solid rgb(45 115 76 / 15%);
@@ -808,6 +819,9 @@
     color: var(--color-neutral-70);
     font-size: var(--text-h8);
   }
+  .discovery-status.is-error { color: var(--color-danger-80); }
+  .discovery-page.is-loading .location-layout,
+  .discovery-page.is-loading .nearby-products { opacity: 0.62; transition: opacity 160ms ease; }
   .location-layout {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(20rem, 3fr);
