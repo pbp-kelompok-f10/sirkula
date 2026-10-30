@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "tailwind",
     "ui",
+    'apps.core',
+    'apps.accounts.apps.AccountsConfig',
 ]
 
 # Tailwind definition
@@ -140,6 +142,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Keep the current avatars/ upload directory intact; only avatar files are served in DEBUG.
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
