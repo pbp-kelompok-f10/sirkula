@@ -115,17 +115,10 @@
                     </li>
                     <li>
                         <a
-                            href="{% url 'bartering:incoming' %}"
-                            class="{% block nav_barter %}{% endblock nav_barter %}"
-                            {% if request.resolver_match.url_name == 'barter' %}aria-current="page"{% endif %}
-                        >Barter</a>
-                    </li>
-                    <li>
-                        <a
-                            href="{% url 'marketplace:shop' %}"
-                            class="{% block nav_thrift %}{% endblock nav_thrift %}"
-                            {% if request.resolver_match.url_name == 'thrift' %}aria-current="page"{% endif %}
-                        >Thrift</a>
+                            href="{% url 'marketplace:discovery_map' %}"
+                            class="{% block nav_map %}{% endblock nav_map %}"
+                            {% if request.resolver_match.url_name == 'discovery_map' %}aria-current="page"{% endif %}
+                        >Map</a>
                     </li>
                 </ul>
             </div>
