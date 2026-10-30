@@ -20,7 +20,7 @@
 
       <div class="payment-total">
         Total pesanan:
-        <strong>Rp {{ checkout.total|rupiah }}</strong>
+        <strong>Rp {{ order.total|rupiah }}</strong>
       </div>
 
       <a href="{% url 'core:home' %}" class="primary-button success-home">

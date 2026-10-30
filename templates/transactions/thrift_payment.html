@@ -28,17 +28,13 @@
     <!-- Dummy Payment Card -->
     <div class="dummy-payment-card">
       <h1>Pembayaran</h1>
-      <p class="payment-subtitle">Silakan scan QR dummy berikut.</p>
+      <p class="payment-subtitle">Scan QRIS berikut menggunakan aplikasi pembayaran Anda.</p>
 
-      <div class="dummy-qr" aria-label="Kode QR Pembayaran Dummy">
-        <div class="qr-pattern" aria-hidden="true">
-          <span></span><span></span><span></span>
-          <span></span><span></span><span></span>
-          <span></span><span></span><span></span>
-        </div>
+      <div class="dummy-qr" aria-label="Kode QRIS Pembayaran">
+        <img src="{{ order.payment_qr_url }}" alt="QRIS pembayaran" class="h-full w-full object-contain">
       </div>
 
-      <p class="expiry-text">Kode ini akan expired dalam 23:01</p>
+      <p class="expiry-text">Status pembayaran: {{ order.payment_status }}</p>
 
       <div class="payment-total">
         Total pembayaran:
@@ -48,7 +44,7 @@
       <form method="post">
         {% csrf_token %}
         <button type="submit" class="success-button">
-          Pembayaran Berhasil
+          Cek Status Pembayaran
         </button>
       </form>
 

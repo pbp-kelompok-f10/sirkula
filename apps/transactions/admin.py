@@ -27,10 +27,10 @@ class TransactionAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "buyer", "status", "purchase_method", "total", "created_at")
-    list_filter = ("status", "purchase_method", "shipping_method")
+    list_display = ("id", "buyer", "status", "payment_status", "purchase_method", "total", "created_at")
+    list_filter = ("status", "payment_status", "purchase_method", "shipping_method")
     search_fields = ("buyer__username", "phone_number")
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at", "paid_at")
 
 
 @admin.register(OrderItem)

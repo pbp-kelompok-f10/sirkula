@@ -1,8 +1,14 @@
+import hashlib
+import json
+
+from django.conf import settings
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction as db_transaction
@@ -12,6 +18,7 @@ from apps.marketplace.models import Product
 
 from .cart import Cart
 from .models import Order, OrderItem, OrderStatusHistory, TransactionNotification
+from .midtrans import create_qris_payment, get_payment_status, get_qr_code_url
 
 
 @login_required
@@ -110,16 +117,6 @@ def thrift_checkout(request):
         admin_fee = Decimal("1000")
         shipping_cost = SHIPPING_COSTS[shipping_method]
         checkout_total = cart.total_price + admin_fee + shipping_cost
-        request.session["checkout"] = {
-            "address": address,
-            "phone_number": phone_number,
-            "shipping_method": shipping_method,
-            "shipping_cost": str(shipping_cost),
-            "purchase_method": purchase_method,
-            "subtotal": str(cart.total_price),
-            "admin_fee": str(admin_fee),
-            "total": str(checkout_total),
-        }
         with db_transaction.atomic():
             locked_items = list(
                 Product.objects.select_for_update().filter(
@@ -155,15 +152,27 @@ def thrift_checkout(request):
                 status=Order.Status.PENDING,
                 note="Pesanan dibuat.",
             )
+        try:
+            payment_response = create_qris_payment(
+                order,
+                list(order.items.select_related("product")),
+            )
+            qr_url = get_qr_code_url(payment_response)
+            if not qr_url:
+                raise ValueError("Midtrans tidak mengembalikan URL QRIS.")
+            order.payment_transaction_id = payment_response.get("transaction_id", "")
+            order.payment_qr_url = qr_url
+            order.save(update_fields=["payment_transaction_id", "payment_qr_url"])
+        except Exception:
+            with db_transaction.atomic():
+                Product.objects.filter(order_items__order=order).update(is_available=True)
+                order.delete()
+            messages.error(request, "QRIS belum dapat dibuat. Periksa konfigurasi Midtrans.")
+            return redirect("transactions:thrift_checkout")
         request.session.modified = True
         Cart(request).clear()
-        request.session["checkout_success"] = {
-            "order_id": order.pk,
-            "total": str(checkout_total),
-            "status": Order.Status.PENDING,
-        }
-        request.session.pop("checkout", None)
-        return redirect("transactions:thrift_success")
+        request.session["payment_order_id"] = order.pk
+        return redirect("transactions:thrift_payment")
 
     admin_fee = Decimal("1000")
     shipping_cost = SHIPPING_COSTS["REGULAR"]
@@ -179,29 +188,78 @@ def thrift_checkout(request):
 
 @login_required
 def thrift_payment(request):
-    checkout = request.session.get("checkout")
-    if not checkout:
-        return redirect("transactions:thrift_checkout")
+    order_id = request.session.get("payment_order_id")
+    order = get_object_or_404(Order, pk=order_id, buyer=request.user)
 
     if request.method == "POST":
-        Cart(request).clear()
-        request.session["checkout_success"] = checkout
-        request.session.pop("checkout", None)
-        return redirect("transactions:thrift_success")
+        try:
+            payment_data = get_payment_status(order.order_number)
+            apply_payment_status(order, payment_data)
+        except Exception:
+            messages.error(request, "Status pembayaran belum dapat diperiksa.")
+            return redirect("transactions:thrift_payment")
+        if order.payment_status == "PAID":
+            request.session["payment_success_order_id"] = order.pk
+            return redirect("transactions:thrift_success")
+        messages.info(request, "Pembayaran belum terdeteksi. Silakan coba lagi.")
+        return redirect("transactions:thrift_payment")
+
+    if not order.payment_qr_url:
+        return redirect("transactions:thrift_checkout")
 
     return render(request, "transactions/thrift_payment.html", {
-        "checkout_total": Decimal(checkout["total"]),
+        "order": order,
+        "checkout_total": order.total,
     })
 
 
 @login_required
 def thrift_success(request):
-    checkout = request.session.pop("checkout_success", None)
-    if not checkout:
+    order_id = request.session.pop("payment_success_order_id", None)
+    order = get_object_or_404(Order, pk=order_id, buyer=request.user)
+    if order.payment_status != "PAID":
         return redirect("transactions:cart")
     return render(request, "transactions/thrift_success.html", {
-        "checkout": checkout,
+        "order": order,
     })
+
+
+def apply_payment_status(order, payment_data):
+    status = payment_data.get("transaction_status")
+    order.payment_transaction_id = payment_data.get(
+        "transaction_id",
+        order.payment_transaction_id,
+    )
+    if status == "settlement":
+        order.payment_status = "PAID"
+        if not order.paid_at:
+            from django.utils import timezone
+            order.paid_at = timezone.now()
+        order.save(update_fields=["payment_status", "payment_transaction_id", "paid_at"])
+    elif status in {"expire", "deny", "cancel"}:
+        order.payment_status = "FAILED"
+        order.save(update_fields=["payment_status", "payment_transaction_id"])
+        Product.objects.filter(order_items__order=order).update(is_available=True)
+    else:
+        order.payment_status = "PENDING"
+        order.save(update_fields=["payment_status", "payment_transaction_id"])
+
+
+@csrf_exempt
+@require_POST
+def midtrans_notification(request):
+    data = json.loads(request.body.decode("utf-8"))
+    order_number = data.get("order_id", "")
+    status_code = data.get("status_code", "")
+    gross_amount = data.get("gross_amount", "")
+    signature = hashlib.sha512(
+        f"{order_number}{status_code}{gross_amount}{settings.MIDTRANS_SERVER_KEY}".encode()
+    ).hexdigest()
+    if signature != data.get("signature_key"):
+        return JsonResponse({"detail": "Invalid signature"}, status=403)
+    order = get_object_or_404(Order, order_number=order_number)
+    apply_payment_status(order, data)
+    return JsonResponse({"status": "ok"})
 
 
 @login_required

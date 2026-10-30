@@ -12,6 +12,7 @@ urlpatterns = [
     path("checkout/thrift/", views.thrift_checkout, name="thrift_checkout"),
     path("checkout/thrift/payment/", views.thrift_payment, name="thrift_payment"),
     path("checkout/thrift/success/", views.thrift_success, name="thrift_success"),
+    path("payment/midtrans-notification/", views.midtrans_notification, name="midtrans_notification"),
     path("purchases/", views.purchase_list, name="purchases"),
     path("sales/", views.sales_list, name="sales"),
     path("<int:transaction_id>/", views.transaction_detail, name="detail"),
