@@ -45,6 +45,19 @@ MIDTRANS_QRIS_ACQUIRER = os.getenv('MIDTRANS_QRIS_ACQUIRER', 'gopay')
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "zayyan-ramadzaki-sirkula.pws.cs.ui.ac.id"]
 
+# PWS terminates HTTPS at its reverse proxy, then forwards the request to
+# Gunicorn. Trust that proxy header so Django does not mistake an HTTPS form
+# submission for an HTTP request during CSRF origin validation.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = [
+    "https://zayyan-ramadzaki-sirkula.pws.cs.ui.ac.id",
+]
+
+# Restrict authentication cookies to HTTPS in production while retaining
+# convenient HTTP access during local development.
+CSRF_COOKIE_SECURE = PRODUCTION
+SESSION_COOKIE_SECURE = PRODUCTION
+
 
 # Application definition
 
