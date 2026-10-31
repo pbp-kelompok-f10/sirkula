@@ -4,11 +4,40 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
-from .models import Listing, PredefinedLocation, SavedPlace, Store
+from .models import Listing, PredefinedLocation, Product, SavedPlace, Store
 from .services import ResolvedCenter, geolocate_ip, haversine_distance_km
+
+
+class SeedMarketplaceProductsTests(TestCase):
+    def test_command_requires_an_existing_account(self):
+        with self.assertRaises(CommandError):
+            call_command("seed_marketplace_products")
+
+    def test_command_seeds_50_products_without_creating_accounts(self):
+        user_model = get_user_model()
+        seller = user_model.objects.create_user(username="mockup-seller")
+
+        call_command("seed_marketplace_products", seller=seller.username)
+
+        self.assertEqual(user_model.objects.count(), 1)
+        self.assertEqual(Product.objects.filter(seller=seller).count(), 50)
+        self.assertEqual(
+            Product.objects.filter(seller=seller, listing_type=Product.ListingType.BARTER).count(),
+            12,
+        )
+
+    def test_command_is_idempotent(self):
+        seller = get_user_model().objects.create_user(username="repeat-seller")
+
+        call_command("seed_marketplace_products", seller=seller.username)
+        call_command("seed_marketplace_products", seller=seller.username)
+
+        self.assertEqual(Product.objects.filter(seller=seller).count(), 50)
 
 # === Geolocation test (buat discovery map) === #
 class DistanceServiceTests(TestCase):
