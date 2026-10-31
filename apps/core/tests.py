@@ -102,7 +102,7 @@ class HomePageTests(TestCase):
         for label, target in {
             "Home": "/",
             "Jelajahi Lemari Virtual": "/wardrobe/",
-            "Mulai Barter/Thrift": "/barter/",
+            "Mulai Barter/Thrift": "/barter/offers/incoming/",
         }.items():
             self.assertEqual(links[label]["href"], target)
         active = [text.strip() for attrs, text in parser.items if attrs.get("aria-current") == "page"]

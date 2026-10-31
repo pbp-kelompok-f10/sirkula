@@ -90,6 +90,7 @@ db.sqlite3
 # Local development and generated assets
 .venv/
 node_modules/
+/staticfiles/
 
 db.sqlite3.backup
 Syarat.pdf

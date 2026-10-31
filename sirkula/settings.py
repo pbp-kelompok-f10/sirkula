@@ -72,11 +72,6 @@ INSTALLED_APPS = [
 # Tailwind definition
 TAILWIND_APP_NAME = 'ui'
 
-# STATICFILES
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
 # PNPM
 NPM_BIN_PATH = os.getenv('NPM_BIN_PATH', "npm")
 
@@ -171,6 +166,12 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# PWS does not run ``collectstatic`` as part of every deployment.  Let
+# WhiteNoise also discover assets in STATICFILES_DIRS and installed apps, so
+# production does not depend on a generated (and intentionally untracked)
+# staticfiles directory being present when Gunicorn starts.
+WHITENOISE_USE_FINDERS = True
 
 STORAGES = {
     "default": {
