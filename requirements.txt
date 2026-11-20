@@ -12,7 +12,7 @@ Pillow
 # api's
 httpx
 # django-storages
-djangorestframework
+djangorestframework~=3.18.3
 
 # tailwind (as in documentation)
 django-tailwind[cookiecutter,honcho,reload]

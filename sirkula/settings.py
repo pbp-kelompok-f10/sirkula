@@ -68,6 +68,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
     'main.apps.MainConfig',  # Keep legacy migration history.
     'apps.wardrobe.apps.WardrobeConfig',
     'apps.outfits.apps.OutfitsConfig',
@@ -81,6 +83,16 @@ INSTALLED_APPS = [
     "apps.bartering",
     "apps.transactions",
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
 
 # Tailwind definition
 TAILWIND_APP_NAME = 'ui'
