@@ -21,6 +21,13 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/v1/core/", include("apps.core.api_urls")),
+    path("api/v1/accounts/", include("apps.accounts.api_urls_drf")),
+    path("api/v1/marketplace/", include("apps.marketplace.api_urls")),
+    path("api/v1/wardrobe/", include("apps.wardrobe.api_urls_drf")),
+    path("api/v1/outfits/", include("apps.outfits.api_urls_drf")),
+    path("api/v1/transactions/", include("apps.transactions.api_urls_drf")),
+    path("api/v1/bartering/", include("apps.bartering.api_urls_drf")),
     path("", include("apps.core.urls")),
     path("accounts/", include("apps.accounts.urls")),
     path("wardrobe/", include("apps.wardrobe.urls")),
