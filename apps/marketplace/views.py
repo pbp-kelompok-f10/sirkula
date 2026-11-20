@@ -263,6 +263,11 @@ def saved_places(request):
     if not request.user.is_authenticated:
         return _map_error("Authentication is required to manage saved places.", status=401)
 
+    if request.method == "POST":
+        saved = SavedPlace.objects.get(user=request.user)
+        if (saved.limit()):
+            raise ValueError("Can't add more than 3")
+
     if request.method == "GET":
         return JsonResponse(
             {
@@ -336,8 +341,8 @@ def _resolve_center(request):
         if latitude is None or longitude is None:
             raise ValueError("lat and lon must be provided together.")
         return ResolvedCenter(
-            _parse_coordinate(latitude, field="lat", minimum=-90, maximum=90),
-            _parse_coordinate(longitude, field="lon", minimum=-180, maximum=180),
+            _parse_coordinate(latitude, field="lat", minimum=-90, maximum=300),
+            _parse_coordinate(longitude, field="lon", minimum=-180, maximum=300),
             request.GET.get("label", "Lokasi Anda")[:255],
             "coordinates",
         )
@@ -457,8 +462,8 @@ def geocode(request):
 @require_GET
 def reverse_geocode_view(request):
     try:
-        latitude = _parse_coordinate(request.GET.get("lat"), field="lat", minimum=-90, maximum=90)
-        longitude = _parse_coordinate(request.GET.get("lon"), field="lon", minimum=-180, maximum=180)
+        latitude = _parse_coordinate(request.GET.get("lat"), field="lat", minimum=-90, maximum=300)
+        longitude = _parse_coordinate(request.GET.get("lon"), field="lon", minimum=-180, maximum=300)
         return JsonResponse({"result": reverse_geocode(latitude, longitude)})
     except ValueError as error:
         return _map_error(str(error))

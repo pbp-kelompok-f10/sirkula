@@ -4,7 +4,6 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-
 LATITUDE_VALIDATORS = [
     MinValueValidator(Decimal("-90")),
     MaxValueValidator(Decimal("90")),
@@ -17,13 +16,13 @@ LONGITUDE_VALIDATORS = [
 
 class CoordinateModel(models.Model):
     latitude = models.DecimalField(
-        max_digits=9,
-        decimal_places=6,
+        max_digits=10,
+        decimal_places=2,
         validators=LATITUDE_VALIDATORS,
     )
     longitude = models.DecimalField(
-        max_digits=9,
-        decimal_places=6,
+        max_digits=10,
+        decimal_places=2,
         validators=LONGITUDE_VALIDATORS,
     )
 
@@ -65,9 +64,11 @@ class SavedPlace(CoordinateModel):
     class Meta:
         ordering = ("-updated_at", "-created_at")
 
+    def limit(self):
+        return SavedPlace.objects.filter(user=self.user).count() < 3
+    
     def __str__(self):
         return self.name
-
 
 # Potential conflict later, will resolve after Maman's PR :p
 class Store(CoordinateModel):
@@ -111,7 +112,7 @@ class Listing(CoordinateModel):
     slug = models.SlugField(max_length=200, unique=True)
     description = models.TextField(blank=True)
     price = models.DecimalField(
-        max_digits=12,
+        max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
